@@ -13,6 +13,8 @@ fn main() {
     for fen in TEST_FENS {
         let board = Board::from_fen(fen);
         assert_eq!(fen, board.to_fen());
-        println!("{:?}", board.gen_moves())
+        for move_data in board.gen_moves() {
+            println!("{move_data}")
+        }
     }
 }
