@@ -1,5 +1,6 @@
 use core::fmt::Display;
 
+use crate::move_generator::move_data::Move;
 use crate::move_generator::gen_moves;
 
 mod bit_board;
@@ -135,8 +136,8 @@ impl Board {
         }
         None
     }
-    pub fn gen_moves(&self) {
-        gen_moves(self);
+    pub fn gen_moves(&self) -> Vec<Move> {
+        gen_moves(self)
     }
     pub fn to_fen(&self) -> String {
         let mut fen = String::with_capacity(87);
