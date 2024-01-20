@@ -1,8 +1,8 @@
-use std::fmt;
 use super::bit_board::BitBoard;
+use std::fmt;
 
 #[derive(PartialEq)]
-pub struct Square (u8);
+pub struct Square(u8);
 
 impl fmt::Display for Square {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
