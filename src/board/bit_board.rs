@@ -1,8 +1,8 @@
-use std::fmt;
 use super::square::Square;
+use std::fmt;
 
 #[derive(Copy, Clone)]
-pub struct BitBoard (u64);
+pub struct BitBoard(u64);
 
 impl fmt::Display for BitBoard {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
