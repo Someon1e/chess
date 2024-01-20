@@ -24,10 +24,10 @@ impl Square {
         self.0
     }
     pub fn file(&self) -> u8 {
-        return self.0 % 8;
+        self.0 % 8
     }
     pub fn rank(&self) -> u8 {
-        return self.0 / 8;
+        self.0 / 8
     }
     pub fn to_notation(&self) -> String {
         let file = self.file();
