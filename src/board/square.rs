@@ -1,5 +1,5 @@
 use std::fmt;
-use crate::bitboard::BitBoard;
+use super::bit_board::BitBoard;
 
 #[derive(PartialEq)]
 pub struct Square (u8);

@@ -1,8 +1,12 @@
 use core::fmt::Display;
 
-use crate::bitboard::BitBoard;
-use crate::piece::{self, Piece};
-use crate::square::Square;
+pub mod piece;
+pub mod square;
+mod bit_board;
+
+use bit_board::BitBoard;
+use piece::Piece;
+use square::Square;
 
 pub struct Board {
     bit_boards: [BitBoard; 12],
