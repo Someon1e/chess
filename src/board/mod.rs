@@ -1,9 +1,6 @@
 use core::fmt::Display;
 
-use crate::move_generator::move_data::Move;
-use crate::move_generator::gen_moves;
-
-mod bit_board;
+pub mod bit_board;
 pub mod piece;
 pub mod square;
 
@@ -14,18 +11,18 @@ use square::Square;
 pub struct Board {
     bit_boards: [BitBoard; 12],
 
-    white_to_move: bool,
+    pub white_to_move: bool,
 
-    white_can_castle_king_side: bool,
-    black_can_castle_queen_side: bool,
+    pub white_can_castle_king_side: bool,
+    pub black_can_castle_queen_side: bool,
 
-    black_can_castle_king_side: bool,
-    white_can_castle_queen_side: bool,
+    pub black_can_castle_king_side: bool,
+    pub white_can_castle_queen_side: bool,
 
-    en_passant_square: Option<Square>,
+    pub en_passant_square: Option<Square>,
 
-    half_move_clock: u64,
-    full_move_counter: u64,
+    pub half_move_clock: u64,
+    pub full_move_counter: u64,
 }
 
 impl Display for Board {
@@ -48,12 +45,11 @@ impl Board {
                 continue;
             }
             if let Some(digit) = character.to_digit(10) {
-                square = square.sub(digit as u8);
+                square = square.left(digit as u8);
             } else {
-                let piece = piece::from_fen_char(&character)
-                    .unwrap_or_else(|_| panic!("{square} {character}"));
-                square = square.sub(1);
-                bit_boards[piece as usize].set(&square);
+                let piece = piece::from_fen_char(&character).expect("{square} {character}");
+                square = square.left(1);
+                bit_boards[piece.usize()].set(&square);
             }
             if square.index() == 0 {
                 break;
@@ -128,16 +124,31 @@ impl Board {
         }
     }
     pub fn piece_at(&self, square: Square) -> Option<Piece> {
-        for piece in Piece::LIST {
-            let bit_board = self.bit_boards[piece as usize];
+        for piece in 0..12 {
+            let bit_board = self.bit_boards[piece];
             if bit_board.get(&square) {
-                return Some(piece);
+                return Some(piece.into());
             }
         }
         None
     }
-    pub fn gen_moves(&self) -> Vec<Move> {
-        gen_moves(self)
+    pub fn white_piece_at(&self, square: Square) -> Option<Piece> {
+        for piece in 0..6 {
+            let bit_board = self.bit_boards[piece];
+            if bit_board.get(&square) {
+                return Some(piece.into());
+            }
+        }
+        None
+    }
+    pub fn black_piece_at(&self, square: Square) -> Option<Piece> {
+        for piece in 6..12 {
+            let bit_board = self.bit_boards[piece];
+            if bit_board.get(&square) {
+                return Some(piece.into());
+            }
+        }
+        None
     }
     pub fn to_fen(&self) -> String {
         let mut fen = String::with_capacity(87);

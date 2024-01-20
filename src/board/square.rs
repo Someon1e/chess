@@ -1,7 +1,7 @@
 use super::bit_board::BitBoard;
 use std::fmt;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Copy, Clone)]
 pub struct Square(u8);
 
 impl fmt::Display for Square {
@@ -17,19 +17,33 @@ impl Square {
     pub fn from_coords(rank: u8, file: u8) -> Self {
         Self(rank * 8 + file)
     }
-    pub fn sub(&self, number: u8) -> Self {
+
+    pub fn up(&self, rank: u8) -> Self {
+        Self(self.0 + rank * 8)
+    }
+    pub fn down(&self, rank: u8) -> Self {
+        Self(self.0 - rank * 8)
+    }
+
+    pub fn right(&self, number: u8) -> Self {
+        Self(self.0 + number)
+    }
+    pub fn left(&self, number: u8) -> Self {
         Self(self.0 - number)
     }
+
     pub fn index(&self) -> u8 {
         self.0
     }
+
     pub fn file(&self) -> u8 {
         self.0 % 8
     }
     pub fn rank(&self) -> u8 {
         self.0 / 8
     }
-    pub fn to_notation(&self) -> String {
+
+    pub fn to_notation(self) -> String {
         let file = self.file();
         let rank = self.rank();
         let file_char = (b'a' + file) as char;
