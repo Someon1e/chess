@@ -1,5 +1,5 @@
 use std::fmt;
-use crate::square::Square;
+use super::square::Square;
 
 #[derive(Copy, Clone)]
 pub struct BitBoard (u64);

@@ -1,9 +1,5 @@
 mod board;
-mod piece;
-mod bitboard;
-mod square;
-
-use crate::board::Board;
+use board::Board;
 
 const TEST_FENS: [&str; 3] = [
     "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
