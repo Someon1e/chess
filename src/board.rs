@@ -2,6 +2,7 @@ use core::fmt::Display;
 
 use crate::bitboard::BitBoard;
 use crate::piece::{self, Piece};
+use crate::square::Square;
 
 pub struct Board {
     bit_boards: [BitBoard; 12],
@@ -14,7 +15,7 @@ pub struct Board {
     black_can_castle_king_side: bool,
     white_can_castle_queen_side: bool,
 
-    en_passant_square: Option<u8>,
+    en_passant_square: Option<Square>,
 
     half_move_clock: u64,
     full_move_counter: u64,
@@ -31,7 +32,7 @@ impl Board {
         let mut bit_boards = [BitBoard::empty(); 12];
 
         // rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR
-        let mut square: u8 = 64;
+        let mut square: Square = Square::from_index(64);
 
         let mut characters = fen.chars().peekable();
 
@@ -40,14 +41,14 @@ impl Board {
                 continue;
             }
             if let Some(digit) = character.to_digit(10) {
-                square -= digit as u8;
+                square = square.sub(digit as u8);
             } else {
                 let piece = piece::from_fen_char(&character)
                     .unwrap_or_else(|_| panic!("{square} {character}"));
-                square -= 1;
-                bit_boards[piece as usize].set(square);
+                square = square.sub(1);
+                bit_boards[piece as usize].set(&square);
             }
-            if 0 == square {
+            if square.index() == 0 {
                 break;
             }
         }
@@ -89,7 +90,7 @@ impl Board {
                 .to_digit(10)
                 .unwrap() as u8
                 - 1;
-            Some(rank * 8 + file)
+            Some(Square::from_coords(rank, file))
         };
         let half_move_clock = split
             .next()
@@ -119,10 +120,10 @@ impl Board {
             full_move_counter,
         }
     }
-    pub fn piece_at(&self, square: u8) -> Option<Piece> {
+    pub fn piece_at(&self, square: Square) -> Option<Piece> {
         for piece in Piece::LIST {
             let bit_board = self.bit_boards[piece as usize];
-            if bit_board.get(square) {
+            if bit_board.get(&square) {
                 return Some(piece);
             }
         }
@@ -134,7 +135,7 @@ impl Board {
         let mut empty: u32 = 0;
         for rank in (0..8).rev() {
             for file in (0..8).rev() {
-                if let Some(piece) = self.piece_at(rank * 8 + file) {
+                if let Some(piece) = self.piece_at(Square::from_coords(rank, file)) {
                     if empty != 0 {
                         fen.push(char::from_digit(empty, 10).unwrap());
                         empty = 0;
@@ -181,13 +182,8 @@ impl Board {
         }
         fen.push(' ');
 
-        if let Some(en_passant_square) = self.en_passant_square {
-            let file = en_passant_square % 8;
-            let rank = en_passant_square / 8;
-            let file_char = (b'a' + file) as char;
-            let rank_number = (rank + 1).to_string();
-            fen.push(file_char);
-            fen.push_str(&rank_number);
+        if let Some(en_passant_square) = &self.en_passant_square {
+            fen.push_str(&en_passant_square.to_notation())
         } else {
             fen.push('-')
         }

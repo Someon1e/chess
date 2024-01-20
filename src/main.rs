@@ -1,6 +1,7 @@
 mod board;
 mod piece;
 mod bitboard;
+mod square;
 
 use crate::board::Board;
 
