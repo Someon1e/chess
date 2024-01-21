@@ -19,8 +19,7 @@ mod tests {
         let move_generator = &mut PsuedoLegalMoveGenerator::new(board);
         let mut move_count = 0;
         for move_data in move_generator.gen() {
-            let piece = board.piece_at(move_data.from()).unwrap();
-            println!("{} {move_data}", piece.to_fen_char());
+            println!("{} {move_data}", move_data.piece().to_fen_char());
             move_count += 1;
         }
         assert_eq!(move_count, 20)
