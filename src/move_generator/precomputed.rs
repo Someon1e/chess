@@ -26,9 +26,9 @@ impl PrecomputedData {
                 rank,
                 file,
                 7 - file,
-                rank.min(file),
+                (7 - rank).min(file),
                 rank.min(7 - file),
-                7 - rank.min(7 - file),
+                (7 - rank).min(7 - file),
                 rank.min(file),
             ];
 

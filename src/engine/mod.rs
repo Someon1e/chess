@@ -1,6 +1,6 @@
 use crate::{
     board::{piece::Piece, square::Square, Board},
-    move_generator::{PsuedoLegalMoveGenerator, move_data::Move},
+    move_generator::{move_data::Move, PsuedoLegalMoveGenerator},
 };
 
 pub struct Engine<'a> {
@@ -9,9 +9,7 @@ pub struct Engine<'a> {
 
 impl<'a> Engine<'a> {
     pub fn new(move_generator: &'a mut PsuedoLegalMoveGenerator<'a>) -> Self {
-        Self {
-            move_generator,
-        }
+        Self { move_generator }
     }
     pub fn board(&mut self) -> &mut Board {
         self.move_generator.board()
@@ -79,5 +77,16 @@ impl<'a> Engine<'a> {
             }
         }
         (best_move, best_score)
+    }
+    pub fn can_capture_king(&mut self) -> bool {
+        if let Some(response_move) = self.best_move(1).0 {
+            match response_move.capture() {
+                Some(Piece::WhiteKing) | Some(Piece::BlackKing) => {
+                    return true
+                }
+                _ => {}
+            }
+        }
+        false
     }
 }
