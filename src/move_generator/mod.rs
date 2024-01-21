@@ -1,5 +1,5 @@
 use crate::board::piece::Piece;
-use crate::board::square::Square;
+use crate::board::square::{Square, DIRECTIONS};
 use crate::board::Board;
 
 pub mod move_data;
@@ -16,6 +16,20 @@ pub struct PsuedoLegalMoveGenerator<'a> {
 }
 
 impl<'a> PsuedoLegalMoveGenerator<'a> {
+    pub fn friendly_piece_at(&self, square: Square) -> Option<Piece> {
+        if self.board.white_to_move {
+            self.board.white_piece_at(square)
+        } else {
+            self.board.black_piece_at(square)
+        }
+    }
+    pub fn enemy_piece_at(&self, square: Square) -> Option<Piece> {
+        if self.board.white_to_move {
+            self.board.black_piece_at(square)
+        } else {
+            self.board.white_piece_at(square)
+        }
+    }
     fn gen_pawn(&mut self, square: Square) {
         let move_to = if self.board.white_to_move {
             square.up(1)
@@ -32,13 +46,7 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
         };
         for attack in attacks {
             // TODO: test if this works
-            if if self.board.white_to_move {
-                self.board.black_piece_at(*attack)
-            } else {
-                self.board.white_piece_at(*attack)
-            }
-            .is_some()
-            {
+            if self.enemy_piece_at(square).is_some() {
                 self.moves.push(Move::new(square, *attack))
             }
         }
@@ -51,6 +59,24 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
             self.moves.push(Move::new(square, square.down(2)))
         }
         // TODO: en passant
+    }
+    pub fn gen_directional(&mut self, square: Square, directions: &[i8]) {
+        // TODO: test if this works
+        for (direction, distance_from_edge) in directions
+            .iter()
+            .zip(self.precomputed.squares_from_edge[square.index() as usize])
+        {
+            for count in 0..distance_from_edge {
+                let move_to = square.offset(direction * count);
+                if self.friendly_piece_at(move_to).is_some() {
+                    break;
+                }
+                self.moves.push(Move::new(square, move_to));
+                if self.enemy_piece_at(move_to).is_some() {
+                    break;
+                }
+            }
+        }
     }
     pub fn gen_king(&mut self, square: Square) {
         // TODO: test if this works
@@ -83,10 +109,16 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
             if let Some(piece) = piece {
                 match piece {
                     Piece::WhitePawn | Piece::BlackPawn => self.gen_pawn(square),
-                    Piece::WhiteKnight | Piece::BlackKnight => {},
-                    Piece::WhiteBishop | Piece::BlackBishop => {},
-                    Piece::WhiteRook | Piece::BlackRook => {},
-                    Piece::WhiteQueen | Piece::BlackQueen => {},
+                    Piece::WhiteKnight | Piece::BlackKnight => {}
+                    Piece::WhiteBishop | Piece::BlackBishop => {
+                        self.gen_directional(square, &DIRECTIONS[4..8])
+                    }
+                    Piece::WhiteRook | Piece::BlackRook => {
+                        self.gen_directional(square, &DIRECTIONS[0..4])
+                    }
+                    Piece::WhiteQueen | Piece::BlackQueen => {
+                        self.gen_directional(square, &DIRECTIONS)
+                    }
                     Piece::WhiteKing | Piece::BlackKing => self.gen_king(square),
                 }
             }
