@@ -38,7 +38,7 @@ impl Board {
         let mut bit_boards = [BitBoard::empty(); 12];
 
         // rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR
-        let mut square: Square = Square::from_index(64);
+        let (mut rank, mut file) = (7, 0);
 
         let mut characters = fen.chars().peekable();
 
@@ -47,14 +47,18 @@ impl Board {
                 continue;
             }
             if let Some(digit) = character.to_digit(10) {
-                square = square.left(digit as i8);
+                file += digit as i8;
             } else {
                 let piece = piece::from_fen_char(&character).expect("{square} {character}");
-                square = square.left(1);
-                bit_boards[piece as usize].set(&square);
+                bit_boards[piece as usize].set(&Square::from_coords(rank, file));
+                file += 1;
             }
-            if square.index() == 0 {
-                break;
+            if file == 8 {
+                if rank == 0 {
+                    break
+                }
+                rank -= 1;
+                file = 0;
             }
         }
 
@@ -152,22 +156,34 @@ impl Board {
         }
         None
     }
-    pub fn make_move(&self, move_data: &Move) {
-        let mut bit_board = self.bit_boards[move_data.piece() as usize];
-        bit_board.unset(&move_data.from());
-        bit_board.set(&move_data.to())
+    pub fn make_move(&mut self, move_data: &Move) {
+        let moving_bit_board = &mut self.bit_boards[move_data.piece() as usize];
+        moving_bit_board.unset(&move_data.from());
+        moving_bit_board.set(&move_data.to());
+        if let Some(captured) = move_data.capture() {
+            let capturing_bit_board = &mut self.bit_boards[captured as usize];
+            capturing_bit_board.unset(&move_data.to())
+        }
+
+        self.white_to_move = !self.white_to_move;
     }
-    pub fn unmake_move(&self, move_data: &Move) {
-        let mut bit_board = self.bit_boards[move_data.piece() as usize];
+    pub fn unmake_move(&mut self, move_data: &Move) {
+        let bit_board = &mut self.bit_boards[move_data.piece() as usize];
         bit_board.unset(&move_data.to());
-        bit_board.set(&move_data.from())
+        bit_board.set(&move_data.from());
+        if let Some(captured) = move_data.capture() {
+            let capturing_bit_board = &mut self.bit_boards[captured as usize];
+            capturing_bit_board.set(&move_data.to())
+        }
+
+        self.white_to_move = !self.white_to_move
     }
     pub fn to_fen(&self) -> String {
         let mut fen = String::with_capacity(87);
 
         let mut empty: u32 = 0;
         for rank in (0..8).rev() {
-            for file in (0..8).rev() {
+            for file in 0..8 {
                 if let Some(piece) = self.piece_at(Square::from_coords(rank, file)) {
                     if empty != 0 {
                         fen.push(char::from_digit(empty, 10).unwrap());

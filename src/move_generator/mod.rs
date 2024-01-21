@@ -10,7 +10,7 @@ use move_data::Move;
 use self::precomputed::PrecomputedData;
 
 pub struct PsuedoLegalMoveGenerator<'a> {
-    board: &'a Board,
+    board: &'a mut Board,
     precomputed: PrecomputedData,
 }
 
@@ -30,32 +30,33 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
         }
     }
     fn gen_pawn(&self, moves: &mut Vec<Move>, piece: Piece, square: Square) {
-        let move_to = if self.board.white_to_move {
-            square.up(1)
-        } else {
-            square.down(1)
-        };
-        if self.board.piece_at(move_to).is_none() {
-            moves.push(Move::new(piece, square, move_to))
-        }
-        let attacks = if self.board.white_to_move {
+        let attacks = if let Piece::WhitePawn = piece {
             &self.precomputed.white_pawn_attacks_at_square[square.index() as usize]
         } else {
             &self.precomputed.black_pawn_attacks_at_square[square.index() as usize]
         };
         for attack in attacks {
             // TODO: test if this works
-            if self.enemy_piece_at(square).is_some() {
-                moves.push(Move::new(piece, square, *attack))
+            if let Some(enemy) = self.enemy_piece_at(square) {
+                moves.push(Move::new(piece, square, *attack, Some(enemy)))
             }
         }
-        if self.board.white_to_move {
-            // TODO: test if this works
-            if square.rank() == 1 {
-                moves.push(Move::new(piece, square, square.up(2)))
+
+        let move_to = if let Piece::WhitePawn = piece {
+            square.up(1)
+        } else {
+            square.down(1)
+        };
+        if self.board.piece_at(move_to).is_none() {
+            moves.push(Move::new(piece, square, move_to, None));
+
+            if let Piece::WhitePawn = piece {
+                if square.rank() == 1 {
+                    moves.push(Move::new(piece, square, square.up(2), None))
+                }
+            } else if square.rank() == 6 {
+                moves.push(Move::new(piece, square, square.down(2), None))
             }
-        } else if square.rank() == 7 {
-            moves.push(Move::new(piece, square, square.down(2)))
         }
         // TODO: en passant
     }
@@ -76,8 +77,9 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
                 if self.friendly_piece_at(move_to).is_some() {
                     break;
                 }
-                moves.push(Move::new(piece, square, move_to));
-                if self.enemy_piece_at(move_to).is_some() {
+                let enemy = self.enemy_piece_at(move_to);
+                moves.push(Move::new(piece, square, move_to, enemy));
+                if enemy.is_some() {
                     break;
                 }
             }
@@ -87,7 +89,8 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
         // TODO: test if this works
         for move_to in &self.precomputed.king_moves_at_square[square.index() as usize] {
             if self.friendly_piece_at(*move_to).is_none() {
-                moves.push(Move::new(piece, square, *move_to))
+                let enemy = self.enemy_piece_at(*move_to);
+                moves.push(Move::new(piece, square, *move_to, enemy))
             }
         }
 
@@ -96,25 +99,25 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
     pub fn gen_knight(&self, moves: &mut Vec<Move>, piece: Piece, square: Square) {
         for move_to in &self.precomputed.knight_moves_at_square[square.index() as usize] {
             if self.friendly_piece_at(*move_to).is_none() {
-                moves.push(Move::new(piece, square, *move_to))
+                let enemy = self.enemy_piece_at(*move_to);
+                moves.push(Move::new(piece, square, *move_to, enemy))
             }
         }
     }
-    pub fn new(board: &'a Board) -> Self {
+    pub fn new(board: &'a mut Board) -> Self {
         let precomputed = PrecomputedData::compute();
         Self {
             board,
             precomputed,
         }
     }
+    pub fn board(&mut self) -> &mut Board {
+        self.board
+    }
     pub fn gen(&self, moves: &mut Vec<Move>) {
         for index in 0..64 {
             let square = Square::from_index(index);
-            let piece = if self.board.white_to_move {
-                self.board.white_piece_at(square)
-            } else {
-                self.board.black_piece_at(square)
-            };
+            let piece = self.friendly_piece_at(square);
             if let Some(piece) = piece {
                 match piece {
                     Piece::WhitePawn | Piece::BlackPawn => self.gen_pawn(moves, piece, square),
