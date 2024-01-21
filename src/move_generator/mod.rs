@@ -30,14 +30,14 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
             self.board.white_piece_at(square)
         }
     }
-    fn gen_pawn(&mut self, square: Square) {
+    fn gen_pawn(&mut self, piece: Piece, square: Square) {
         let move_to = if self.board.white_to_move {
             square.up(1)
         } else {
             square.down(1)
         };
         if self.board.piece_at(move_to).is_none() {
-            self.moves.push(Move::new(square, move_to))
+            self.moves.push(Move::new(piece, square, move_to))
         }
         let attacks = if self.board.white_to_move {
             &self.precomputed.white_pawn_attacks_at_square[square.index() as usize]
@@ -47,20 +47,20 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
         for attack in attacks {
             // TODO: test if this works
             if self.enemy_piece_at(square).is_some() {
-                self.moves.push(Move::new(square, *attack))
+                self.moves.push(Move::new(piece, square, *attack))
             }
         }
         if self.board.white_to_move {
             // TODO: test if this works
             if square.rank() == 1 {
-                self.moves.push(Move::new(square, square.up(2)))
+                self.moves.push(Move::new(piece, square, square.up(2)))
             }
         } else if square.rank() == 7 {
-            self.moves.push(Move::new(square, square.down(2)))
+            self.moves.push(Move::new(piece, square, square.down(2)))
         }
         // TODO: en passant
     }
-    pub fn gen_directional(&mut self, square: Square, directions: &[i8]) {
+    pub fn gen_directional(&mut self, piece: Piece, square: Square, directions: &[i8]) {
         // TODO: test if this works
         for (direction, distance_from_edge) in directions
             .iter()
@@ -71,27 +71,27 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
                 if self.friendly_piece_at(move_to).is_some() {
                     break;
                 }
-                self.moves.push(Move::new(square, move_to));
+                self.moves.push(Move::new(piece, square, move_to));
                 if self.enemy_piece_at(move_to).is_some() {
                     break;
                 }
             }
         }
     }
-    pub fn gen_king(&mut self, square: Square) {
+    pub fn gen_king(&mut self, piece: Piece, square: Square) {
         // TODO: test if this works
         for move_to in &self.precomputed.king_moves_at_square[square.index() as usize] {
             if self.friendly_piece_at(*move_to).is_none() {
-                self.moves.push(Move::new(square, *move_to))
+                self.moves.push(Move::new(piece, square, *move_to))
             }
         }
 
         // TODO: castling
     }
-    pub fn gen_knight(&mut self, square: Square) {
+    pub fn gen_knight(&mut self, piece: Piece, square: Square) {
         for move_to in &self.precomputed.knight_moves_at_square[square.index() as usize] {
             if self.friendly_piece_at(*move_to).is_none() {
-                self.moves.push(Move::new(square, *move_to))
+                self.moves.push(Move::new(piece, square, *move_to))
             }
         }
     }
@@ -117,18 +117,18 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
             };
             if let Some(piece) = piece {
                 match piece {
-                    Piece::WhitePawn | Piece::BlackPawn => self.gen_pawn(square),
-                    Piece::WhiteKnight | Piece::BlackKnight => self.gen_knight(square),
+                    Piece::WhitePawn | Piece::BlackPawn => self.gen_pawn(piece, square),
+                    Piece::WhiteKnight | Piece::BlackKnight => self.gen_knight(piece, square),
                     Piece::WhiteBishop | Piece::BlackBishop => {
-                        self.gen_directional(square, &DIRECTIONS[4..8])
+                        self.gen_directional(piece, square, &DIRECTIONS[4..8])
                     }
                     Piece::WhiteRook | Piece::BlackRook => {
-                        self.gen_directional(square, &DIRECTIONS[0..4])
+                        self.gen_directional(piece, square, &DIRECTIONS[0..4])
                     }
                     Piece::WhiteQueen | Piece::BlackQueen => {
-                        self.gen_directional(square, &DIRECTIONS)
+                        self.gen_directional(piece, square, &DIRECTIONS)
                     }
-                    Piece::WhiteKing | Piece::BlackKing => self.gen_king(square),
+                    Piece::WhiteKing | Piece::BlackKing => self.gen_king(piece, square),
                 }
             }
         }
