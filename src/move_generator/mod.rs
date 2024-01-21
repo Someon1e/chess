@@ -1,4 +1,4 @@
-use crate::board::piece;
+use crate::board::piece::Piece;
 use crate::board::square::Square;
 use crate::board::Board;
 
@@ -82,11 +82,12 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
             };
             if let Some(piece) = piece {
                 match piece {
-                    piece::WHITE_PAWN => self.gen_pawn(square),
-                    piece::BLACK_PAWN => self.gen_pawn(square),
-                    piece::WHITE_KING => self.gen_king(square),
-                    piece::BLACK_KING => self.gen_king(square),
-                    _ => {}
+                    Piece::WhitePawn | Piece::BlackPawn => self.gen_pawn(square),
+                    Piece::WhiteKnight | Piece::BlackKnight => {},
+                    Piece::WhiteBishop | Piece::BlackBishop => {},
+                    Piece::WhiteRook | Piece::BlackRook => {},
+                    Piece::WhiteQueen | Piece::BlackQueen => {},
+                    Piece::WhiteKing | Piece::BlackKing => self.gen_king(square),
                 }
             }
         }

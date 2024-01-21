@@ -40,14 +40,13 @@ impl PrecomputedData {
             let king_moves = &mut king_moves_at_square[index];
             for direction in DIRECTION_OFFSETS {
                 let move_to = square.offset(direction);
-                if move_to.within_bounds() {
-                    if (file - move_to.file())
+                if move_to.within_bounds()
+                    && (file - move_to.file())
                         .abs()
                         .max((rank - move_to.rank()).abs())
                         == 1
-                    {
-                        king_moves.push(move_to);
-                    }
+                {
+                    king_moves.push(move_to);
                 }
             }
         }

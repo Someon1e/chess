@@ -5,7 +5,7 @@ pub mod piece;
 pub mod square;
 
 use bit_board::BitBoard;
-use piece::Piece;
+use piece::{Piece, ALL_PIECES, BLACK_PIECES, WHITE_PIECES};
 use square::Square;
 
 pub struct Board {
@@ -49,7 +49,7 @@ impl Board {
             } else {
                 let piece = piece::from_fen_char(&character).expect("{square} {character}");
                 square = square.left(1);
-                bit_boards[piece.usize()].set(&square);
+                bit_boards[piece as usize].set(&square);
             }
             if square.index() == 0 {
                 break;
@@ -124,28 +124,28 @@ impl Board {
         }
     }
     pub fn piece_at(&self, square: Square) -> Option<Piece> {
-        for piece in 0..12 {
-            let bit_board = self.bit_boards[piece];
+        for piece in ALL_PIECES {
+            let bit_board = self.bit_boards[piece as usize];
             if bit_board.get(&square) {
-                return Some(piece.into());
+                return Some(piece);
             }
         }
         None
     }
     pub fn white_piece_at(&self, square: Square) -> Option<Piece> {
-        for piece in 0..6 {
-            let bit_board = self.bit_boards[piece];
+        for piece in WHITE_PIECES {
+            let bit_board = self.bit_boards[piece as usize];
             if bit_board.get(&square) {
-                return Some(piece.into());
+                return Some(piece);
             }
         }
         None
     }
     pub fn black_piece_at(&self, square: Square) -> Option<Piece> {
-        for piece in 6..12 {
-            let bit_board = self.bit_boards[piece];
+        for piece in BLACK_PIECES {
+            let bit_board = self.bit_boards[piece as usize];
             if bit_board.get(&square) {
-                return Some(piece.into());
+                return Some(piece);
             }
         }
         None
