@@ -13,15 +13,26 @@ mod tests {
         "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10",
     ];
 
+    fn perft(board: &Board, move_generator: &PsuedoLegalMoveGenerator, depth: u16) -> usize {
+        let mut moves = Vec::new();
+        move_generator.gen(&mut moves);
+        if depth == 1 {
+            return moves.len();
+        };
+
+        let mut move_count = 0;
+        for move_data in moves {
+            //TODO: board.make_move(move_data);
+            move_count += perft(&board, move_generator, depth - 1);
+        }
+        move_count
+    }
+
     #[test]
     fn test_start_position() {
-        let board = &mut Board::from_fen(START_POSITION_FEN);
-        let move_generator = &mut PsuedoLegalMoveGenerator::new(board);
-        let mut move_count = 0;
-        for move_data in move_generator.gen() {
-            println!("{} {move_data}", move_data.piece().to_fen_char());
-            move_count += 1;
-        }
+        let board = Board::from_fen(START_POSITION_FEN);
+        let mut move_generator = PsuedoLegalMoveGenerator::new(&board);
+        let move_count = perft(&board, &mut move_generator, 1);
         assert_eq!(move_count, 20)
     }
 
