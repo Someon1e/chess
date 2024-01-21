@@ -1,4 +1,4 @@
-use crate::board::square::Square;
+use crate::board::{piece::Piece, square::Square};
 use std::fmt;
 
 pub struct Move {
@@ -15,5 +15,11 @@ impl fmt::Display for Move {
 impl Move {
     pub fn new(from: Square, to: Square) -> Self {
         Self { from, to }
+    }
+    pub fn from(&self) -> Square {
+        return self.from
+    }
+    pub fn to(&self) -> Square {
+        return self.to
     }
 }
