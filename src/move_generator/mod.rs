@@ -86,6 +86,13 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
 
         // TODO: castling
     }
+    pub fn gen_knight(&mut self, square: Square) {
+        for move_to in &self.precomputed.knight_moves_at_square[square.index() as usize] {
+            if self.friendly_piece_at(*move_to).is_none() {
+                self.moves.push(Move::new(square, *move_to))
+            }
+        }
+    }
     pub fn new(board: &'a Board) -> Self {
         let moves = Vec::with_capacity(1);
         let precomputed = PrecomputedData::compute();
@@ -109,7 +116,7 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
             if let Some(piece) = piece {
                 match piece {
                     Piece::WhitePawn | Piece::BlackPawn => self.gen_pawn(square),
-                    Piece::WhiteKnight | Piece::BlackKnight => {}
+                    Piece::WhiteKnight | Piece::BlackKnight => self.gen_knight(square),
                     Piece::WhiteBishop | Piece::BlackBishop => {
                         self.gen_directional(square, &DIRECTIONS[4..8])
                     }

@@ -14,6 +14,20 @@ pub enum Piece {
     BlackKing,
 }
 
+pub const ALL_PIECES: [Piece; 12] = [
+    Piece::WhitePawn,
+    Piece::WhiteKnight,
+    Piece::WhiteBishop,
+    Piece::WhiteRook,
+    Piece::WhiteQueen,
+    Piece::WhiteKing,
+    Piece::BlackPawn,
+    Piece::BlackKnight,
+    Piece::BlackBishop,
+    Piece::BlackRook,
+    Piece::BlackQueen,
+    Piece::BlackKing,
+];
 pub const WHITE_PIECES: [Piece; 6] = [
     Piece::WhitePawn,
     Piece::WhiteKnight,
@@ -23,20 +37,6 @@ pub const WHITE_PIECES: [Piece; 6] = [
     Piece::WhiteKing,
 ];
 pub const BLACK_PIECES: [Piece; 6] = [
-    Piece::BlackPawn,
-    Piece::BlackKnight,
-    Piece::BlackBishop,
-    Piece::BlackRook,
-    Piece::BlackQueen,
-    Piece::BlackKing,
-];
-pub const ALL_PIECES: [Piece; 12] = [
-    Piece::WhitePawn,
-    Piece::WhiteKnight,
-    Piece::WhiteBishop,
-    Piece::WhiteRook,
-    Piece::WhiteQueen,
-    Piece::WhiteKing,
     Piece::BlackPawn,
     Piece::BlackKnight,
     Piece::BlackBishop,
