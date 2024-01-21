@@ -1,40 +1,77 @@
 pub mod board;
+pub mod engine;
 pub mod move_generator;
 
 #[cfg(test)]
 mod tests {
+    use crate::board::bit_board::BitBoard;
+    use crate::board::piece::Piece;
+    use crate::board::square::Square;
+
     use super::board::Board;
+    use super::engine::Engine;
     use super::move_generator::PsuedoLegalMoveGenerator;
 
     const START_POSITION_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     const TEST_FENS: [&str; 3] = [
         START_POSITION_FEN,
         "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2",
-        "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10",
+        "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10"
     ];
 
-    fn perft(board: &Board, move_generator: &PsuedoLegalMoveGenerator, depth: u16) -> usize {
+    fn perft(engine: &mut Engine, depth: u16) -> usize {
         let mut moves = Vec::new();
-        move_generator.gen(&mut moves);
+        engine.move_generator().gen(&mut moves);
         if depth == 1 {
             return moves.len();
         };
 
         let mut move_count = 0;
         for move_data in moves {
-            board.make_move(&move_data);
-            move_count += perft(&board, move_generator, depth - 1);
-            board.unmake_move(&move_data);
+            engine.board().make_move(&move_data);
+            if let Some(response_move) = engine.best_move(1).0 {
+                match response_move.capture() {
+                    Some(Piece::WhiteKing) | Some(Piece::BlackKing) => {
+                        engine.board().unmake_move(&move_data);
+                        continue;
+                    }
+                    _ => {}
+                }
+            }
+            move_count += perft(engine, depth - 1);
+            engine.board().unmake_move(&move_data);
         }
         move_count
     }
 
     #[test]
     fn test_start_position() {
-        let board = Board::from_fen(START_POSITION_FEN);
-        let mut move_generator = PsuedoLegalMoveGenerator::new(&board);
-        let move_count = perft(&board, &mut move_generator, 2);
-        assert_eq!(move_count, 400)
+        let board = &mut Board::from_fen(START_POSITION_FEN);
+        let mut move_generator = PsuedoLegalMoveGenerator::new(board);
+        let engine = &mut Engine::new(&mut move_generator);
+        let move_count = perft(engine, 2);
+
+        assert_eq!(move_count, 400);
+    }
+
+    #[test]
+    fn test_coordinates() {
+        let a1 = Square::from_coords(0, 0);
+        assert!(a1.to_notation() == "a1");
+        let b1 = a1.right(1);
+        assert!(b1.to_notation() == "b1");
+        let b2 = b1.up(1);
+        assert!(b2.to_notation() == "b2");
+        let also_b2 = Square::from_index(b2.index());
+        assert!(also_b2.to_notation() == "b2");
+        assert!(also_b2.index() == 9);
+
+        let bit_board = also_b2.bitboard();
+
+        let mut same_bit_board = BitBoard::empty();
+        same_bit_board.set(&also_b2);
+
+        assert!(bit_board.to_string() == same_bit_board.to_string())
     }
 
     #[test]
