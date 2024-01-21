@@ -1,9 +1,10 @@
-use crate::board::square::{Square, DIRECTION_OFFSETS};
+use crate::board::square::{Square, DIRECTIONS};
 
 pub struct PrecomputedData {
     pub white_pawn_attacks_at_square: Vec<Vec<Square>>,
     pub black_pawn_attacks_at_square: Vec<Vec<Square>>,
     pub king_moves_at_square: Vec<Vec<Square>>,
+    pub squares_from_edge: [[i8; 8]; 64],
 }
 
 impl PrecomputedData {
@@ -11,11 +12,23 @@ impl PrecomputedData {
         let mut white_pawn_attacks_at_square = vec![vec![]; 64];
         let mut black_pawn_attacks_at_square = vec![vec![]; 64];
         let mut king_moves_at_square = vec![vec![]; 64];
+        let mut squares_from_edge = [[0; 8]; 64];
 
         for index in 0..64 {
             let square = Square::from_index(index as i8);
             let rank = square.rank();
             let file = square.file();
+
+            squares_from_edge[index] = [
+                7 - rank,
+                rank,
+                file,
+                7 - file,
+                rank.min(file),
+                rank.min(7 - file),
+                7 - rank.min(7 - file),
+                rank.min(file),
+            ];
 
             let white_pawn_attacks = &mut white_pawn_attacks_at_square[index];
             let black_pawn_attacks = &mut black_pawn_attacks_at_square[index];
@@ -38,7 +51,7 @@ impl PrecomputedData {
             }
 
             let king_moves = &mut king_moves_at_square[index];
-            for direction in DIRECTION_OFFSETS {
+            for direction in DIRECTIONS {
                 let move_to = square.offset(direction);
                 if move_to.within_bounds()
                     && (file - move_to.file())
@@ -55,6 +68,7 @@ impl PrecomputedData {
             white_pawn_attacks_at_square,
             black_pawn_attacks_at_square,
             king_moves_at_square,
+            squares_from_edge
         }
     }
 }

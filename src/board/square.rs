@@ -10,15 +10,18 @@ impl fmt::Display for Square {
     }
 }
 
-const UP_OFFSET: i8 = 8;
-const DOWN_OFFSET: i8 = -8;
-const LEFT_OFFSET: i8 = -1;
-const RIGHT_OFFSET: i8 = 1;
-pub const DIRECTION_OFFSETS: [i8; 8] = [
+pub type Direction = i8;
+
+const UP_OFFSET: Direction = 8;
+const DOWN_OFFSET: Direction = -8;
+const LEFT_OFFSET: Direction = -1;
+const RIGHT_OFFSET: Direction = 1;
+pub const DIRECTIONS: [Direction; 8] = [
     UP_OFFSET,
     DOWN_OFFSET,
     LEFT_OFFSET,
     RIGHT_OFFSET,
+
     UP_OFFSET + LEFT_OFFSET,
     UP_OFFSET + RIGHT_OFFSET,
     DOWN_OFFSET + LEFT_OFFSET,
