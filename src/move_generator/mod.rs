@@ -31,6 +31,7 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
             &self.precomputed.black_pawn_attacks_at_square[square.index() as usize]
         };
         for attack in attacks {
+            // TODO: test if this works
             if if self.board.white_to_move {
                 self.board.black_piece_at(*attack)
             } else {
@@ -42,6 +43,7 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
             }
         }
         if self.board.white_to_move {
+            // TODO: test if this works
             if square.rank() == 1 {
                 self.moves.push(Move::new(square, square.up(2)))
             }
@@ -49,6 +51,14 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
             self.moves.push(Move::new(square, square.down(2)))
         }
         // TODO: en passant
+    }
+    pub fn gen_king(&mut self, square: Square) {
+        // TODO: test if this works
+        for move_to in &self.precomputed.king_moves_at_square[square.index() as usize] {
+            self.moves.push(Move::new(square, *move_to))
+        }
+
+        // TODO: castling
     }
     pub fn new(board: &'a Board) -> Self {
         let moves = Vec::with_capacity(1);
@@ -74,6 +84,7 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
                 match piece {
                     piece::WHITE_PAWN => self.gen_pawn(square),
                     piece::BLACK_PAWN => self.gen_pawn(square),
+                    piece::WHITE_KING => self.gen_king(square),
                     _ => {}
                 }
             }

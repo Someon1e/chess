@@ -2,7 +2,7 @@ use super::bit_board::BitBoard;
 use std::fmt;
 
 #[derive(PartialEq, Copy, Clone)]
-pub struct Square(u8);
+pub struct Square(i8);
 
 impl fmt::Display for Square {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -10,43 +10,66 @@ impl fmt::Display for Square {
     }
 }
 
+const UP_OFFSET: i8 = 8;
+const DOWN_OFFSET: i8 = -8;
+const LEFT_OFFSET: i8 = -1;
+const RIGHT_OFFSET: i8 = 1;
+pub const DIRECTION_OFFSETS: [i8; 8] = [
+    UP_OFFSET,
+    DOWN_OFFSET,
+    LEFT_OFFSET,
+    RIGHT_OFFSET,
+    UP_OFFSET + LEFT_OFFSET,
+    UP_OFFSET + RIGHT_OFFSET,
+    DOWN_OFFSET + LEFT_OFFSET,
+    DOWN_OFFSET + RIGHT_OFFSET,
+];
+
 impl Square {
-    pub fn from_index(index: u8) -> Self {
+    pub fn from_index(index: i8) -> Self {
         Self(index)
     }
-    pub fn from_coords(rank: u8, file: u8) -> Self {
+    pub fn from_coords(rank: i8, file: i8) -> Self {
         Self(rank * 8 + file)
     }
 
-    pub fn up(&self, rank: u8) -> Self {
-        Self(self.0 + rank * 8)
+    pub fn up(&self, number: i8) -> Self {
+        self.offset(UP_OFFSET * number)
     }
-    pub fn down(&self, rank: u8) -> Self {
-        Self(self.0 - rank * 8)
-    }
-
-    pub fn right(&self, number: u8) -> Self {
-        Self(self.0 + number)
-    }
-    pub fn left(&self, number: u8) -> Self {
-        Self(self.0 - number)
+    pub fn down(&self, number: i8) -> Self {
+        self.offset(DOWN_OFFSET * number)
     }
 
-    pub fn index(&self) -> u8 {
+    pub fn left(&self, number: i8) -> Self {
+        self.offset(LEFT_OFFSET * number)
+    }
+    pub fn right(&self, number: i8) -> Self {
+        self.offset(RIGHT_OFFSET * number)
+    }
+
+    pub fn within_bounds(&self) -> bool {
+        self.index() >= 0 && self.index() < 64
+    }
+
+    pub fn offset(&self, offset: i8) -> Self {
+        Self(self.index() + offset)
+    }
+
+    pub fn index(&self) -> i8 {
         self.0
     }
 
-    pub fn file(&self) -> u8 {
-        self.0 % 8
+    pub fn file(&self) -> i8 {
+        self.index() % 8
     }
-    pub fn rank(&self) -> u8 {
-        self.0 / 8
+    pub fn rank(&self) -> i8 {
+        self.index() / 8
     }
 
     pub fn to_notation(self) -> String {
         let file = self.file();
         let rank = self.rank();
-        let file_char = (b'a' + file) as char;
+        let file_char = (b'a' + file as u8) as char;
         let rank_number = (rank + 1).to_string();
         format!("{}{}", file_char, rank_number)
     }
