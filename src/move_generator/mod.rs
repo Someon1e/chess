@@ -85,6 +85,7 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
                     piece::WHITE_PAWN => self.gen_pawn(square),
                     piece::BLACK_PAWN => self.gen_pawn(square),
                     piece::WHITE_KING => self.gen_king(square),
+                    piece::BLACK_KING => self.gen_king(square),
                     _ => {}
                 }
             }
