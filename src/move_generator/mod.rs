@@ -65,7 +65,11 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
     pub fn gen(&mut self) -> &Vec<Move> {
         for index in 0..64 {
             let square = Square::from_index(index);
-            let piece = self.board.piece_at(square);
+            let piece = if self.board.white_to_move {
+                self.board.white_piece_at(square)
+            } else {
+                self.board.black_piece_at(square)
+            };
             if let Some(piece) = piece {
                 match piece {
                     piece::WHITE_PAWN => self.gen_pawn(square),
