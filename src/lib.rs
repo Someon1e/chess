@@ -15,11 +15,15 @@ mod tests {
 
     #[test]
     fn test_start_position() {
-        let mut board = Board::from_fen(START_POSITION_FEN);
-        let mut move_generator = PsuedoLegalMoveGenerator::new(&mut board);
+        let board = &mut Board::from_fen(START_POSITION_FEN);
+        let move_generator = &mut PsuedoLegalMoveGenerator::new(board);
+        let mut move_count = 0;
         for move_data in move_generator.gen() {
-            println!("{move_data}")
+            let piece = board.piece_at(move_data.from()).unwrap();
+            println!("{} {move_data}", piece.to_fen_char());
+            move_count += 1;
         }
+        assert_eq!(move_count, 20)
     }
 
     #[test]
