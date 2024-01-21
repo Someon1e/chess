@@ -45,7 +45,7 @@ impl Board {
                 continue;
             }
             if let Some(digit) = character.to_digit(10) {
-                square = square.left(digit as u8);
+                square = square.left(digit as i8);
             } else {
                 let piece = piece::from_fen_char(&character).expect("{square} {character}");
                 square = square.left(1);
@@ -93,7 +93,7 @@ impl Board {
                 .to_digit(10)
                 .unwrap() as u8
                 - 1;
-            Some(Square::from_coords(rank, file))
+            Some(Square::from_coords(rank as i8, file as i8))
         };
         let half_move_clock = split
             .next()
