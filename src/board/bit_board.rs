@@ -33,6 +33,9 @@ impl BitBoard {
     pub fn set(&mut self, square: &Square) {
         self.0 |= square.bitboard().0
     }
+    pub fn unset(&mut self, square: &Square) {
+        self.0 &= !(square.bitboard().0);
+    }
     pub fn get(&self, square: &Square) -> bool {
         self.0 & square.bitboard().0 != 0
     }

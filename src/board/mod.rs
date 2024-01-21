@@ -8,6 +8,8 @@ use bit_board::BitBoard;
 use piece::{Piece, ALL_PIECES, BLACK_PIECES, WHITE_PIECES};
 use square::Square;
 
+use crate::move_generator::move_data::Move;
+
 pub struct Board {
     bit_boards: [BitBoard; 12],
 
@@ -149,6 +151,16 @@ impl Board {
             }
         }
         None
+    }
+    pub fn make_move(&self, move_data: &Move) {
+        let mut bit_board = self.bit_boards[move_data.piece() as usize];
+        bit_board.unset(&move_data.from());
+        bit_board.set(&move_data.to())
+    }
+    pub fn unmake_move(&self, move_data: &Move) {
+        let mut bit_board = self.bit_boards[move_data.piece() as usize];
+        bit_board.unset(&move_data.to());
+        bit_board.set(&move_data.from())
     }
     pub fn to_fen(&self) -> String {
         let mut fen = String::with_capacity(87);

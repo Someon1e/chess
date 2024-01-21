@@ -22,8 +22,9 @@ mod tests {
 
         let mut move_count = 0;
         for move_data in moves {
-            //TODO: board.make_move(move_data);
+            board.make_move(&move_data);
             move_count += perft(&board, move_generator, depth - 1);
+            board.unmake_move(&move_data);
         }
         move_count
     }
@@ -32,8 +33,8 @@ mod tests {
     fn test_start_position() {
         let board = Board::from_fen(START_POSITION_FEN);
         let mut move_generator = PsuedoLegalMoveGenerator::new(&board);
-        let move_count = perft(&board, &mut move_generator, 1);
-        assert_eq!(move_count, 20)
+        let move_count = perft(&board, &mut move_generator, 2);
+        assert_eq!(move_count, 400)
     }
 
     #[test]
