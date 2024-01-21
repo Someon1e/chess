@@ -36,26 +36,19 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
             &self.precomputed.black_pawn_attacks_at_square[square.index() as usize]
         };
         for attack in attacks {
-            // TODO: test if this works
-            if let Some(enemy) = self.enemy_piece_at(square) {
+            if let Some(enemy) = self.enemy_piece_at(*attack) {
                 moves.push(Move::new(piece, square, *attack, Some(enemy)))
             }
         }
 
-        let move_to = if let Piece::WhitePawn = piece {
-            square.up(1)
-        } else {
-            square.down(1)
-        };
-        if self.board.piece_at(move_to).is_none() {
-            moves.push(Move::new(piece, square, move_to, None));
+        let pawn_up = if let Piece::WhitePawn = piece { 1 } else { -1 };
+        if self.board.piece_at(square.up(pawn_up)).is_none() {
+            moves.push(Move::new(piece, square, square.up(pawn_up), None));
 
-            if let Piece::WhitePawn = piece {
-                if square.rank() == 1 {
-                    moves.push(Move::new(piece, square, square.up(2), None))
+            if (self.board.white_to_move && square.rank() == 1) || square.rank() == 6 {
+                if self.board.piece_at(square.up(pawn_up * 2)).is_none() {
+                    moves.push(Move::new(piece, square, square.up(pawn_up * 2), None))
                 }
-            } else if square.rank() == 6 {
-                moves.push(Move::new(piece, square, square.down(2), None))
             }
         }
         // TODO: en passant
@@ -66,13 +59,11 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
         piece: Piece,
         square: Square,
         directions: &[i8],
+        squares_from_edge: &[i8],
     ) {
         // TODO: test if this works
-        for (direction, distance_from_edge) in directions
-            .iter()
-            .zip(self.precomputed.squares_from_edge[square.index() as usize])
-        {
-            for count in 0..distance_from_edge {
+        for (direction, distance_from_edge) in directions.iter().zip(squares_from_edge) {
+            for count in 1..=*distance_from_edge {
                 let move_to = square.offset(direction * count);
                 if self.friendly_piece_at(move_to).is_some() {
                     break;
@@ -106,10 +97,7 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
     }
     pub fn new(board: &'a mut Board) -> Self {
         let precomputed = PrecomputedData::compute();
-        Self {
-            board,
-            precomputed,
-        }
+        Self { board, precomputed }
     }
     pub fn board(&mut self) -> &mut Board {
         self.board
@@ -124,15 +112,27 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
                     Piece::WhiteKnight | Piece::BlackKnight => {
                         self.gen_knight(moves, piece, square)
                     }
-                    Piece::WhiteBishop | Piece::BlackBishop => {
-                        self.gen_directional(moves, piece, square, &DIRECTIONS[4..8])
-                    }
-                    Piece::WhiteRook | Piece::BlackRook => {
-                        self.gen_directional(moves, piece, square, &DIRECTIONS[0..4])
-                    }
-                    Piece::WhiteQueen | Piece::BlackQueen => {
-                        self.gen_directional(moves, piece, square, &DIRECTIONS)
-                    }
+                    Piece::WhiteBishop | Piece::BlackBishop => self.gen_directional(
+                        moves,
+                        piece,
+                        square,
+                        &DIRECTIONS[4..8],
+                        &self.precomputed.squares_from_edge[square.index() as usize][4..8],
+                    ),
+                    Piece::WhiteRook | Piece::BlackRook => self.gen_directional(
+                        moves,
+                        piece,
+                        square,
+                        &DIRECTIONS[0..4],
+                        &self.precomputed.squares_from_edge[square.index() as usize][0..4],
+                    ),
+                    Piece::WhiteQueen | Piece::BlackQueen => self.gen_directional(
+                        moves,
+                        piece,
+                        square,
+                        &DIRECTIONS,
+                        &self.precomputed.squares_from_edge[square.index() as usize],
+                    ),
                     Piece::WhiteKing | Piece::BlackKing => self.gen_king(moves, piece, square),
                 }
             }

@@ -16,29 +16,23 @@ mod tests {
     const TEST_FENS: [&str; 3] = [
         START_POSITION_FEN,
         "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2",
-        "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10"
+        "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10",
     ];
 
     fn perft(engine: &mut Engine, depth: u16) -> usize {
+        if depth == 0 {
+            return 1;
+        };
+
         let mut moves = Vec::new();
         engine.move_generator().gen(&mut moves);
-        if depth == 1 {
-            return moves.len();
-        };
 
         let mut move_count = 0;
         for move_data in moves {
             engine.board().make_move(&move_data);
-            if let Some(response_move) = engine.best_move(1).0 {
-                match response_move.capture() {
-                    Some(Piece::WhiteKing) | Some(Piece::BlackKing) => {
-                        engine.board().unmake_move(&move_data);
-                        continue;
-                    }
-                    _ => {}
-                }
+            if !engine.can_capture_king() {
+                move_count += perft(engine, depth - 1);
             }
-            move_count += perft(engine, depth - 1);
             engine.board().unmake_move(&move_data);
         }
         move_count
@@ -49,9 +43,9 @@ mod tests {
         let board = &mut Board::from_fen(START_POSITION_FEN);
         let mut move_generator = PsuedoLegalMoveGenerator::new(board);
         let engine = &mut Engine::new(&mut move_generator);
-        let move_count = perft(engine, 2);
+        let move_count = perft(engine, 3);
 
-        assert_eq!(move_count, 400);
+        assert_eq!(move_count, 0);
     }
 
     #[test]

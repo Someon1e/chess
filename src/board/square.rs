@@ -23,9 +23,9 @@ pub const DIRECTIONS: [Direction; 8] = [
     RIGHT_OFFSET,
 
     UP_OFFSET + LEFT_OFFSET,
+    DOWN_OFFSET + RIGHT_OFFSET,
     UP_OFFSET + RIGHT_OFFSET,
     DOWN_OFFSET + LEFT_OFFSET,
-    DOWN_OFFSET + RIGHT_OFFSET,
 ];
 
 impl Square {
