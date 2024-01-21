@@ -81,7 +81,9 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
     pub fn gen_king(&mut self, square: Square) {
         // TODO: test if this works
         for move_to in &self.precomputed.king_moves_at_square[square.index() as usize] {
-            self.moves.push(Move::new(square, *move_to))
+            if self.friendly_piece_at(*move_to).is_none() {
+                self.moves.push(Move::new(square, *move_to))
+            }
         }
 
         // TODO: castling
