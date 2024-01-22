@@ -21,6 +21,7 @@ pub struct Board {
     pub black_can_castle_king_side: bool,
     pub white_can_castle_queen_side: bool,
 
+    history: Vec<Option<Square>>,
     pub en_passant_square: Option<Square>,
 
     pub half_move_clock: u64,
@@ -123,6 +124,7 @@ impl Board {
             black_can_castle_king_side,
             white_can_castle_queen_side,
 
+            history: vec![],
             en_passant_square,
 
             half_move_clock,
@@ -160,9 +162,24 @@ impl Board {
         let moving_bit_board = self.get_bit_board_mut(move_data.piece());
         moving_bit_board.unset(&move_data.from());
         moving_bit_board.set(&move_data.to());
-        if let Some(captured) = move_data.capture() {
+        if let Some(captured) = move_data.captured() {
+            let capture_position = if move_data.is_en_passant() {
+                self.en_passant_square
+                    .unwrap()
+                    .down(if self.white_to_move { 1 } else { -1 })
+            } else {
+                move_data.to()
+            };
             let capturing_bit_board = self.get_bit_board_mut(captured);
-            capturing_bit_board.unset(&move_data.to())
+            capturing_bit_board.unset(&capture_position);
+        }
+
+        self.history.push(self.en_passant_square);
+        if move_data.is_pawn_two_up() {
+            self.en_passant_square =
+                Some(move_data.from().up(if self.white_to_move { 1 } else { -1 }))
+        } else {
+            self.en_passant_square = None
         }
 
         self.white_to_move = !self.white_to_move;
@@ -171,9 +188,19 @@ impl Board {
         let bit_board = self.get_bit_board_mut(move_data.piece());
         bit_board.unset(&move_data.to());
         bit_board.set(&move_data.from());
-        if let Some(captured) = move_data.capture() {
+
+        self.en_passant_square = self.history.pop().unwrap();
+
+        if let Some(captured) = move_data.captured() {
+            let capture_position = if move_data.is_en_passant() {
+                self.en_passant_square
+                    .unwrap()
+                    .up(if self.white_to_move { -1 } else { 1 })
+            } else {
+                move_data.to()
+            };
             let capturing_bit_board = self.get_bit_board_mut(captured);
-            capturing_bit_board.set(&move_data.to())
+            capturing_bit_board.set(&capture_position)
         }
 
         self.white_to_move = !self.white_to_move

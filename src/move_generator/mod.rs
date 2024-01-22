@@ -35,23 +35,42 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
         } else {
             &self.precomputed.black_pawn_attacks_at_square[square.index() as usize]
         };
+        let pawn_up = if let Piece::WhitePawn = piece { 1 } else { -1 };
+
         for attack in attacks {
             if let Some(enemy) = self.enemy_piece_at(*attack) {
-                moves.push(Move::new(piece, square, *attack, Some(enemy)))
-            }
-        }
-
-        let pawn_up = if let Piece::WhitePawn = piece { 1 } else { -1 };
-        if self.board.piece_at(square.up(pawn_up)).is_none() {
-            moves.push(Move::new(piece, square, square.up(pawn_up), None));
-
-            if (self.board.white_to_move && square.rank() == 1) || square.rank() == 6 {
-                if self.board.piece_at(square.up(pawn_up * 2)).is_none() {
-                    moves.push(Move::new(piece, square, square.up(pawn_up * 2), None))
+                moves.push(Move::new(piece, square, *attack, Some(enemy), false, false))
+            } else if let Some(en_passant_square) = self.board.en_passant_square {
+                if en_passant_square == *attack {
+                    let enemy = self.enemy_piece_at(en_passant_square.down(pawn_up)); // TODO: make this only check for pawns
+                    moves.push(Move::new(piece, square, *attack, enemy, true, false));
                 }
             }
         }
-        // TODO: en passant
+
+        if self.board.piece_at(square.up(pawn_up)).is_none() {
+            moves.push(Move::new(
+                piece,
+                square,
+                square.up(pawn_up),
+                None,
+                false,
+                false,
+            ));
+
+            if (self.board.white_to_move && square.rank() == 1) || square.rank() == 6 {
+                if self.board.piece_at(square.up(pawn_up * 2)).is_none() {
+                    moves.push(Move::new(
+                        piece,
+                        square,
+                        square.up(pawn_up * 2),
+                        None,
+                        false,
+                        true,
+                    ))
+                }
+            }
+        }
     }
     fn gen_directional(
         &self,
@@ -69,7 +88,7 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
                     break;
                 }
                 let enemy = self.enemy_piece_at(move_to);
-                moves.push(Move::new(piece, square, move_to, enemy));
+                moves.push(Move::new(piece, square, move_to, enemy, false, false));
                 if enemy.is_some() {
                     break;
                 }
@@ -107,7 +126,7 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
         for move_to in &self.precomputed.knight_moves_at_square[square.index() as usize] {
             if self.friendly_piece_at(*move_to).is_none() {
                 let enemy = self.enemy_piece_at(*move_to);
-                moves.push(Move::new(piece, square, *move_to, enemy))
+                moves.push(Move::new(piece, square, *move_to, enemy, false, false))
             }
         }
     }
@@ -116,7 +135,7 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
         for move_to in &self.precomputed.king_moves_at_square[square.index() as usize] {
             if self.friendly_piece_at(*move_to).is_none() {
                 let enemy = self.enemy_piece_at(*move_to);
-                moves.push(Move::new(piece, square, *move_to, enemy))
+                moves.push(Move::new(piece, square, *move_to, enemy, false, false))
             }
         }
 
