@@ -79,8 +79,11 @@ impl<'a> Engine<'a> {
         (best_move, best_score)
     }
     pub fn can_capture_king(&mut self) -> bool {
-        if let Some(response_move) = self.best_move(1).0 {
-            match response_move.capture() {
+        let mut moves = vec![];
+        self.move_generator.gen(&mut moves);
+
+        for move_data in moves {
+            match move_data.capture() {
                 Some(Piece::WhiteKing) | Some(Piece::BlackKing) => return true,
                 _ => {}
             }
