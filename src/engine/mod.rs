@@ -81,9 +81,7 @@ impl<'a> Engine<'a> {
     pub fn can_capture_king(&mut self) -> bool {
         if let Some(response_move) = self.best_move(1).0 {
             match response_move.capture() {
-                Some(Piece::WhiteKing) | Some(Piece::BlackKing) => {
-                    return true
-                }
+                Some(Piece::WhiteKing) | Some(Piece::BlackKing) => return true,
                 _ => {}
             }
         }

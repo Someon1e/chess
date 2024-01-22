@@ -76,6 +76,14 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
             }
         }
     }
+    pub fn gen_knight(&self, moves: &mut Vec<Move>, piece: Piece, square: Square) {
+        for move_to in &self.precomputed.knight_moves_at_square[square.index() as usize] {
+            if self.friendly_piece_at(*move_to).is_none() {
+                let enemy = self.enemy_piece_at(*move_to);
+                moves.push(Move::new(piece, square, *move_to, enemy))
+            }
+        }
+    }
     pub fn gen_king(&self, moves: &mut Vec<Move>, piece: Piece, square: Square) {
         // TODO: test if this works
         for move_to in &self.precomputed.king_moves_at_square[square.index() as usize] {
@@ -86,14 +94,6 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
         }
 
         // TODO: castling
-    }
-    pub fn gen_knight(&self, moves: &mut Vec<Move>, piece: Piece, square: Square) {
-        for move_to in &self.precomputed.knight_moves_at_square[square.index() as usize] {
-            if self.friendly_piece_at(*move_to).is_none() {
-                let enemy = self.enemy_piece_at(*move_to);
-                moves.push(Move::new(piece, square, *move_to, enemy))
-            }
-        }
     }
     pub fn new(board: &'a mut Board) -> Self {
         let precomputed = PrecomputedData::compute();

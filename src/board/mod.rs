@@ -55,7 +55,7 @@ impl Board {
             }
             if file == 8 {
                 if rank == 0 {
-                    break
+                    break;
                 }
                 rank -= 1;
                 file = 0;
