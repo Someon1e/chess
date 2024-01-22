@@ -83,7 +83,7 @@ impl<'a> Engine<'a> {
         self.move_generator.gen(&mut moves);
 
         for move_data in moves {
-            match move_data.capture() {
+            match move_data.captured() {
                 Some(Piece::WhiteKing) | Some(Piece::BlackKing) => return true,
                 _ => {}
             }
