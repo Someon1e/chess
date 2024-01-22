@@ -5,7 +5,7 @@ pub struct Move {
     piece: Piece,
     from: Square,
     to: Square,
-    capture: Option<Piece>
+    capture: Option<Piece>,
 }
 
 impl fmt::Display for Move {
@@ -16,7 +16,12 @@ impl fmt::Display for Move {
 
 impl Move {
     pub fn new(piece: Piece, from: Square, to: Square, capture: Option<Piece>) -> Self {
-        Self { piece, from, to, capture }
+        Self {
+            piece,
+            from,
+            to,
+            capture,
+        }
     }
     pub fn from(&self) -> Square {
         self.from

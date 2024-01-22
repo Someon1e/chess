@@ -41,8 +41,8 @@ mod tests {
     #[test]
     fn test_start_position() {
         let board = &mut Board::from_fen(START_POSITION_FEN);
-        let mut move_generator = PsuedoLegalMoveGenerator::new(board);
-        let engine = &mut Engine::new(&mut move_generator);
+        let move_generator = &mut PsuedoLegalMoveGenerator::new(board);
+        let engine = &mut Engine::new(move_generator);
         let move_count = perft(engine, 3);
 
         assert_eq!(move_count, 0);
