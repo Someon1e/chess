@@ -21,7 +21,7 @@ pub struct Board {
     pub black_can_castle_king_side: bool,
     pub white_can_castle_queen_side: bool,
 
-    history: Vec<Option<Square>>,
+    history: Vec<(Option<Square>, bool, bool, bool, bool)>,
     pub en_passant_square: Option<Square>,
 
     pub half_move_clock: u64,
@@ -174,7 +174,13 @@ impl Board {
             capturing_bit_board.unset(&capture_position);
         }
 
-        self.history.push(self.en_passant_square);
+        self.history.push((
+            self.en_passant_square,
+            self.white_can_castle_king_side,
+            self.black_can_castle_queen_side,
+            self.black_can_castle_king_side,
+            self.white_can_castle_queen_side,
+        ));
         if move_data.is_pawn_two_up() {
             self.en_passant_square =
                 Some(move_data.from().up(if self.white_to_move { 1 } else { -1 }))
@@ -189,7 +195,13 @@ impl Board {
         bit_board.unset(&move_data.to());
         bit_board.set(&move_data.from());
 
-        self.en_passant_square = self.history.pop().unwrap();
+        (
+            self.en_passant_square,
+            self.white_can_castle_king_side,
+            self.black_can_castle_queen_side,
+            self.black_can_castle_king_side,
+            self.white_can_castle_queen_side,
+        ) = self.history.pop().unwrap();
 
         if let Some(captured) = move_data.captured() {
             let capture_position = if move_data.is_en_passant() {
