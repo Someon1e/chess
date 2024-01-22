@@ -15,7 +15,7 @@ impl<'a> Engine<'a> {
         self.move_generator.board()
     }
     pub fn move_generator(&self) -> &PsuedoLegalMoveGenerator {
-        &self.move_generator
+        self.move_generator
     }
     pub fn evaluate(&mut self) -> i32 {
         let mut score = 0;
@@ -61,7 +61,7 @@ impl<'a> Engine<'a> {
             }
             self.board().unmake_move(&move_data);
         }
-        return best_score;
+        best_score
     }
     pub fn best_move(&mut self, depth: u16) -> (Option<Move>, i32) {
         let mut moves = vec![];
