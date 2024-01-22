@@ -131,7 +131,7 @@ impl Board {
     }
     pub fn piece_at(&self, square: Square) -> Option<Piece> {
         for piece in ALL_PIECES {
-            let bit_board = self.bit_boards[piece as usize];
+            let bit_board = self.get_bit_board(piece);
             if bit_board.get(&square) {
                 return Some(piece);
             }
@@ -140,7 +140,7 @@ impl Board {
     }
     pub fn white_piece_at(&self, square: Square) -> Option<Piece> {
         for piece in WHITE_PIECES {
-            let bit_board = self.bit_boards[piece as usize];
+            let bit_board = self.get_bit_board(piece);
             if bit_board.get(&square) {
                 return Some(piece);
             }
@@ -149,7 +149,7 @@ impl Board {
     }
     pub fn black_piece_at(&self, square: Square) -> Option<Piece> {
         for piece in BLACK_PIECES {
-            let bit_board = self.bit_boards[piece as usize];
+            let bit_board = self.get_bit_board(piece);
             if bit_board.get(&square) {
                 return Some(piece);
             }
@@ -157,26 +157,32 @@ impl Board {
         None
     }
     pub fn make_move(&mut self, move_data: &Move) {
-        let moving_bit_board = &mut self.bit_boards[move_data.piece() as usize];
+        let moving_bit_board = self.get_bit_board_mut(move_data.piece());
         moving_bit_board.unset(&move_data.from());
         moving_bit_board.set(&move_data.to());
         if let Some(captured) = move_data.capture() {
-            let capturing_bit_board = &mut self.bit_boards[captured as usize];
+            let capturing_bit_board = self.get_bit_board_mut(captured);
             capturing_bit_board.unset(&move_data.to())
         }
 
         self.white_to_move = !self.white_to_move;
     }
     pub fn unmake_move(&mut self, move_data: &Move) {
-        let bit_board = &mut self.bit_boards[move_data.piece() as usize];
+        let bit_board = self.get_bit_board_mut(move_data.piece());
         bit_board.unset(&move_data.to());
         bit_board.set(&move_data.from());
         if let Some(captured) = move_data.capture() {
-            let capturing_bit_board = &mut self.bit_boards[captured as usize];
+            let capturing_bit_board = self.get_bit_board_mut(captured);
             capturing_bit_board.set(&move_data.to())
         }
 
         self.white_to_move = !self.white_to_move
+    }
+    pub fn get_bit_board(&self, piece: Piece) -> &BitBoard {
+        &self.bit_boards[piece as usize]
+    }
+    fn get_bit_board_mut(&mut self, piece: Piece) -> &mut BitBoard {
+        &mut self.bit_boards[piece as usize]
     }
     pub fn to_fen(&self) -> String {
         let mut fen = String::with_capacity(87);

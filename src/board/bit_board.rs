@@ -27,6 +27,9 @@ impl BitBoard {
     pub fn empty() -> Self {
         BitBoard(0)
     }
+    pub fn is_empty(&self) -> bool {
+        self.0 == 0
+    }
     pub fn from_square(square: &Square) -> Self {
         BitBoard(1 << square.index())
     }
@@ -38,5 +41,10 @@ impl BitBoard {
     }
     pub fn get(&self, square: &Square) -> bool {
         self.0 & square.bitboard().0 != 0
+    }
+    pub fn pop_square(&mut self) -> Square {
+        let index = self.0.trailing_zeros();
+        self.0 &= self.0 - 1;
+        Square::from_index(index as i8)
     }
 }

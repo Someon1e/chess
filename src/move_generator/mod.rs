@@ -1,4 +1,4 @@
-use crate::board::piece::Piece;
+use crate::board::piece::{self, Piece};
 use crate::board::square::{Square, DIRECTIONS};
 use crate::board::Board;
 
@@ -53,7 +53,7 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
         }
         // TODO: en passant
     }
-    pub fn gen_directional(
+    fn gen_directional(
         &self,
         moves: &mut Vec<Move>,
         piece: Piece,
@@ -75,6 +75,33 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
                 }
             }
         }
+    }
+    pub fn gen_bishop(&self, moves: &mut Vec<Move>, piece: Piece, square: Square) {
+        self.gen_directional(
+            moves,
+            piece,
+            square,
+            &DIRECTIONS[4..8],
+            &self.precomputed.squares_from_edge[square.index() as usize][4..8],
+        )
+    }
+    pub fn gen_rook(&self, moves: &mut Vec<Move>, piece: Piece, square: Square) {
+        self.gen_directional(
+            moves,
+            piece,
+            square,
+            &DIRECTIONS[0..4],
+            &self.precomputed.squares_from_edge[square.index() as usize][0..4],
+        )
+    }
+    pub fn gen_queen(&self, moves: &mut Vec<Move>, piece: Piece, square: Square) {
+        self.gen_directional(
+            moves,
+            piece,
+            square,
+            &DIRECTIONS,
+            &self.precomputed.squares_from_edge[square.index() as usize],
+        )
     }
     pub fn gen_knight(&self, moves: &mut Vec<Move>, piece: Piece, square: Square) {
         for move_to in &self.precomputed.knight_moves_at_square[square.index() as usize] {
@@ -102,37 +129,27 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
     pub fn board(&mut self) -> &mut Board {
         self.board
     }
+
     pub fn gen(&self, moves: &mut Vec<Move>) {
-        for index in 0..64 {
-            let square = Square::from_index(index);
-            let piece = self.friendly_piece_at(square);
-            if let Some(piece) = piece {
+        let pieces = if self.board.white_to_move {
+            piece::WHITE_PIECES
+        } else {
+            piece::BLACK_PIECES
+        };
+        for piece in pieces {
+            let mut bit_board = self.board.get_bit_board(piece).clone();
+            while !bit_board.is_empty() {
+                let square = bit_board.pop_square();
                 match piece {
                     Piece::WhitePawn | Piece::BlackPawn => self.gen_pawn(moves, piece, square),
                     Piece::WhiteKnight | Piece::BlackKnight => {
                         self.gen_knight(moves, piece, square)
                     }
-                    Piece::WhiteBishop | Piece::BlackBishop => self.gen_directional(
-                        moves,
-                        piece,
-                        square,
-                        &DIRECTIONS[4..8],
-                        &self.precomputed.squares_from_edge[square.index() as usize][4..8],
-                    ),
-                    Piece::WhiteRook | Piece::BlackRook => self.gen_directional(
-                        moves,
-                        piece,
-                        square,
-                        &DIRECTIONS[0..4],
-                        &self.precomputed.squares_from_edge[square.index() as usize][0..4],
-                    ),
-                    Piece::WhiteQueen | Piece::BlackQueen => self.gen_directional(
-                        moves,
-                        piece,
-                        square,
-                        &DIRECTIONS,
-                        &self.precomputed.squares_from_edge[square.index() as usize],
-                    ),
+                    Piece::WhiteBishop | Piece::BlackBishop => {
+                        self.gen_bishop(moves, piece, square)
+                    }
+                    Piece::WhiteRook | Piece::BlackRook => self.gen_rook(moves, piece, square),
+                    Piece::WhiteQueen | Piece::BlackQueen => self.gen_queen(moves, piece, square),
                     Piece::WhiteKing | Piece::BlackKing => self.gen_king(moves, piece, square),
                 }
             }
