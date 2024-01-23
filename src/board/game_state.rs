@@ -1,13 +1,23 @@
 use crate::board::square::Square;
 
+macro_rules! define_castling_rights {
+    ($getter:ident, $setter:ident, $offset:expr) => {
+        pub fn $getter(&self) -> bool {
+            self.0 & (1 << $offset) != 0
+        }
+
+        pub fn $setter(&mut self) {
+            self.0 |= 1 << $offset;
+        }
+    };
+}
 #[derive(Copy, Clone)]
 pub struct CastlingRights(u8);
 impl CastlingRights {
-    const WHITE_CAN_CASTLE_KING_SIDE: u8 = 0b0001;
-    const WHITE_CAN_CASTLE_QUEEN_SIDE: u8 = 0b0010;
-
-    const BLACK_CAN_CASTLE_KING_SIDE: u8 = 0b0100;
-    const BLACK_CAN_CASTLE_QUEEN_SIDE: u8 = 0b1000;
+    define_castling_rights!(get_white_king_side, set_white_king_side, 0);
+    define_castling_rights!(get_white_queen_side, set_white_queen_side, 1);
+    define_castling_rights!(get_black_king_side, set_black_king_side, 2);
+    define_castling_rights!(get_black_queen_side, set_black_queen_side, 3);
 
     pub fn new(
         white_can_castle_king_side: bool,
@@ -45,32 +55,6 @@ impl CastlingRights {
     }
     pub fn none(&self) -> bool {
         self.0 == 0
-    }
-
-    pub fn get_white_king_side(&self) -> bool {
-        self.0 & Self::WHITE_CAN_CASTLE_KING_SIDE == Self::WHITE_CAN_CASTLE_KING_SIDE
-    }
-    pub fn get_white_queen_side(&self) -> bool {
-        self.0 & Self::WHITE_CAN_CASTLE_QUEEN_SIDE == Self::WHITE_CAN_CASTLE_QUEEN_SIDE
-    }
-    pub fn get_black_king_side(&self) -> bool {
-        self.0 & Self::BLACK_CAN_CASTLE_KING_SIDE == Self::BLACK_CAN_CASTLE_KING_SIDE
-    }
-    pub fn get_black_queen_side(&self) -> bool {
-        self.0 & Self::BLACK_CAN_CASTLE_QUEEN_SIDE == Self::BLACK_CAN_CASTLE_QUEEN_SIDE
-    }
-
-    pub fn set_white_king_side(&mut self) {
-        self.0 |= Self::WHITE_CAN_CASTLE_KING_SIDE
-    }
-    pub fn set_white_queen_side(&mut self) {
-        self.0 |= Self::WHITE_CAN_CASTLE_QUEEN_SIDE
-    }
-    pub fn set_black_king_side(&mut self) {
-        self.0 |= Self::BLACK_CAN_CASTLE_KING_SIDE
-    }
-    pub fn set_black_queen_side(&mut self) {
-        self.0 |= Self::BLACK_CAN_CASTLE_QUEEN_SIDE
     }
 }
 
