@@ -1,6 +1,7 @@
 use core::fmt::Display;
 
 pub mod bit_board;
+pub mod game_state;
 pub mod piece;
 pub mod square;
 
@@ -10,22 +11,15 @@ use square::Square;
 
 use crate::move_generator::move_data::Move;
 
-pub struct Board {
-    bit_boards: [BitBoard; 12],
+use self::game_state::{CastlingRights, GameState};
 
+pub struct Board {
     pub white_to_move: bool,
 
-    pub white_can_castle_king_side: bool,
-    pub black_can_castle_queen_side: bool,
+    bit_boards: [BitBoard; 12],
 
-    pub black_can_castle_king_side: bool,
-    pub white_can_castle_queen_side: bool,
-
-    history: Vec<(Option<Square>, bool, bool, bool, bool)>,
-    pub en_passant_square: Option<Square>,
-
-    pub half_move_clock: u64,
-    pub full_move_counter: u64,
+    pub game_state: GameState,
+    history: Vec<GameState>,
 }
 
 impl Display for Board {
@@ -72,22 +66,8 @@ impl Board {
             _ => panic!("No w/b to move"),
         };
 
-        let castling_rights = split.next().expect("Missing castling rights");
-        let (
-            white_can_castle_king_side,
-            white_can_castle_queen_side,
-            black_can_castle_king_side,
-            black_can_castle_queen_side,
-        ) = if castling_rights == "-" {
-            (false, false, false, false)
-        } else {
-            (
-                castling_rights.contains('K'),
-                castling_rights.contains('Q'),
-                castling_rights.contains('k'),
-                castling_rights.contains('q'),
-            )
-        };
+        let castling_rights =
+            CastlingRights::from_fen_section(split.next().expect("Missing castling rights"));
 
         let mut en_passant = split.next().expect("Missing en passant").chars().peekable();
         let en_passant_square = if *en_passant.peek().expect("Missing en passant") == '-' {
@@ -113,22 +93,23 @@ impl Board {
             .parse()
             .expect("No full move counter");
 
+        let game_state = GameState {
+            en_passant_square,
+
+            castling_rights,
+
+            half_move_clock,
+            full_move_counter,
+        };
+
         Self {
             bit_boards,
 
             white_to_move,
 
-            white_can_castle_king_side,
-            black_can_castle_queen_side,
-
-            black_can_castle_king_side,
-            white_can_castle_queen_side,
+            game_state,
 
             history: vec![],
-            en_passant_square,
-
-            half_move_clock,
-            full_move_counter,
         }
     }
     pub fn piece_at(&self, square: Square) -> Option<Piece> {
@@ -164,7 +145,8 @@ impl Board {
         moving_bit_board.set(&move_data.to());
         if let Some(captured) = move_data.captured() {
             let capture_position = if move_data.is_en_passant() {
-                self.en_passant_square
+                self.game_state
+                    .en_passant_square
                     .unwrap()
                     .down(if self.white_to_move { 1 } else { -1 })
             } else {
@@ -174,18 +156,12 @@ impl Board {
             capturing_bit_board.unset(&capture_position);
         }
 
-        self.history.push((
-            self.en_passant_square,
-            self.white_can_castle_king_side,
-            self.black_can_castle_queen_side,
-            self.black_can_castle_king_side,
-            self.white_can_castle_queen_side,
-        ));
+        self.history.push(self.game_state);
         if move_data.is_pawn_two_up() {
-            self.en_passant_square =
+            self.game_state.en_passant_square =
                 Some(move_data.from().up(if self.white_to_move { 1 } else { -1 }))
         } else {
-            self.en_passant_square = None
+            self.game_state.en_passant_square = None
         }
 
         self.white_to_move = !self.white_to_move;
@@ -195,17 +171,12 @@ impl Board {
         bit_board.unset(&move_data.to());
         bit_board.set(&move_data.from());
 
-        (
-            self.en_passant_square,
-            self.white_can_castle_king_side,
-            self.black_can_castle_queen_side,
-            self.black_can_castle_king_side,
-            self.white_can_castle_queen_side,
-        ) = self.history.pop().unwrap();
+        self.game_state = self.history.pop().unwrap();
 
         if let Some(captured) = move_data.captured() {
             let capture_position = if move_data.is_en_passant() {
-                self.en_passant_square
+                self.game_state
+                    .en_passant_square
                     .unwrap()
                     .up(if self.white_to_move { -1 } else { 1 })
             } else {
@@ -254,38 +225,34 @@ impl Board {
             fen.push_str(" b ")
         }
 
-        if self.white_can_castle_king_side
-            || self.white_can_castle_queen_side
-            || self.black_can_castle_king_side
-            || self.black_can_castle_queen_side
-        {
-            if self.white_can_castle_king_side {
+        if self.game_state.castling_rights.none() {
+            fen.push('-')
+        } else {
+            if self.game_state.castling_rights.get_white_king_side() {
                 fen.push('K')
             }
-            if self.white_can_castle_queen_side {
+            if self.game_state.castling_rights.get_white_queen_side() {
                 fen.push('Q')
             }
-            if self.black_can_castle_king_side {
+            if self.game_state.castling_rights.get_black_king_side() {
                 fen.push('k')
             }
-            if self.black_can_castle_queen_side {
+            if self.game_state.castling_rights.get_black_queen_side() {
                 fen.push('q')
             }
-        } else {
-            fen.push('-')
-        }
+        };
         fen.push(' ');
 
-        if let Some(en_passant_square) = &self.en_passant_square {
+        if let Some(en_passant_square) = &self.game_state.en_passant_square {
             fen.push_str(&en_passant_square.to_notation())
         } else {
             fen.push('-')
         }
 
         fen.push(' ');
-        fen.push_str(&self.half_move_clock.to_string());
+        fen.push_str(&self.game_state.half_move_clock.to_string());
         fen.push(' ');
-        fen.push_str(&self.full_move_counter.to_string());
+        fen.push_str(&self.game_state.full_move_counter.to_string());
 
         fen
     }

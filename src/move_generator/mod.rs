@@ -40,7 +40,7 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
         for attack in attacks {
             if let Some(enemy) = self.enemy_piece_at(*attack) {
                 moves.push(Move::new(piece, square, *attack, Some(enemy), false, false))
-            } else if let Some(en_passant_square) = self.board.en_passant_square {
+            } else if let Some(en_passant_square) = self.board.game_state.en_passant_square {
                 if en_passant_square == *attack {
                     let enemy = self.enemy_piece_at(en_passant_square.down(pawn_up)); // TODO: make this only check for pawns
                     moves.push(Move::new(piece, square, *attack, enemy, true, false));
@@ -58,17 +58,15 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
                 false,
             ));
 
-            if (self.board.white_to_move && square.rank() == 1) || square.rank() == 6 {
-                if self.board.piece_at(square.up(pawn_up * 2)).is_none() {
-                    moves.push(Move::new(
-                        piece,
-                        square,
-                        square.up(pawn_up * 2),
-                        None,
-                        false,
-                        true,
-                    ))
-                }
+            if ((self.board.white_to_move && square.rank() == 1) || square.rank() == 6) && self.board.piece_at(square.up(pawn_up * 2)).is_none() {
+                moves.push(Move::new(
+                    piece,
+                    square,
+                    square.up(pawn_up * 2),
+                    None,
+                    false,
+                    true,
+                ))
             }
         }
     }
@@ -156,7 +154,7 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
             piece::BLACK_PIECES
         };
         for piece in pieces {
-            let mut bit_board = self.board.get_bit_board(piece).clone();
+            let mut bit_board = *self.board.get_bit_board(piece);
             while !bit_board.is_empty() {
                 let square = bit_board.pop_square();
                 match piece {
