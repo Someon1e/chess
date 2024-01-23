@@ -5,7 +5,7 @@ pub mod move_generator;
 #[cfg(test)]
 mod tests {
     use crate::board::bit_board::BitBoard;
-    use crate::board::piece::Piece;
+    
     use crate::board::square::Square;
 
     use super::board::Board;
