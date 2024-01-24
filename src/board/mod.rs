@@ -140,6 +140,10 @@ impl Board {
         None
     }
     pub fn make_move(&mut self, move_data: &Move) {
+        if move_data.is_castle() {
+            todo!()
+        }
+
         let moving_bit_board = self.get_bit_board_mut(move_data.piece());
         moving_bit_board.unset(&move_data.from());
         moving_bit_board.set(&move_data.to());
@@ -167,6 +171,10 @@ impl Board {
         self.white_to_move = !self.white_to_move;
     }
     pub fn unmake_move(&mut self, move_data: &Move) {
+        if move_data.is_castle() {
+            todo!()
+        }
+
         let bit_board = self.get_bit_board_mut(move_data.piece());
         bit_board.unset(&move_data.to());
         bit_board.set(&move_data.from());
