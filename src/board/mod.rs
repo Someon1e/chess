@@ -157,8 +157,7 @@ impl Board {
         }
 
         let moving_bit_board = self.get_bit_board_mut(move_data.piece());
-        moving_bit_board.unset(&move_data.from());
-        moving_bit_board.set(&move_data.to());
+        moving_bit_board.toggle(&move_data.from(), &move_data.to());
 
         let en_passant_square = self.game_state.en_passant_square;
         self.game_state.en_passant_square = None;
@@ -200,8 +199,7 @@ impl Board {
                 } else {
                     self.get_bit_board_mut(Piece::BlackRook)
                 };
-                rook_bit_board.unset(&rook_from);
-                rook_bit_board.set(&rook_to)
+                rook_bit_board.toggle(&rook_from, &rook_to);
             }
         } else if move_data.is_pawn_two_up() {
             self.game_state.en_passant_square =
@@ -214,8 +212,7 @@ impl Board {
         self.game_state = self.history.pop().unwrap();
 
         let bit_board = self.get_bit_board_mut(move_data.piece());
-        bit_board.unset(&move_data.to());
-        bit_board.set(&move_data.from());
+        bit_board.toggle(&move_data.from(), &move_data.to());
 
         if move_data.is_castle() {
             let (rook_from, rook_to) = if move_data.to() == Square::from_notation("g1") {
@@ -228,8 +225,7 @@ impl Board {
             } else {
                 self.get_bit_board_mut(Piece::BlackRook)
             };
-            rook_bit_board.set(&rook_from);
-            rook_bit_board.unset(&rook_to)
+            rook_bit_board.toggle(&rook_from, &rook_to)
         } else if let Some(captured) = move_data.captured() {
             let capture_position = if move_data.is_en_passant() {
                 self.game_state
