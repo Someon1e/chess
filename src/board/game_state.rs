@@ -18,10 +18,30 @@ macro_rules! define_castling_rights {
 #[derive(Copy, Clone)]
 pub struct CastlingRights(u8);
 impl CastlingRights {
-    define_castling_rights!(get_white_king_side, set_white_king_side, unset_white_king_side, 0);
-    define_castling_rights!(get_white_queen_side, set_white_queen_side, unset_white_queen_side, 1);
-    define_castling_rights!(get_black_king_side, set_black_king_side, unset_black_king_side, 2);
-    define_castling_rights!(get_black_queen_side, set_black_queen_side, unset_black_queen_side, 3);
+    define_castling_rights!(
+        get_white_king_side,
+        set_white_king_side,
+        unset_white_king_side,
+        0
+    );
+    define_castling_rights!(
+        get_white_queen_side,
+        set_white_queen_side,
+        unset_white_queen_side,
+        1
+    );
+    define_castling_rights!(
+        get_black_king_side,
+        set_black_king_side,
+        unset_black_king_side,
+        2
+    );
+    define_castling_rights!(
+        get_black_queen_side,
+        set_black_queen_side,
+        unset_black_queen_side,
+        3
+    );
 
     pub fn new(
         white_can_castle_king_side: bool,

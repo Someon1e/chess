@@ -55,9 +55,12 @@ impl PrecomputedData {
             let knight_moves = &mut knight_moves_at_square[index];
             for knight_jump_offset in [15, 17, -17, -15, 10, -6, 6, -10] {
                 let move_to = square.offset(knight_jump_offset);
-                if move_to.within_bounds() && (square.file() - move_to.file())
+                if move_to.within_bounds()
+                    && (square.file() - move_to.file())
                         .abs()
-                        .max((square.rank() - move_to.rank()).abs()) == 2 {
+                        .max((square.rank() - move_to.rank()).abs())
+                        == 2
+                {
                     knight_moves.push(move_to)
                 }
             }

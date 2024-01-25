@@ -76,9 +76,10 @@ impl Square {
         format!("{}{}", file_char, rank_number)
     }
     pub fn from_notation(notation: &str) -> Square {
-        let file = notation.bytes().nth(0).expect("Invalid notation") - b'a';
+        let file = notation.as_bytes().first().expect("Invalid notation") - b'a';
         let rank = notation
-            .chars().nth(1)
+            .chars()
+            .nth(1)
             .expect("Invalid notation")
             .to_digit(10)
             .expect("Invalid notation")

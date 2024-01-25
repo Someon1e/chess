@@ -174,7 +174,7 @@ impl Board {
             let capturing_bit_board = self.get_bit_board_mut(captured);
             capturing_bit_board.unset(&capture_position);
         }
-        
+
         if move_data.piece()
             == (if self.white_to_move {
                 Piece::WhiteKing
