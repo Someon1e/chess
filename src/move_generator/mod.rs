@@ -179,6 +179,7 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
             let move_to = square.left(2);
             if self.board.piece_at(square.left(1)).is_none()
                 && self.board.piece_at(move_to).is_none()
+                && self.board.piece_at(square.left(3)).is_none()
             {
                 moves.push(Move::new(piece, square, move_to, None, false, false, true))
             }
