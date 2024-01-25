@@ -8,7 +8,16 @@ pub struct Move(u32);
 
 impl fmt::Display for Move {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{} {}", self.from(), self.to())
+        write!(
+            f,
+            "from {} to {}, capturing {:?}, is castle {}, is en passant {}, is pawn two up {}",
+            self.from(),
+            self.to(),
+            self.captured(),
+            self.is_castle(),
+            self.is_en_passant(),
+            self.is_pawn_two_up()
+        )
     }
 }
 
@@ -20,7 +29,7 @@ impl Move {
         captured: Option<Piece>,
         is_en_passant: bool,
         is_pawn_two_up: bool,
-        is_castle: bool
+        is_castle: bool,
     ) -> Self {
         let mut data: u32 = 0;
 
@@ -85,28 +94,39 @@ mod tests {
     use super::Move;
     use crate::{board::square::Square, move_generator::Piece};
 
-    const TEST_MOVES: [(Piece, Square, Square, Option<Piece>, bool, bool, bool); 2] = [(
-        Piece::WhitePawn,
-        Square::from_coords(2, 2),
-        Square::from_coords(3, 2),
-        None,
-        false,
-        false,
-        false
-    ), (
-        Piece::BlackBishop,
-        Square::from_coords(5, 5),
-        Square::from_coords(7, 7),
-        None,
-        false,
-        false,
-        false
-    )];
+    const TEST_MOVES: [(Piece, Square, Square, Option<Piece>, bool, bool, bool); 2] = [
+        (
+            Piece::WhitePawn,
+            Square::from_coords(2, 2),
+            Square::from_coords(3, 2),
+            None,
+            false,
+            false,
+            false,
+        ),
+        (
+            Piece::BlackBishop,
+            Square::from_coords(5, 5),
+            Square::from_coords(7, 7),
+            None,
+            false,
+            false,
+            false,
+        ),
+    ];
     #[test]
     fn move_encoded_correctly() {
         for test_move in TEST_MOVES {
             let (piece, from, to, captured, is_en_passant, is_pawn_two_up, is_castle) = test_move;
-            let encoded = Move::new(piece, from, to, captured, is_en_passant, is_pawn_two_up, is_castle);
+            let encoded = Move::new(
+                piece,
+                from,
+                to,
+                captured,
+                is_en_passant,
+                is_pawn_two_up,
+                is_castle,
+            );
             assert_eq!(encoded.piece(), piece);
             assert_eq!(encoded.from(), from);
             assert_eq!(encoded.to(), to);

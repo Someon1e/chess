@@ -75,6 +75,16 @@ impl Square {
         let rank_number = (rank + 1).to_string();
         format!("{}{}", file_char, rank_number)
     }
+    pub fn from_notation(notation: &str) -> Square {
+        let file = notation.bytes().nth(0).expect("Invalid notation") - b'a';
+        let rank = notation
+            .chars().nth(1)
+            .expect("Invalid notation")
+            .to_digit(10)
+            .expect("Invalid notation")
+            - 1;
+        Square::from_coords(rank as i8, file as i8)
+    }
     pub fn bitboard(&self) -> BitBoard {
         BitBoard::from_square(self)
     }

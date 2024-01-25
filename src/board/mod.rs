@@ -69,18 +69,11 @@ impl Board {
         let castling_rights =
             CastlingRights::from_fen_section(split.next().expect("Missing castling rights"));
 
-        let mut en_passant = split.next().expect("Missing en passant").chars().peekable();
-        let en_passant_square = if *en_passant.peek().expect("Missing en passant") == '-' {
+        let en_passant = split.next().expect("Missing en passant");
+        let en_passant_square = if en_passant == "-" {
             None
         } else {
-            let file = en_passant.next().expect("Missing en passant") as u8 - b'a';
-            let rank = en_passant
-                .next()
-                .expect("Missing en passant")
-                .to_digit(10)
-                .unwrap() as u8
-                - 1;
-            Some(Square::from_coords(rank as i8, file as i8))
+            Some(Square::from_notation(en_passant))
         };
         let half_move_clock = split
             .next()
@@ -140,17 +133,39 @@ impl Board {
         None
     }
     pub fn make_move(&mut self, move_data: &Move) {
-        if move_data.is_castle() {
-            todo!()
+        self.history.push(self.game_state);
+
+        if move_data.from() == Square::from_notation("a1")
+            || move_data.to() == Square::from_notation("a1")
+        {
+            self.game_state.castling_rights.unset_white_queen_side();
+        }
+        if move_data.from() == Square::from_notation("h1")
+            || move_data.to() == Square::from_notation("h1")
+        {
+            self.game_state.castling_rights.unset_white_king_side();
+        }
+        if move_data.from() == Square::from_notation("a8")
+            || move_data.to() == Square::from_notation("a8")
+        {
+            self.game_state.castling_rights.unset_black_queen_side();
+        }
+        if move_data.from() == Square::from_notation("h8")
+            || move_data.to() == Square::from_notation("h8")
+        {
+            self.game_state.castling_rights.unset_black_king_side();
         }
 
         let moving_bit_board = self.get_bit_board_mut(move_data.piece());
         moving_bit_board.unset(&move_data.from());
         moving_bit_board.set(&move_data.to());
+
+        let en_passant_square = self.game_state.en_passant_square;
+        self.game_state.en_passant_square = None;
+
         if let Some(captured) = move_data.captured() {
             let capture_position = if move_data.is_en_passant() {
-                self.game_state
-                    .en_passant_square
+                en_passant_square
                     .unwrap()
                     .down(if self.white_to_move { 1 } else { -1 })
             } else {
@@ -159,34 +174,68 @@ impl Board {
             let capturing_bit_board = self.get_bit_board_mut(captured);
             capturing_bit_board.unset(&capture_position);
         }
-
-        self.history.push(self.game_state);
-        if move_data.is_pawn_two_up() {
+        
+        if move_data.piece()
+            == (if self.white_to_move {
+                Piece::WhiteKing
+            } else {
+                Piece::BlackKing
+            })
+        {
+            if self.white_to_move {
+                self.game_state.castling_rights.unset_white_king_side();
+                self.game_state.castling_rights.unset_white_queen_side();
+            } else {
+                self.game_state.castling_rights.unset_black_king_side();
+                self.game_state.castling_rights.unset_black_queen_side();
+            }
+            if move_data.is_castle() {
+                let (rook_from, rook_to) = if move_data.to() == Square::from_notation("g1") {
+                    (Square::from_notation("h1"), Square::from_notation("f1"))
+                } else {
+                    (Square::from_notation("a1"), Square::from_notation("d1"))
+                };
+                let rook_bit_board = if self.white_to_move {
+                    self.get_bit_board_mut(Piece::WhiteRook)
+                } else {
+                    self.get_bit_board_mut(Piece::BlackRook)
+                };
+                rook_bit_board.unset(&rook_from);
+                rook_bit_board.set(&rook_to)
+            }
+        } else if move_data.is_pawn_two_up() {
             self.game_state.en_passant_square =
                 Some(move_data.from().up(if self.white_to_move { 1 } else { -1 }))
-        } else {
-            self.game_state.en_passant_square = None
         }
 
         self.white_to_move = !self.white_to_move;
     }
     pub fn unmake_move(&mut self, move_data: &Move) {
-        if move_data.is_castle() {
-            todo!()
-        }
+        self.game_state = self.history.pop().unwrap();
 
         let bit_board = self.get_bit_board_mut(move_data.piece());
         bit_board.unset(&move_data.to());
         bit_board.set(&move_data.from());
 
-        self.game_state = self.history.pop().unwrap();
-
-        if let Some(captured) = move_data.captured() {
+        if move_data.is_castle() {
+            let (rook_from, rook_to) = if move_data.to() == Square::from_notation("g1") {
+                (Square::from_notation("h1"), Square::from_notation("f1"))
+            } else {
+                (Square::from_notation("a1"), Square::from_notation("d1"))
+            };
+            let rook_bit_board = if self.white_to_move {
+                self.get_bit_board_mut(Piece::WhiteRook)
+            } else {
+                self.get_bit_board_mut(Piece::BlackRook)
+            };
+            rook_bit_board.set(&rook_from);
+            rook_bit_board.unset(&rook_to)
+        } else if let Some(captured) = move_data.captured() {
             let capture_position = if move_data.is_en_passant() {
                 self.game_state
                     .en_passant_square
                     .unwrap()
-                    .up(if self.white_to_move { -1 } else { 1 })
+                    .up(if self.white_to_move { 1 } else { -1 })
             } else {
                 move_data.to()
             };

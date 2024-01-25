@@ -1,7 +1,7 @@
 use crate::board::square::Square;
 
 macro_rules! define_castling_rights {
-    ($getter:ident, $setter:ident, $offset:expr) => {
+    ($getter:ident, $setter:ident, $unsetter:ident, $offset:expr) => {
         pub fn $getter(&self) -> bool {
             self.0 & (1 << $offset) != 0
         }
@@ -9,15 +9,19 @@ macro_rules! define_castling_rights {
         pub fn $setter(&mut self) {
             self.0 |= 1 << $offset;
         }
+
+        pub fn $unsetter(&mut self) {
+            self.0 &= !(1 << $offset);
+        }
     };
 }
 #[derive(Copy, Clone)]
 pub struct CastlingRights(u8);
 impl CastlingRights {
-    define_castling_rights!(get_white_king_side, set_white_king_side, 0);
-    define_castling_rights!(get_white_queen_side, set_white_queen_side, 1);
-    define_castling_rights!(get_black_king_side, set_black_king_side, 2);
-    define_castling_rights!(get_black_queen_side, set_black_queen_side, 3);
+    define_castling_rights!(get_white_king_side, set_white_king_side, unset_white_king_side, 0);
+    define_castling_rights!(get_white_queen_side, set_white_queen_side, unset_white_queen_side, 1);
+    define_castling_rights!(get_black_king_side, set_black_king_side, unset_black_king_side, 2);
+    define_castling_rights!(get_black_queen_side, set_black_queen_side, unset_black_queen_side, 3);
 
     pub fn new(
         white_can_castle_king_side: bool,
