@@ -5,7 +5,7 @@ pub mod move_generator;
 #[cfg(test)]
 mod tests {
     use crate::board::bit_board::BitBoard;
-    
+
     use crate::board::square::Square;
 
     use super::board::Board;
@@ -17,7 +17,11 @@ mod tests {
         (START_POSITION_FEN, 6, 119060324),
         ("r6r/1b2k1bq/8/8/7B/8/8/R3K2R b KQ - 3 2", 1, 8),
         ("2r5/3pk3/8/2P5/8/2K5/8/8 w - - 5 4", 1, 9),
-        ("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8", 3, 62379),
+        (
+            "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8",
+            3,
+            62379,
+        ),
     ];
 
     fn perft_inner(engine: &mut Engine, depth: u16) -> usize {
