@@ -4,18 +4,18 @@ use crate::board::{
 };
 
 pub struct PrecomputedData {
-    pub white_pawn_attacks_at_square: Vec<Vec<Square>>,
-    pub black_pawn_attacks_at_square: Vec<Vec<Square>>,
-    pub knight_moves_at_square: Vec<Vec<Square>>,
+    pub white_pawn_attacks_at_square: [BitBoard; 64],
+    pub black_pawn_attacks_at_square: [BitBoard; 64],
+    pub knight_moves_at_square: [BitBoard; 64],
     pub king_moves_at_square: [BitBoard; 64],
     pub squares_from_edge: [[i8; 8]; 64],
 }
 
 impl PrecomputedData {
     pub fn compute() -> Self {
-        let mut white_pawn_attacks_at_square = vec![vec![]; 64];
-        let mut black_pawn_attacks_at_square = vec![vec![]; 64];
-        let mut knight_moves_at_square = vec![vec![]; 64];
+        let mut white_pawn_attacks_at_square = [BitBoard::empty(); 64];
+        let mut black_pawn_attacks_at_square = [BitBoard::empty(); 64];
+        let mut knight_moves_at_square = [BitBoard::empty(); 64];
         let mut king_moves_at_square = [BitBoard::empty(); 64];
         let mut squares_from_edge = [[0; 8]; 64];
 
@@ -40,18 +40,18 @@ impl PrecomputedData {
 
             if file > 0 {
                 if rank < 7 {
-                    white_pawn_attacks.push(square.up(1).left(1));
+                    white_pawn_attacks.set(&square.up(1).left(1));
                 }
                 if rank > 0 {
-                    black_pawn_attacks.push(square.down(1).left(1));
+                    black_pawn_attacks.set(&square.down(1).left(1));
                 }
             }
             if file < 7 {
                 if rank < 7 {
-                    white_pawn_attacks.push(square.up(1).right(1));
+                    white_pawn_attacks.set(&square.up(1).right(1));
                 }
                 if rank > 0 {
-                    black_pawn_attacks.push(square.down(1).right(1));
+                    black_pawn_attacks.set(&square.down(1).right(1));
                 }
             }
 
@@ -64,7 +64,7 @@ impl PrecomputedData {
                         .max((square.rank() - move_to.rank()).abs())
                         == 2
                 {
-                    knight_moves.push(move_to)
+                    knight_moves.set(&move_to)
                 }
             }
 
