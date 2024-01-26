@@ -22,46 +22,43 @@ impl fmt::Display for Move {
 }
 
 impl Move {
-    pub fn capture() {
-        // TODO
-    }
-    pub fn new(
-        piece: Piece,
-        from: Square,
-        to: Square,
-        captured: Option<Piece>,
-
-        is_en_passant: bool,
-        is_pawn_two_up: bool,
-        is_castle: bool,
-    ) -> Self {
+    pub fn new(piece: Piece, from: Square, to: Square, captured: Option<Piece>) -> Move {
         let mut data: u32 = 0;
 
         // Squares are 6 bits each
         data |= from.index() as u32;
         data |= (to.index() as u32) << 6;
 
-        // Moving piece is 4 bits
+        // Pieces are 4 bits
+
         data |= (piece as u32) << 12;
-        // Capturing piece is 4 bits
+
         if let Some(captured) = captured {
             data |= (captured as u32) << 16;
         } else {
             data |= 0b1111 << 16
         }
 
-        // 1 bit to store if it's an en_passant
-        if is_en_passant {
-            data |= 1 << 20
-        }
-        // 1 bit to store if it's an pawn going 2 squares up
-        if is_pawn_two_up {
-            data |= 1 << 21
-        }
-        // 1 bit to store if it's a castle
-        if is_castle {
-            data |= 1 << 22
-        }
+        Self(data)
+    }
+    pub fn en_passant(
+        piece: Piece,
+        from: Square,
+        to: Square,
+        captured: Piece,
+    ) -> Self {
+        let mut data = Self::new(piece, from, to, Some(captured)).0;
+        data |= 1 << 20;
+        Self(data)
+    }
+    pub fn pawn_two_up(piece: Piece, from: Square, to: Square) -> Self {
+        let mut data = Self::new(piece, from, to, None).0;
+        data |= 1 << 21;
+        Self(data)
+    }
+    pub fn castle(piece: Piece, from: Square, to: Square) -> Self {
+        let mut data = Self::new(piece, from, to, None).0;
+        data |= 1 << 22;
         Self(data)
     }
     pub fn from(&self) -> Square {
@@ -97,45 +94,30 @@ mod tests {
     use super::Move;
     use crate::{board::square::Square, move_generator::Piece};
 
-    const TEST_MOVES: [(Piece, Square, Square, Option<Piece>, bool, bool, bool); 2] = [
+    // TODO: add more test cases
+    const TEST_MOVES: [(Piece, Square, Square); 2] = [
         (
             Piece::WhitePawn,
             Square::from_coords(2, 2),
             Square::from_coords(3, 2),
-            None,
-            false,
-            false,
-            false,
         ),
         (
             Piece::BlackBishop,
             Square::from_coords(5, 5),
             Square::from_coords(7, 7),
-            None,
-            false,
-            false,
-            false,
         ),
     ];
     #[test]
     fn move_encoded_correctly() {
         for test_move in TEST_MOVES {
-            let (piece, from, to, captured, is_en_passant, is_pawn_two_up, is_castle) = test_move;
-            let encoded = Move::new(
-                piece,
-                from,
-                to,
-                captured,
-                is_en_passant,
-                is_pawn_two_up,
-                is_castle,
-            );
+            let (piece, from, to) = test_move;
+            let encoded = Move::new(piece, from, to, None);
             assert_eq!(encoded.piece(), piece);
             assert_eq!(encoded.from(), from);
             assert_eq!(encoded.to(), to);
-            assert_eq!(encoded.captured(), captured);
-            assert_eq!(encoded.is_en_passant(), is_en_passant);
-            assert_eq!(encoded.is_pawn_two_up(), is_pawn_two_up);
+            assert_eq!(encoded.captured(), None);
+            assert_eq!(encoded.is_en_passant(), false);
+            assert_eq!(encoded.is_pawn_two_up(), false);
         }
     }
 }
