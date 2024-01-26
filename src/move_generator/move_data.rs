@@ -22,70 +22,73 @@ impl fmt::Display for Move {
 }
 
 impl Move {
+    pub fn capture() {
+        // TODO
+    }
     pub fn new(
         piece: Piece,
         from: Square,
         to: Square,
         captured: Option<Piece>,
+
         is_en_passant: bool,
         is_pawn_two_up: bool,
         is_castle: bool,
     ) -> Self {
         let mut data: u32 = 0;
 
+        // Squares are 6 bits each
+        data |= from.index() as u32;
+        data |= (to.index() as u32) << 6;
+
+        // Moving piece is 4 bits
+        data |= (piece as u32) << 12;
+        // Capturing piece is 4 bits
+        if let Some(captured) = captured {
+            data |= (captured as u32) << 16;
+        } else {
+            data |= 0b1111 << 16
+        }
+
         // 1 bit to store if it's an en_passant
         if is_en_passant {
-            data |= 1
+            data |= 1 << 20
         }
         // 1 bit to store if it's an pawn going 2 squares up
         if is_pawn_two_up {
-            data |= 1 << 1
+            data |= 1 << 21
         }
         // 1 bit to store if it's a castle
         if is_castle {
-            data |= 1 << 2
+            data |= 1 << 22
         }
-
-        // Moving piece is 4 bits
-        data |= (piece as u32) << 3;
-        // Capturing piece is 4 bits
-        if let Some(captured) = captured {
-            data |= (captured as u32) << 7;
-        } else {
-            data |= 0b1111 << 7
-        }
-
-        // Squares are 6 bits each
-        data |= (from.index() as u32) << 11;
-        data |= (to.index() as u32) << 17;
-
         Self(data)
     }
-    pub fn is_en_passant(&self) -> bool {
-        self.0 & 0b1 == 1
+    pub fn from(&self) -> Square {
+        Square::from_index((self.0 & 0b111111) as i8)
     }
-    pub fn is_pawn_two_up(&self) -> bool {
-        (self.0 >> 1) & 0b1 == 1
-    }
-    pub fn is_castle(&self) -> bool {
-        (self.0 >> 2) & 0b1 == 1
+    pub fn to(&self) -> Square {
+        Square::from_index(((self.0 >> 6) & 0b111111) as i8)
     }
     pub fn piece(&self) -> Piece {
-        ALL_PIECES[((self.0 >> 3) & 0b1111) as usize]
+        ALL_PIECES[((self.0 >> 12) & 0b1111) as usize]
     }
     pub fn captured(&self) -> Option<Piece> {
-        let encoded = (self.0 >> 7) & 0b1111;
+        let encoded = (self.0 >> 16) & 0b1111;
         if encoded == 0b1111 {
             None
         } else {
             Some(ALL_PIECES[encoded as usize])
         }
     }
-    pub fn from(&self) -> Square {
-        Square::from_index(((self.0 >> 11) & 0b111111) as i8)
+    pub fn is_en_passant(&self) -> bool {
+        (self.0 >> 20) & 0b1 == 1
     }
-    pub fn to(&self) -> Square {
-        Square::from_index(((self.0 >> 17) & 0b111111) as i8)
+    pub fn is_pawn_two_up(&self) -> bool {
+        (self.0 >> 21) & 0b1 == 1
+    }
+    pub fn is_castle(&self) -> bool {
+        (self.0 >> 22) & 0b1 == 1
     }
 }
 

@@ -60,7 +60,7 @@ macro_rules! implement {
     ($op:ident, $name:ident, $operator:tt) => {
         impl $op<BitBoard> for BitBoard {
             type Output = BitBoard;
-        
+
             fn $name(self, rhs: BitBoard) -> Self::Output {
                Self(self.0 $operator rhs.0)
             }

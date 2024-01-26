@@ -64,7 +64,9 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
             }
         }
 
-        if self.board.piece_at(square.up(pawn_up)).is_none() {
+        if !friendly_pieces.get(&square.up(pawn_up))
+            && self.enemy_piece_at(square.up(pawn_up)).is_none()
+        {
             moves.push(Move::new(
                 piece,
                 square,
@@ -75,8 +77,14 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
                 false,
             ));
 
-            if ((self.board.white_to_move && square.rank() == 1) || square.rank() == 6)
-                && self.board.piece_at(square.up(pawn_up * 2)).is_none()
+            let is_starting_rank = if self.board.white_to_move {
+                square.rank() == 1
+            } else {
+                square.rank() == 6
+            };
+            if is_starting_rank
+                && !friendly_pieces.get(&square.up(pawn_up * 2))
+                && self.enemy_piece_at(square.up(pawn_up * 2)).is_none()
             {
                 moves.push(Move::new(
                     piece,
