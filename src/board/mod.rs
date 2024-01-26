@@ -9,7 +9,7 @@ use bit_board::BitBoard;
 use piece::{Piece, ALL_PIECES, BLACK_PIECES, WHITE_PIECES};
 use square::Square;
 
-use crate::move_generator::move_data::Move;
+use crate::move_generator::move_data::{Move, Promotion};
 
 use self::game_state::{CastlingRights, GameState};
 
@@ -156,8 +156,21 @@ impl Board {
             self.game_state.castling_rights.unset_black_king_side();
         }
 
+        let white_to_move = self.white_to_move;
+
         let moving_bit_board = self.get_bit_board_mut(move_data.piece());
-        moving_bit_board.toggle(&move_data.from(), &move_data.to());
+        let promotion = move_data.get_promotion();
+        match promotion {
+            Promotion::NoPromotion => {
+                moving_bit_board.toggle(&move_data.from(), &move_data.to());
+            }
+
+            _ => {
+                let promotion_piece = promotion.to_piece(white_to_move);
+                moving_bit_board.unset(&move_data.from());
+                self.get_bit_board_mut(promotion_piece).set(&move_data.to())
+            }
+        }
 
         let en_passant_square = self.game_state.en_passant_square;
         self.game_state.en_passant_square = None;
@@ -175,13 +188,13 @@ impl Board {
         }
 
         if move_data.piece()
-            == (if self.white_to_move {
+            == (if white_to_move {
                 Piece::WhiteKing
             } else {
                 Piece::BlackKing
             })
         {
-            if self.white_to_move {
+            if white_to_move {
                 self.game_state.castling_rights.unset_white_king_side();
                 self.game_state.castling_rights.unset_white_queen_side();
             } else {
@@ -205,14 +218,28 @@ impl Board {
             self.game_state.en_passant_square =
                 Some(move_data.from().up(if self.white_to_move { 1 } else { -1 }))
         }
-
-        self.white_to_move = !self.white_to_move;
+        self.white_to_move = !white_to_move;
     }
     pub fn unmake_move(&mut self, move_data: &Move) {
         self.game_state = self.history.pop().unwrap();
 
-        let bit_board = self.get_bit_board_mut(move_data.piece());
-        bit_board.toggle(&move_data.from(), &move_data.to());
+        let white_to_move = !self.white_to_move;
+        self.white_to_move = white_to_move;
+
+        let moving_bit_board = self.get_bit_board_mut(move_data.piece());
+        let promotion = move_data.get_promotion();
+        match promotion {
+            Promotion::NoPromotion => {
+                moving_bit_board.toggle(&move_data.from(), &move_data.to());
+            }
+
+            _ => {
+                let promotion_piece = promotion.to_piece(white_to_move);
+                moving_bit_board.set(&move_data.from());
+                self.get_bit_board_mut(promotion_piece)
+                    .unset(&move_data.to())
+            }
+        }
 
         if move_data.is_castle() {
             let (rook_from, rook_to) = if move_data.to() == Square::from_notation("g1") {
@@ -220,7 +247,7 @@ impl Board {
             } else {
                 (Square::from_notation("a1"), Square::from_notation("d1"))
             };
-            let rook_bit_board = if self.white_to_move {
+            let rook_bit_board = if white_to_move {
                 self.get_bit_board_mut(Piece::WhiteRook)
             } else {
                 self.get_bit_board_mut(Piece::BlackRook)
@@ -231,15 +258,13 @@ impl Board {
                 self.game_state
                     .en_passant_square
                     .unwrap()
-                    .up(if self.white_to_move { 1 } else { -1 })
+                    .down(if white_to_move { 1 } else { -1 })
             } else {
                 move_data.to()
             };
             let capturing_bit_board = self.get_bit_board_mut(captured);
             capturing_bit_board.set(&capture_position)
         }
-
-        self.white_to_move = !self.white_to_move
     }
     pub fn get_bit_board(&self, piece: Piece) -> &BitBoard {
         &self.bit_boards[piece as usize]
