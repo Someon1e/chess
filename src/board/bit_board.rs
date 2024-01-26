@@ -1,7 +1,8 @@
 use super::square::Square;
 use std::fmt;
+use std::ops::{BitAnd, BitOr};
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub struct BitBoard(u64);
 
 impl fmt::Display for BitBoard {
@@ -31,7 +32,7 @@ impl BitBoard {
         self.0 == 0
     }
     pub fn from_square(square: &Square) -> Self {
-        BitBoard(1 << square.index())
+        Self(1 << square.index())
     }
     pub fn set(&mut self, square: &Square) {
         self.0 |= square.bitboard().0
@@ -40,10 +41,13 @@ impl BitBoard {
         self.0 &= !(square.bitboard().0);
     }
     pub fn toggle(&mut self, a: &Square, b: &Square) {
-        self.0 ^= a.bitboard().0 | b.bitboard().0;
+        self.0 ^= (a.bitboard() | b.bitboard()).0;
+    }
+    pub fn not(&self) -> Self {
+        Self(!self.0)
     }
     pub fn get(&self, square: &Square) -> bool {
-        self.0 & square.bitboard().0 != 0
+        !((*self & square.bitboard()).is_empty())
     }
     pub fn pop_square(&mut self) -> Square {
         let index = self.0.trailing_zeros();
@@ -51,3 +55,17 @@ impl BitBoard {
         Square::from_index(index as i8)
     }
 }
+
+macro_rules! implement {
+    ($op:ident, $name:ident, $operator:tt) => {
+        impl $op<BitBoard> for BitBoard {
+            type Output = BitBoard;
+        
+            fn $name(self, rhs: BitBoard) -> Self::Output {
+               Self(self.0 $operator rhs.0)
+            }
+        }
+    };
+}
+implement!(BitOr, bitor, |);
+implement!(BitAnd, bitand, &);
