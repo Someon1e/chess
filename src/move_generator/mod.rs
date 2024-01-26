@@ -50,7 +50,9 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
                 moves.push(Move::new(piece, square, attack, Some(enemy)))
             } else if let Some(en_passant_square) = self.board.game_state.en_passant_square {
                 if en_passant_square == attack {
-                    let enemy = self.enemy_piece_at(en_passant_square.down(pawn_up)).unwrap(); // TODO: make this only check for pawns
+                    let enemy = self
+                        .enemy_piece_at(en_passant_square.down(pawn_up))
+                        .unwrap(); // TODO: make this only check for pawns
                     moves.push(Move::en_passant(piece, square, attack, enemy));
                 }
             }
@@ -217,40 +219,40 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
     }
 
     pub fn gen(&self, moves: &mut Vec<Move>) {
-        let pieces = if self.board.white_to_move {
+        let friendly_pieces = if self.board.white_to_move {
             piece::WHITE_PIECES
         } else {
             piece::BLACK_PIECES
         };
 
-        let mut friendly_pieces = BitBoard::empty();
-        for piece in pieces {
+        let mut friendly_piece_bit_board = BitBoard::empty();
+        for piece in friendly_pieces {
             let bit_board = self.board.get_bit_board(piece);
-            friendly_pieces = friendly_pieces | *bit_board
+            friendly_piece_bit_board = friendly_piece_bit_board | *bit_board
         }
 
-        for piece in pieces {
+        for piece in friendly_pieces {
             let mut bit_board = *self.board.get_bit_board(piece);
             while !bit_board.is_empty() {
                 let square = bit_board.pop_square();
                 match piece {
                     Piece::WhitePawn | Piece::BlackPawn => {
-                        self.gen_pawn(moves, piece, square, &friendly_pieces)
+                        self.gen_pawn(moves, piece, square, &friendly_piece_bit_board)
                     }
                     Piece::WhiteKnight | Piece::BlackKnight => {
-                        self.gen_knight(moves, piece, square, &friendly_pieces)
+                        self.gen_knight(moves, piece, square, &friendly_piece_bit_board)
                     }
                     Piece::WhiteBishop | Piece::BlackBishop => {
-                        self.gen_bishop(moves, piece, square, &friendly_pieces)
+                        self.gen_bishop(moves, piece, square, &friendly_piece_bit_board)
                     }
                     Piece::WhiteRook | Piece::BlackRook => {
-                        self.gen_rook(moves, piece, square, &friendly_pieces)
+                        self.gen_rook(moves, piece, square, &friendly_piece_bit_board)
                     }
                     Piece::WhiteQueen | Piece::BlackQueen => {
-                        self.gen_queen(moves, piece, square, &friendly_pieces)
+                        self.gen_queen(moves, piece, square, &friendly_piece_bit_board)
                     }
                     Piece::WhiteKing | Piece::BlackKing => {
-                        self.gen_king(moves, piece, square, &friendly_pieces)
+                        self.gen_king(moves, piece, square, &friendly_piece_bit_board)
                     }
                 }
             }
