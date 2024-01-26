@@ -1,10 +1,13 @@
-use crate::board::square::{Square, DIRECTIONS};
+use crate::board::{
+    bit_board::BitBoard,
+    square::{Square, DIRECTIONS},
+};
 
 pub struct PrecomputedData {
     pub white_pawn_attacks_at_square: Vec<Vec<Square>>,
     pub black_pawn_attacks_at_square: Vec<Vec<Square>>,
     pub knight_moves_at_square: Vec<Vec<Square>>,
-    pub king_moves_at_square: Vec<Vec<Square>>,
+    pub king_moves_at_square: [BitBoard; 64],
     pub squares_from_edge: [[i8; 8]; 64],
 }
 
@@ -13,7 +16,7 @@ impl PrecomputedData {
         let mut white_pawn_attacks_at_square = vec![vec![]; 64];
         let mut black_pawn_attacks_at_square = vec![vec![]; 64];
         let mut knight_moves_at_square = vec![vec![]; 64];
-        let mut king_moves_at_square = vec![vec![]; 64];
+        let mut king_moves_at_square = [BitBoard::empty(); 64];
         let mut squares_from_edge = [[0; 8]; 64];
 
         for index in 0..64 {
@@ -74,7 +77,7 @@ impl PrecomputedData {
                         .max((rank - move_to.rank()).abs())
                         == 1
                 {
-                    king_moves.push(move_to);
+                    king_moves.set(&move_to);
                 }
             }
         }

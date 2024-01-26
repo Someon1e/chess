@@ -31,7 +31,6 @@ mod tests {
 
         let mut moves = Vec::new();
         engine.move_generator().gen(&mut moves);
-
         let mut move_count = 0;
         for move_data in &moves {
             engine.board().make_move(move_data);
