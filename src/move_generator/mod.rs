@@ -8,6 +8,7 @@ mod precomputed;
 
 use move_data::Move;
 
+use self::move_data::ALL_PROMOTIONS;
 use self::precomputed::PrecomputedData;
 
 pub struct PsuedoLegalMoveGenerator<'a> {
@@ -30,6 +31,25 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
             self.board.white_piece_at(square)
         }
     }
+    fn is_promotion_rank(&self, rank: i8) -> bool {
+        if self.board.white_to_move {
+            rank == 7
+        } else {
+            rank == 0
+        }
+    }
+    fn gen_promotions(
+        &self,
+        moves: &mut Vec<Move>,
+        piece: Piece,
+        from: Square,
+        to: Square,
+        captured: Option<Piece>,
+    ) {
+        for promotion in ALL_PROMOTIONS {
+            moves.push(Move::promotion(piece, from, to, captured, promotion));
+        }
+    }
     fn gen_pawn(
         &self,
         moves: &mut Vec<Move>,
@@ -47,7 +67,11 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
         while !attacks.is_empty() {
             let attack = attacks.pop_square();
             if let Some(enemy) = self.enemy_piece_at(attack) {
-                moves.push(Move::new(piece, square, attack, Some(enemy)))
+                if self.is_promotion_rank(attack.rank()) {
+                    self.gen_promotions(moves, piece, square, attack, Some(enemy))
+                } else {
+                    moves.push(Move::new(piece, square, attack, Some(enemy)));
+                }
             } else if let Some(en_passant_square) = self.board.game_state.en_passant_square {
                 if en_passant_square == attack {
                     let enemy = self
@@ -61,18 +85,21 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
         if !friendly_pieces.get(&square.up(pawn_up))
             && self.enemy_piece_at(square.up(pawn_up)).is_none()
         {
-            moves.push(Move::new(piece, square, square.up(pawn_up), None));
-
-            let is_starting_rank = if self.board.white_to_move {
-                square.rank() == 1
+            if self.is_promotion_rank(square.up(pawn_up).rank()) {
+                self.gen_promotions(moves, piece, square, square.up(pawn_up), None)
             } else {
-                square.rank() == 6
-            };
-            if is_starting_rank
-                && !friendly_pieces.get(&square.up(pawn_up * 2))
-                && self.enemy_piece_at(square.up(pawn_up * 2)).is_none()
-            {
-                moves.push(Move::pawn_two_up(piece, square, square.up(pawn_up * 2)))
+                moves.push(Move::new(piece, square, square.up(pawn_up), None));
+                let is_starting_rank = if self.board.white_to_move {
+                    square.rank() == 1
+                } else {
+                    square.rank() == 6
+                };
+                if is_starting_rank
+                    && !friendly_pieces.get(&square.up(pawn_up * 2))
+                    && self.enemy_piece_at(square.up(pawn_up * 2)).is_none()
+                {
+                    moves.push(Move::pawn_two_up(piece, square, square.up(pawn_up * 2)))
+                }
             }
         }
     }
@@ -171,7 +198,6 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
         square: Square,
         friendly_pieces: &BitBoard,
     ) {
-        // TODO: test if this works
         let mut king_moves =
             self.precomputed.king_moves_at_square[square.index() as usize] & friendly_pieces.not();
         while !king_moves.is_empty() {
@@ -179,6 +205,8 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
             let enemy = self.enemy_piece_at(move_to);
             moves.push(Move::new(piece, square, move_to, enemy));
         }
+
+        // TODO: stop castling when in check
 
         let castling_rights = self.board.game_state.castling_rights;
         let (king_side, queen_side) = if self.board.white_to_move {
