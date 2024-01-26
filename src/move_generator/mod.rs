@@ -47,19 +47,11 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
         while !attacks.is_empty() {
             let attack = attacks.pop_square();
             if let Some(enemy) = self.enemy_piece_at(attack) {
-                moves.push(Move::new(
-                    piece,
-                    square,
-                    attack,
-                    Some(enemy),
-                    false,
-                    false,
-                    false,
-                ))
+                moves.push(Move::new(piece, square, attack, Some(enemy)))
             } else if let Some(en_passant_square) = self.board.game_state.en_passant_square {
                 if en_passant_square == attack {
-                    let enemy = self.enemy_piece_at(en_passant_square.down(pawn_up)); // TODO: make this only check for pawns
-                    moves.push(Move::new(piece, square, attack, enemy, true, false, false));
+                    let enemy = self.enemy_piece_at(en_passant_square.down(pawn_up)).unwrap(); // TODO: make this only check for pawns
+                    moves.push(Move::en_passant(piece, square, attack, enemy));
                 }
             }
         }
@@ -67,15 +59,7 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
         if !friendly_pieces.get(&square.up(pawn_up))
             && self.enemy_piece_at(square.up(pawn_up)).is_none()
         {
-            moves.push(Move::new(
-                piece,
-                square,
-                square.up(pawn_up),
-                None,
-                false,
-                false,
-                false,
-            ));
+            moves.push(Move::new(piece, square, square.up(pawn_up), None));
 
             let is_starting_rank = if self.board.white_to_move {
                 square.rank() == 1
@@ -86,15 +70,7 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
                 && !friendly_pieces.get(&square.up(pawn_up * 2))
                 && self.enemy_piece_at(square.up(pawn_up * 2)).is_none()
             {
-                moves.push(Move::new(
-                    piece,
-                    square,
-                    square.up(pawn_up * 2),
-                    None,
-                    false,
-                    true,
-                    false,
-                ))
+                moves.push(Move::pawn_two_up(piece, square, square.up(pawn_up * 2)))
             }
         }
     }
@@ -116,9 +92,7 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
                     break;
                 }
                 let enemy = self.enemy_piece_at(move_to);
-                moves.push(Move::new(
-                    piece, square, move_to, enemy, false, false, false,
-                ));
+                moves.push(Move::new(piece, square, move_to, enemy));
                 if enemy.is_some() {
                     break;
                 }
@@ -185,9 +159,7 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
         while !knight_moves.is_empty() {
             let move_to = knight_moves.pop_square();
             let enemy = self.enemy_piece_at(move_to);
-            moves.push(Move::new(
-                piece, square, move_to, enemy, false, false, false,
-            ))
+            moves.push(Move::new(piece, square, move_to, enemy))
         }
     }
     pub fn gen_king(
@@ -203,9 +175,7 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
         while !king_moves.is_empty() {
             let move_to = king_moves.pop_square();
             let enemy = self.enemy_piece_at(move_to);
-            moves.push(Move::new(
-                piece, square, move_to, enemy, false, false, false,
-            ));
+            moves.push(Move::new(piece, square, move_to, enemy));
         }
 
         let castling_rights = self.board.game_state.castling_rights;
@@ -225,7 +195,7 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
             if self.board.piece_at(square.right(1)).is_none()
                 && self.board.piece_at(move_to).is_none()
             {
-                moves.push(Move::new(piece, square, move_to, None, false, false, true))
+                moves.push(Move::castle(piece, square, move_to))
             }
         }
         if queen_side {
@@ -234,7 +204,7 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
                 && self.board.piece_at(move_to).is_none()
                 && self.board.piece_at(square.left(3)).is_none()
             {
-                moves.push(Move::new(piece, square, move_to, None, false, false, true))
+                moves.push(Move::castle(piece, square, move_to))
             }
         }
     }
