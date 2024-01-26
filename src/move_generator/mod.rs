@@ -37,28 +37,29 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
         square: Square,
         friendly_pieces: &BitBoard,
     ) {
-        let attacks = if let Piece::WhitePawn = piece {
-            &self.precomputed.white_pawn_attacks_at_square[square.index() as usize]
+        let mut attacks = if let Piece::WhitePawn = piece {
+            self.precomputed.white_pawn_attacks_at_square[square.index() as usize]
         } else {
-            &self.precomputed.black_pawn_attacks_at_square[square.index() as usize]
+            self.precomputed.black_pawn_attacks_at_square[square.index() as usize]
         };
         let pawn_up = if let Piece::WhitePawn = piece { 1 } else { -1 };
 
-        for attack in attacks {
-            if let Some(enemy) = self.enemy_piece_at(*attack) {
+        while !attacks.is_empty() {
+            let attack = attacks.pop_square();
+            if let Some(enemy) = self.enemy_piece_at(attack) {
                 moves.push(Move::new(
                     piece,
                     square,
-                    *attack,
+                    attack,
                     Some(enemy),
                     false,
                     false,
                     false,
                 ))
             } else if let Some(en_passant_square) = self.board.game_state.en_passant_square {
-                if en_passant_square == *attack {
+                if en_passant_square == attack {
                     let enemy = self.enemy_piece_at(en_passant_square.down(pawn_up)); // TODO: make this only check for pawns
-                    moves.push(Move::new(piece, square, *attack, enemy, true, false, false));
+                    moves.push(Move::new(piece, square, attack, enemy, true, false, false));
                 }
             }
         }
@@ -171,13 +172,14 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
         square: Square,
         friendly_pieces: &BitBoard,
     ) {
-        for move_to in &self.precomputed.knight_moves_at_square[square.index() as usize] {
-            if !friendly_pieces.get(&move_to) {
-                let enemy = self.enemy_piece_at(*move_to);
-                moves.push(Move::new(
-                    piece, square, *move_to, enemy, false, false, false,
-                ))
-            }
+        let mut knight_moves = self.precomputed.knight_moves_at_square[square.index() as usize]
+            & friendly_pieces.not();
+        while !knight_moves.is_empty() {
+            let move_to = knight_moves.pop_square();
+            let enemy = self.enemy_piece_at(move_to);
+            moves.push(Move::new(
+                piece, square, move_to, enemy, false, false, false,
+            ))
         }
     }
     pub fn gen_king(
