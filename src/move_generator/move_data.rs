@@ -10,7 +10,7 @@ impl fmt::Display for Move {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "from {} to {}, capturing {:?}, is castle {}, is en passant {}, is pawn two up {}, promotion {:?}",
+            "From {} to {}, Capturing {:?}, Is castle {}, Is en passant {}, Is pawn two up {}, Promotion {:?}",
             self.from(),
             self.to(),
             self.captured(),
