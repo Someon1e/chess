@@ -4,6 +4,8 @@ pub mod move_generator;
 
 #[cfg(test)]
 mod tests {
+    use std::io::{stdin, BufRead};
+
     use crate::board::bit_board::BitBoard;
 
     use crate::board::square::Square;
@@ -75,11 +77,16 @@ mod tests {
 
     #[test]
     fn get_best_move() {
-        let board = &mut Board::from_fen("rnbqkb1r/pppppppp/5n2/8/4P1Q1/8/PPPP1PPP/RNB1KBNR b KQkq - 2 2");
-        let move_generator = &mut PsuedoLegalMoveGenerator::new(board);
-        let engine = &mut Engine::new(move_generator);
-        let (best_move, evaluation) = engine.best_move(5);
-        println!("{} {}", best_move.unwrap(), evaluation)
+        let mut stdin = stdin().lock();
+        loop {
+            let mut fen = String::new();
+            stdin.read_line(&mut fen).unwrap();
+            let board = &mut Board::from_fen(&fen);
+            let move_generator = &mut PsuedoLegalMoveGenerator::new(board);
+            let engine = &mut Engine::new(move_generator);
+            let (best_move, evaluation) = engine.best_move(6);
+            println!("{} {}", best_move.unwrap(), evaluation)
+        }
     }
 
     #[test]
