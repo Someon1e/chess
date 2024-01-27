@@ -74,6 +74,15 @@ mod tests {
     }
 
     #[test]
+    fn get_best_move() {
+        let board = &mut Board::from_fen("rnbqkb1r/pppppppp/5n2/8/4P1Q1/8/PPPP1PPP/RNB1KBNR b KQkq - 2 2");
+        let move_generator = &mut PsuedoLegalMoveGenerator::new(board);
+        let engine = &mut Engine::new(move_generator);
+        let (best_move, evaluation) = engine.best_move(4);
+        println!("{} {}", best_move.unwrap(), evaluation)
+    }
+
+    #[test]
     fn test_coordinates() {
         let a1 = Square::from_coords(0, 0);
         assert!(a1.to_notation() == "a1");
