@@ -112,10 +112,6 @@ impl<'a> Engine<'a> {
 
         for move_data in moves {
             self.board().make_move(&move_data);
-            if self.can_capture_king() {
-                self.board().unmake_move(&move_data);
-                continue;
-            }
             best_score = best_score.max(-self.negamax(depth - 1, -beta, -alpha));
             self.board().unmake_move(&move_data);
             alpha = alpha.max(best_score);
@@ -133,6 +129,7 @@ impl<'a> Engine<'a> {
         for move_data in moves {
             self.board().make_move(&move_data);
             let score = -self.negamax(depth - 1, i32::MIN, i32::MAX);
+            println!("{} {}", move_data, score);
             self.board().unmake_move(&move_data);
             if score > best_score {
                 (best_move, best_score) = (Some(move_data), score);
