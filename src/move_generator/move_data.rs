@@ -81,6 +81,10 @@ pub const ALL_PROMOTIONS: [Promotion; 4] = [
 ];
 
 impl Move {
+    const EN_PASSANT: u32 = 0b01;
+    const PAWN_TWO_UP: u32 = 0b10;
+    const CASTLE: u32 = 0b11;
+
     pub fn new(piece: Piece, from: Square, to: Square, captured: Option<Piece>) -> Move {
         let mut data: u32 = 0;
 
@@ -102,17 +106,17 @@ impl Move {
     }
     pub fn en_passant(piece: Piece, from: Square, to: Square, captured: Piece) -> Self {
         let mut data = Self::new(piece, from, to, Some(captured)).0;
-        data |= 1 << 20;
+        data |= Self::EN_PASSANT << 20;
         Self(data)
     }
     pub fn pawn_two_up(piece: Piece, from: Square, to: Square) -> Self {
         let mut data = Self::new(piece, from, to, None).0;
-        data |= 1 << 21;
+        data |= Self::PAWN_TWO_UP << 20;
         Self(data)
     }
     pub fn castle(piece: Piece, from: Square, to: Square) -> Self {
         let mut data = Self::new(piece, from, to, None).0;
-        data |= 1 << 22;
+        data |= Self::CASTLE << 20;
         Self(data)
     }
 
@@ -124,7 +128,7 @@ impl Move {
         promotion_type: Promotion,
     ) -> Self {
         let mut data = Self::new(piece, from, to, captured).0;
-        data |= (promotion_type as u32) << 23;
+        data |= (promotion_type as u32) << 22;
         Self(data)
     }
 
@@ -145,17 +149,18 @@ impl Move {
             Some(ALL_PIECES[encoded as usize])
         }
     }
+
     pub fn is_en_passant(&self) -> bool {
-        (self.0 >> 20) & 0b1 == 1
+        (self.0 >> 20) & 0b11 == Self::EN_PASSANT
     }
     pub fn is_pawn_two_up(&self) -> bool {
-        (self.0 >> 21) & 0b1 == 1
+        (self.0 >> 20) & 0b11 == Self::PAWN_TWO_UP
     }
     pub fn is_castle(&self) -> bool {
-        (self.0 >> 22) & 0b1 == 1
+        (self.0 >> 20) & 0b11 == Self::CASTLE
     }
     pub fn get_promotion(&self) -> &Promotion {
-        &PROMOTION_ENUM[((self.0 >> 23) & 0b111) as usize]
+        &PROMOTION_ENUM[((self.0 >> 22) & 0b111) as usize]
     }
 }
 
