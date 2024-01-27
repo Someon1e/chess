@@ -56,14 +56,9 @@ impl<'a> Engine<'a> {
     ];
 
     pub const FLIP: [usize; 64] = [
-        56, 57, 58, 59, 60, 61, 62, 63,
-        48, 49, 50, 51, 52, 53, 54, 55,
-        40, 41, 42, 43, 44, 45, 46, 47,
-        32, 33, 34, 35, 36, 37, 38, 39,
-        24, 25, 26, 27, 28, 29, 30, 31,
-        16, 17, 18, 19, 20, 21, 22, 23,
-        8,   9,  10, 11, 12, 13, 14, 15,
-        0,   1,   2,  3,  4,  5,  6,  7,
+        56, 57, 58, 59, 60, 61, 62, 63, 48, 49, 50, 51, 52, 53, 54, 55, 40, 41, 42, 43, 44, 45, 46,
+        47, 32, 33, 34, 35, 36, 37, 38, 39, 24, 25, 26, 27, 28, 29, 30, 31, 16, 17, 18, 19, 20, 21,
+        22, 23, 8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7,
     ];
 
     pub fn evaluate(&mut self) -> i32 {
@@ -102,7 +97,7 @@ impl<'a> Engine<'a> {
         }
         score
     }
-    pub fn negamax(&mut self, depth: u16) -> i32 {
+    pub fn negamax(&mut self, depth: u16, mut alpha: i32, beta: i32) -> i32 {
         if depth == 0 {
             if self.board().white_to_move {
                 return self.evaluate();
@@ -114,17 +109,19 @@ impl<'a> Engine<'a> {
         self.move_generator.gen(&mut moves);
 
         let mut best_score = i32::MIN;
+
         for move_data in moves {
             self.board().make_move(&move_data);
             if self.can_capture_king() {
                 self.board().unmake_move(&move_data);
                 continue;
             }
-            let score = -self.negamax(depth - 1);
-            if score > best_score {
-                best_score = score;
-            }
+            best_score = best_score.max(-self.negamax(depth - 1, -alpha, -beta));
             self.board().unmake_move(&move_data);
+            alpha = alpha.max(best_score);
+            if alpha >= beta {
+                break
+            }
         }
         best_score
     }
@@ -135,7 +132,7 @@ impl<'a> Engine<'a> {
         let (mut best_move, mut best_score) = (None, i32::MIN);
         for move_data in moves {
             self.board().make_move(&move_data);
-            let score = -self.negamax(depth - 1);
+            let score = -self.negamax(depth - 1, i32::MIN, i32::MAX);
             self.board().unmake_move(&move_data);
             if score > best_score {
                 (best_move, best_score) = (Some(move_data), score);
