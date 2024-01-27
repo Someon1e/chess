@@ -116,7 +116,7 @@ impl<'a> Engine<'a> {
                 self.board().unmake_move(&move_data);
                 continue;
             }
-            best_score = best_score.max(-self.negamax(depth - 1, -alpha, -beta));
+            best_score = best_score.max(-self.negamax(depth - 1, -beta, -alpha));
             self.board().unmake_move(&move_data);
             alpha = alpha.max(best_score);
             if alpha >= beta {
