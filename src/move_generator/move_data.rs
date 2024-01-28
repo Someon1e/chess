@@ -10,125 +10,97 @@ impl fmt::Display for Move {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "From {} to {}, Capturing {:?}, Is castle {}, Is en passant {}, Is pawn two up {}, Promotion {:?}",
+            "From {} to {}, Captured {:?}, Flag {:?}",
             self.from(),
             self.to(),
             self.captured(),
-            self.is_castle(),
-            self.is_en_passant(),
-            self.is_pawn_two_up(),
-            self.get_promotion()
+            self.flag()
         )
     }
 }
 
-#[derive(Debug, PartialEq)]
-pub enum Promotion {
-    NoPromotion,
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum Flag {
+    None,
+
     QueenPromotion,
     RookPromotion,
     BishopPromotion,
     KnightPromotion,
+
+    EnPassant,
+
+    PawnTwoUp,
+
+    Castle,
 }
-impl Promotion {
-    pub fn to_piece(&self, white: bool) -> Piece {
+impl Flag {
+    const ALL: [Flag; 8] = [
+        Self::None,
+        Self::QueenPromotion,
+        Self::RookPromotion,
+        Self::BishopPromotion,
+        Self::KnightPromotion,
+        Self::EnPassant,
+        Self::PawnTwoUp,
+        Self::Castle,
+    ];
+    pub const PROMOTIONS: [Flag; 4] = [
+        Self::QueenPromotion,
+        Self::RookPromotion,
+        Self::BishopPromotion,
+        Self::KnightPromotion,
+    ];
+
+    pub fn get_promotion_piece(&self, white: bool) -> Option<Piece> {
         match self {
-            Promotion::QueenPromotion => {
+            Self::QueenPromotion => Some({
                 if white {
                     Piece::WhiteQueen
                 } else {
                     Piece::BlackQueen
                 }
-            }
-            Promotion::RookPromotion => {
+            }),
+            Self::RookPromotion => Some({
                 if white {
                     Piece::WhiteRook
                 } else {
                     Piece::BlackRook
                 }
-            }
-            Promotion::BishopPromotion => {
+            }),
+            Self::BishopPromotion => Some({
                 if white {
                     Piece::WhiteBishop
                 } else {
                     Piece::BlackBishop
                 }
-            }
-            Promotion::KnightPromotion => {
+            }),
+            Self::KnightPromotion => Some({
                 if white {
                     Piece::WhiteKnight
                 } else {
                     Piece::BlackKnight
                 }
-            }
-            Promotion::NoPromotion => unreachable!(),
+            }),
+            _ => None,
         }
     }
 }
 
-pub const PROMOTION_ENUM: [Promotion; 5] = [
-    Promotion::NoPromotion,
-    Promotion::QueenPromotion,
-    Promotion::RookPromotion,
-    Promotion::BishopPromotion,
-    Promotion::KnightPromotion,
-];
-pub const ALL_PROMOTIONS: [Promotion; 4] = [
-    Promotion::QueenPromotion,
-    Promotion::RookPromotion,
-    Promotion::BishopPromotion,
-    Promotion::KnightPromotion,
-];
-
 impl Move {
-    const EN_PASSANT: u32 = 0b01;
-    const PAWN_TWO_UP: u32 = 0b10;
-    const CASTLE: u32 = 0b11;
-
-    pub fn new(piece: Piece, from: Square, to: Square, captured: Option<Piece>) -> Move {
+    pub fn new(from: Square, to: Square, captured: Option<Piece>) -> Move {
         let mut data: u32 = 0;
 
         // Squares are 6 bits each
         data |= from.index() as u32;
         data |= (to.index() as u32) << 6;
 
-        // Pieces are 4 bits
-
-        data |= (piece as u32) << 12;
-
         if let Some(captured) = captured {
-            data |= (captured as u32) << 16;
+            data |= (captured as u32) << 12;
         } else {
-            data |= 0b1111 << 16
+            data |= 0b1111 << 12
         }
 
-        Self(data)
-    }
-    pub fn en_passant(piece: Piece, from: Square, to: Square, captured: Piece) -> Self {
-        let mut data = Self::new(piece, from, to, Some(captured)).0;
-        data |= Self::EN_PASSANT << 20;
-        Self(data)
-    }
-    pub fn pawn_two_up(piece: Piece, from: Square, to: Square) -> Self {
-        let mut data = Self::new(piece, from, to, None).0;
-        data |= Self::PAWN_TWO_UP << 20;
-        Self(data)
-    }
-    pub fn castle(piece: Piece, from: Square, to: Square) -> Self {
-        let mut data = Self::new(piece, from, to, None).0;
-        data |= Self::CASTLE << 20;
-        Self(data)
-    }
-
-    pub fn promotion(
-        piece: Piece,
-        from: Square,
-        to: Square,
-        captured: Option<Piece>,
-        promotion_type: Promotion,
-    ) -> Self {
-        let mut data = Self::new(piece, from, to, captured).0;
-        data |= (promotion_type as u32) << 22;
         Self(data)
     }
 
@@ -138,11 +110,8 @@ impl Move {
     pub fn to(&self) -> Square {
         Square::from_index(((self.0 >> 6) & 0b111111) as i8)
     }
-    pub fn piece(&self) -> Piece {
-        ALL_PIECES[((self.0 >> 12) & 0b1111) as usize]
-    }
     pub fn captured(&self) -> Option<Piece> {
-        let encoded = (self.0 >> 16) & 0b1111;
+        let encoded = (self.0 >> 12) & 0b1111;
         if encoded == 0b1111 {
             None
         } else {
@@ -150,17 +119,14 @@ impl Move {
         }
     }
 
-    pub fn is_en_passant(&self) -> bool {
-        (self.0 >> 20) & 0b11 == Self::EN_PASSANT
+    pub fn with_flag(from: Square, to: Square, captured: Option<Piece>, flag: Flag) -> Self {
+        let mut data = Self::new(from, to, captured).0;
+        data |= (flag as u32) << 16;
+        Self(data)
     }
-    pub fn is_pawn_two_up(&self) -> bool {
-        (self.0 >> 20) & 0b11 == Self::PAWN_TWO_UP
-    }
-    pub fn is_castle(&self) -> bool {
-        (self.0 >> 20) & 0b11 == Self::CASTLE
-    }
-    pub fn get_promotion(&self) -> &Promotion {
-        &PROMOTION_ENUM[((self.0 >> 22) & 0b111) as usize]
+
+    pub fn flag(&self) -> &Flag {
+        &Flag::ALL[((self.0 >> 16) & 0b1111) as usize]
     }
 }
 
@@ -168,35 +134,34 @@ impl Move {
 mod tests {
     use super::Move;
     use crate::{
-        board::square::Square,
-        move_generator::{move_data::Promotion, Piece},
+        board::{piece::Piece, square::Square},
+        move_generator::move_data::Flag,
     };
 
     // TODO: add more test cases
-    const TEST_MOVES: [(Piece, Square, Square); 2] = [
+    const TEST_MOVES: [(Square, Square, Option<Piece>, Flag); 2] = [
         (
-            Piece::WhitePawn,
             Square::from_coords(2, 2),
             Square::from_coords(3, 2),
+            Some(Piece::WhiteKing),
+            Flag::None,
         ),
         (
-            Piece::BlackBishop,
             Square::from_coords(5, 5),
             Square::from_coords(7, 7),
+            None,
+            Flag::None,
         ),
     ];
     #[test]
     fn move_encoded_correctly() {
         for test_move in TEST_MOVES {
-            let (piece, from, to) = test_move;
-            let encoded = Move::new(piece, from, to, None);
-            assert_eq!(encoded.piece(), piece);
+            let (from, to, captured, flag) = test_move;
+            let encoded = Move::with_flag(from, to, captured, flag);
             assert_eq!(encoded.from(), from);
             assert_eq!(encoded.to(), to);
-            assert_eq!(encoded.captured(), None);
-            assert_eq!(encoded.is_en_passant(), false);
-            assert_eq!(encoded.is_pawn_two_up(), false);
-            assert_eq!(*encoded.get_promotion(), Promotion::NoPromotion);
+            assert_eq!(encoded.captured(), captured);
+            assert_eq!(*encoded.flag(), flag);
         }
     }
 }
