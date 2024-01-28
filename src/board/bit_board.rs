@@ -61,10 +61,13 @@ impl BitBoard {
     pub fn get(&self, square: &Square) -> bool {
         !((*self & square.bitboard()).is_empty())
     }
+    pub fn first_square(&mut self) -> Square {
+        Square::from_index(self.0.trailing_zeros() as i8)
+    }
     pub fn pop_square(&mut self) -> Square {
-        let index = self.0.trailing_zeros();
+        let index = self.first_square();
         self.0 &= self.0 - 1;
-        Square::from_index(index as i8)
+        index
     }
 }
 

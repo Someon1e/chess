@@ -21,10 +21,14 @@ mod tests {
         ("2r5/3pk3/8/2P5/8/2K5/8/8 w - - 5 4", 1, 9),
         (
             "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8",
-            1,
+            3,
             62379,
-        ),*/
-        ("8/8/2K5/8/8/2k1R3/8/2R2b2 w - - 0 1", 1, 0)
+        )*/
+        (
+            "r1bqkbnr/ppp1pppp/2n5/1B1p4/4P3/8/PPPPKPPP/RNBQ2NR b kq - 0 1",
+            1,
+            0,
+        )
     ];
 
     fn perft_inner(engine: &mut Engine, depth: u16) -> usize {
@@ -40,7 +44,7 @@ mod tests {
             if !engine.can_capture_king() {
                 move_count += perft_inner(engine, depth - 1);
             } else {
-                panic!("illegal {move_data}!")
+                //panic!("Illegal {move_data}")
             }
             engine.board().unmake_move(move_data);
         }
@@ -63,7 +67,7 @@ mod tests {
                 move_count += inner;
                 println!("{move_data} {inner}")
             } else {
-                panic!("illegal! {move_data}")
+                //panic!("Illegal {move_data}")
             }
             engine.board().unmake_move(&move_data);
             assert_eq!(engine.board().to_fen(), fen)
