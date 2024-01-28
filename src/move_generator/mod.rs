@@ -36,14 +36,14 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
             self.precomputed.black_pawn_attacks_at_square[square.index() as usize]
         }
     }
-    pub fn gen_all_pawn_pushes(
+    fn gen_all_pawn_pushes(
         &self,
         moves: &mut Vec<Move>,
         pawns: &BitBoard,
-        friendly_pieces: &BitBoard,
-        enemy_pieces: &BitBoard,
+        friendly_piece_bit_board: &BitBoard,
+        enemy_piece_bit_board: &BitBoard,
     ) {
-        let empty_squares = (*friendly_pieces | *enemy_pieces).not();
+        let empty_squares = (*friendly_piece_bit_board | *enemy_piece_bit_board).not();
 
         let (single_push, down_offset) = if self.board.white_to_move {
             ((*pawns << 8) & empty_squares, -8)
@@ -114,8 +114,8 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
     fn directional_attack_bit_board(
         &self,
         square: Square,
-        friendly_pieces: &BitBoard,
-        enemy_pieces: &BitBoard,
+        friendly_piece_bit_board: &BitBoard,
+        enemy_piece_bit_board: &BitBoard,
 
         directions: &[i8],
         squares_from_edge: &[i8],
@@ -125,7 +125,7 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
             for count in 1..=*distance_from_edge {
                 let move_to = square.offset(direction * count);
                 attacked = attacked | move_to.bitboard();
-                if friendly_pieces.get(&move_to) || enemy_pieces.get(&move_to) {
+                if friendly_piece_bit_board.get(&move_to) || enemy_piece_bit_board.get(&move_to) {
                     break;
                 }
             }
@@ -136,8 +136,8 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
         &self,
         moves: &mut Vec<Move>,
         square: Square,
-        friendly_pieces: &BitBoard,
-        enemy_pieces: &BitBoard,
+        friendly_piece_bit_board: &BitBoard,
+        enemy_piece_bit_board: &BitBoard,
 
         directions: &[i8],
         squares_from_edge: &[i8],
@@ -145,11 +145,11 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
         for (direction, distance_from_edge) in directions.iter().zip(squares_from_edge) {
             for count in 1..=*distance_from_edge {
                 let move_to = square.offset(direction * count);
-                if friendly_pieces.get(&move_to) {
+                if friendly_piece_bit_board.get(&move_to) {
                     break;
                 }
                 moves.push(Move::new(square, move_to));
-                if enemy_pieces.get(&move_to) {
+                if enemy_piece_bit_board.get(&move_to) {
                     break;
                 }
             }
@@ -158,7 +158,8 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
     fn knight_attack_bit_board(&self, square: Square) -> BitBoard {
         self.precomputed.knight_moves_at_square[square.index() as usize]
     }
-    pub fn gen_knight(&self, moves: &mut Vec<Move>, square: Square, friendly_pieces: &BitBoard) {
+    
+    fn gen_knight(&self, moves: &mut Vec<Move>, square: Square, friendly_pieces: &BitBoard) {
         let mut knight_moves = self.knight_attack_bit_board(square) & friendly_pieces.not();
         while !knight_moves.is_empty() {
             let move_to = knight_moves.pop_square();
@@ -169,15 +170,16 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
     fn king_attack_bit_board(&self, square: Square) -> BitBoard {
         self.precomputed.king_moves_at_square[square.index() as usize]
     }
-    pub fn gen_king(
+    fn gen_king(
         &self,
         moves: &mut Vec<Move>,
         square: Square,
-        friendly_pieces: &BitBoard,
+        friendly_piece_bit_board: &BitBoard,
+        enemy_piece_bit_board: &BitBoard,
         attacked_bit_board: &BitBoard,
     ) {
         let mut king_moves =
-            self.king_attack_bit_board(square) & friendly_pieces.not() & attacked_bit_board.not();
+            self.king_attack_bit_board(square) & friendly_piece_bit_board.not() & attacked_bit_board.not();
         while !king_moves.is_empty() {
             let move_to = king_moves.pop_square();
             moves.push(Move::new(square, move_to));
@@ -199,19 +201,21 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
                 castling_rights.get_black_queen_side(),
             )
         };
+
+        let occupied_squares = *friendly_piece_bit_board | *enemy_piece_bit_board;
         if king_side {
             let move_to = square.right(2);
-            if self.board.piece_at(square.right(1)).is_none()
-                && self.board.piece_at(move_to).is_none()
+            if !occupied_squares.get(&square.right(1))
+                && !occupied_squares.get(&move_to)
             {
                 moves.push(Move::with_flag(square, move_to, Flag::Castle))
             }
         }
         if queen_side {
             let move_to = square.left(2);
-            if self.board.piece_at(square.left(1)).is_none()
-                && self.board.piece_at(move_to).is_none()
-                && self.board.piece_at(square.left(3)).is_none()
+            if !occupied_squares.get(&square.left(1))
+                && !occupied_squares.get(&move_to)
+                && !occupied_squares.get(&square.left(3))
             {
                 moves.push(Move::with_flag(square, move_to, Flag::Castle))
             }
@@ -343,6 +347,7 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
                 moves,
                 square,
                 &friendly_piece_bit_board,
+                &enemy_piece_bit_board,
                 &attacked_bit_board,
             )
         }
