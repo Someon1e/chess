@@ -1,19 +1,18 @@
 use crate::board::{
-    piece::{Piece, ALL_PIECES},
+    piece::Piece,
     square::Square,
 };
 use std::fmt;
 
-pub struct Move(u32);
+pub struct Move(u16);
 
 impl fmt::Display for Move {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "From {} to {}, Captured {:?}, Flag {:?}",
+            "From {} to {}, Flag {:?}",
             self.from(),
             self.to(),
-            self.captured(),
             self.flag()
         )
     }
@@ -88,18 +87,12 @@ impl Flag {
 }
 
 impl Move {
-    pub fn new(from: Square, to: Square, captured: Option<Piece>) -> Move {
-        let mut data: u32 = 0;
+    pub fn new(from: Square, to: Square) -> Move {
+        let mut data: u16 = 0;
 
         // Squares are 6 bits each
-        data |= from.index() as u32;
-        data |= (to.index() as u32) << 6;
-
-        if let Some(captured) = captured {
-            data |= (captured as u32) << 12;
-        } else {
-            data |= 0b1111 << 12
-        }
+        data |= from.index() as u16;
+        data |= (to.index() as u16) << 6;
 
         Self(data)
     }
@@ -110,23 +103,15 @@ impl Move {
     pub fn to(&self) -> Square {
         Square::from_index(((self.0 >> 6) & 0b111111) as i8)
     }
-    pub fn captured(&self) -> Option<Piece> {
-        let encoded = (self.0 >> 12) & 0b1111;
-        if encoded == 0b1111 {
-            None
-        } else {
-            Some(ALL_PIECES[encoded as usize])
-        }
-    }
 
-    pub fn with_flag(from: Square, to: Square, captured: Option<Piece>, flag: Flag) -> Self {
-        let mut data = Self::new(from, to, captured).0;
-        data |= (flag as u32) << 16;
+    pub fn with_flag(from: Square, to: Square, flag: Flag) -> Self {
+        let mut data = Self::new(from, to).0;
+        data |= (flag as u16) << 12;
         Self(data)
     }
 
     pub fn flag(&self) -> &Flag {
-        &Flag::ALL[((self.0 >> 16) & 0b1111) as usize]
+        &Flag::ALL[((self.0 >> 12) & 0b1111) as usize]
     }
 }
 
@@ -134,33 +119,30 @@ impl Move {
 mod tests {
     use super::Move;
     use crate::{
-        board::{piece::Piece, square::Square},
+        board::square::Square,
         move_generator::move_data::Flag,
     };
 
     // TODO: add more test cases
-    const TEST_MOVES: [(Square, Square, Option<Piece>, Flag); 2] = [
+    const TEST_MOVES: [(Square, Square, Flag); 2] = [
         (
             Square::from_coords(2, 2),
             Square::from_coords(3, 2),
-            Some(Piece::WhiteKing),
             Flag::None,
         ),
         (
             Square::from_coords(5, 5),
             Square::from_coords(7, 7),
-            None,
             Flag::None,
         ),
     ];
     #[test]
     fn move_encoded_correctly() {
         for test_move in TEST_MOVES {
-            let (from, to, captured, flag) = test_move;
-            let encoded = Move::with_flag(from, to, captured, flag);
+            let (from, to, flag) = test_move;
+            let encoded = Move::with_flag(from, to, flag);
             assert_eq!(encoded.from(), from);
             assert_eq!(encoded.to(), to);
-            assert_eq!(encoded.captured(), captured);
             assert_eq!(*encoded.flag(), flag);
         }
     }

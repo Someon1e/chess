@@ -123,9 +123,8 @@ fn main() {
                             println!("{promotion}")
                         }
                     }
-                    let captured = board.piece_at(to);
 
-                    move_data = Move::new(from, to, captured);
+                    move_data = Move::new(from, to);
                     board.make_move(&move_data)
                 }
                 moves.clear();

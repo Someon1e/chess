@@ -93,6 +93,7 @@ impl Board {
 
             half_move_clock,
             full_move_counter,
+            captured: None,
         };
 
         Self {
@@ -186,16 +187,32 @@ impl Board {
         let en_passant_square = self.game_state.en_passant_square;
         self.game_state.en_passant_square = None;
 
-        if let Some(captured) = move_data.captured() {
-            let capture_position = if *flag == Flag::EnPassant {
+        if *flag == Flag::EnPassant {
+            let capture_position =
                 en_passant_square
                     .unwrap()
-                    .down(if self.white_to_move { 1 } else { -1 })
+                    .down(if self.white_to_move { 1 } else { -1 });
+            let captured = if white_to_move {
+                Piece::BlackPawn
             } else {
-                move_data.to()
+                Piece::WhitePawn
             };
+            self.game_state.captured = Some(captured);
             let capturing_bit_board = self.get_bit_board_mut(captured);
             capturing_bit_board.unset(&capture_position);
+        } else {
+            self.game_state.captured = self.enemy_piece_at(move_data.to());
+            if let Some(captured) = self.game_state.captured {
+                let capture_position = if *flag == Flag::EnPassant {
+                    en_passant_square
+                        .unwrap()
+                        .down(if self.white_to_move { 1 } else { -1 })
+                } else {
+                    move_data.to()
+                };
+                let capturing_bit_board = self.get_bit_board_mut(captured);
+                capturing_bit_board.unset(&capture_position);
+            }
         }
 
         if piece
@@ -232,6 +249,7 @@ impl Board {
         self.white_to_move = !white_to_move;
     }
     pub fn unmake_move(&mut self, move_data: &Move) {
+        let capture = self.game_state.captured;
         self.game_state = self.history.pop().unwrap();
 
         let white_to_move = !self.white_to_move;
@@ -266,7 +284,7 @@ impl Board {
                 self.get_bit_board_mut(Piece::BlackRook)
             };
             rook_bit_board.toggle(&rook_from, &rook_to)
-        } else if let Some(captured) = move_data.captured() {
+        } else if let Some(captured) = capture {
             let capture_position = if *flag == Flag::EnPassant {
                 self.game_state
                     .en_passant_square
