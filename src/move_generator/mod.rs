@@ -93,12 +93,7 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
             }
         }
     }
-    pub fn gen_pawn(
-        &self,
-        moves: &mut Vec<Move>,
-        square: Square,
-        enemy_pieces: &BitBoard,
-    ) {
+    pub fn gen_pawn(&self, moves: &mut Vec<Move>, square: Square, enemy_pieces: &BitBoard) {
         let mut attacks = self.pawn_attack_bit_board(square, self.board.white_to_move);
 
         while !attacks.is_empty() {
@@ -159,54 +154,6 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
                 }
             }
         }
-    }
-    pub fn gen_bishop(
-        &self,
-        moves: &mut Vec<Move>,
-        square: Square,
-        friendly_pieces: &BitBoard,
-        enemy_pieces: &BitBoard,
-    ) {
-        self.gen_directional(
-            moves,
-            square,
-            friendly_pieces,
-            enemy_pieces,
-            &DIRECTIONS[4..8],
-            &self.precomputed.squares_from_edge[square.index() as usize][4..8],
-        )
-    }
-    pub fn gen_rook(
-        &self,
-        moves: &mut Vec<Move>,
-        square: Square,
-        friendly_pieces: &BitBoard,
-        enemy_pieces: &BitBoard,
-    ) {
-        self.gen_directional(
-            moves,
-            square,
-            friendly_pieces,
-            enemy_pieces,
-            &DIRECTIONS[0..4],
-            &self.precomputed.squares_from_edge[square.index() as usize][0..4],
-        )
-    }
-    pub fn gen_queen(
-        &self,
-        moves: &mut Vec<Move>,
-        square: Square,
-        friendly_pieces: &BitBoard,
-        enemy_pieces: &BitBoard,
-    ) {
-        self.gen_directional(
-            moves,
-            square,
-            friendly_pieces,
-            enemy_pieces,
-            &DIRECTIONS,
-            &self.precomputed.squares_from_edge[square.index() as usize],
-        )
     }
     fn knight_attack_bit_board(&self, square: Square) -> BitBoard {
         self.precomputed.knight_moves_at_square[square.index() as usize]
@@ -343,46 +290,61 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
             &friendly_piece_bit_board,
             &enemy_piece_bit_board,
         );
-
-        for piece in friendly_pieces {
-            let mut bit_board = *self.board.get_bit_board(piece);
-            while !bit_board.is_empty() {
-                let square = bit_board.pop_square();
-                match piece {
-                    Piece::WhitePawn | Piece::BlackPawn => self.gen_pawn(
-                        moves,
-                        square,
-                        &enemy_piece_bit_board,
-                    ),
-                    Piece::WhiteKnight | Piece::BlackKnight => {
-                        self.gen_knight(moves, square, &friendly_piece_bit_board)
-                    }
-                    Piece::WhiteBishop | Piece::BlackBishop => self.gen_bishop(
-                        moves,
-                        square,
-                        &friendly_piece_bit_board,
-                        &enemy_piece_bit_board,
-                    ),
-                    Piece::WhiteRook | Piece::BlackRook => self.gen_rook(
-                        moves,
-                        square,
-                        &friendly_piece_bit_board,
-                        &enemy_piece_bit_board,
-                    ),
-                    Piece::WhiteQueen | Piece::BlackQueen => self.gen_queen(
-                        moves,
-                        square,
-                        &friendly_piece_bit_board,
-                        &enemy_piece_bit_board,
-                    ),
-                    Piece::WhiteKing | Piece::BlackKing => self.gen_king(
-                        moves,
-                        square,
-                        &friendly_piece_bit_board,
-                        &attacked_bit_board,
-                    ),
-                }
-            }
+        let mut pawn_bit_board = *self.board.get_bit_board(friendly_pieces[0]);
+        while !pawn_bit_board.is_empty() {
+            let square = pawn_bit_board.pop_square();
+            self.gen_pawn(moves, square, &enemy_piece_bit_board)
+        }
+        let mut knight_bit_board = *self.board.get_bit_board(friendly_pieces[1]);
+        while !knight_bit_board.is_empty() {
+            let square = knight_bit_board.pop_square();
+            self.gen_knight(moves, square, &friendly_piece_bit_board)
+        }
+        let mut bishop_bit_board = *self.board.get_bit_board(friendly_pieces[2]);
+        while !bishop_bit_board.is_empty() {
+            let square = bishop_bit_board.pop_square();
+            self.gen_directional(
+                moves,
+                square,
+                &friendly_piece_bit_board,
+                &enemy_piece_bit_board,
+                &DIRECTIONS[4..8],
+                &self.precomputed.squares_from_edge[square.index() as usize][4..8],
+            )
+        }
+        let mut rook_bit_board = *self.board.get_bit_board(friendly_pieces[3]);
+        while !rook_bit_board.is_empty() {
+            let square = rook_bit_board.pop_square();
+            self.gen_directional(
+                moves,
+                square,
+                &friendly_piece_bit_board,
+                &enemy_piece_bit_board,
+                &DIRECTIONS[0..4],
+                &self.precomputed.squares_from_edge[square.index() as usize][0..4],
+            )
+        }
+        let mut queen_bit_board = *self.board.get_bit_board(friendly_pieces[4]);
+        while !queen_bit_board.is_empty() {
+            let square = queen_bit_board.pop_square();
+            self.gen_directional(
+                moves,
+                square,
+                &friendly_piece_bit_board,
+                &enemy_piece_bit_board,
+                &DIRECTIONS,
+                &self.precomputed.squares_from_edge[square.index() as usize],
+            )
+        }
+        let mut king_bit_board = *self.board.get_bit_board(friendly_pieces[5]);
+        while !king_bit_board.is_empty() {
+            let square = king_bit_board.pop_square();
+            self.gen_king(
+                moves,
+                square,
+                &friendly_piece_bit_board,
+                &attacked_bit_board,
+            )
         }
     }
 }
