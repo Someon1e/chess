@@ -111,9 +111,11 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
             }
         }
     }
-    fn directional_attack_bit_board(
+    fn directional_king_danger_bit_board(
         &self,
         square: Square,
+
+        king_bit_board: &BitBoard,
         friendly_piece_bit_board: &BitBoard,
         enemy_piece_bit_board: &BitBoard,
 
@@ -125,6 +127,9 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
             for count in 1..=*distance_from_edge {
                 let move_to = square.offset(direction * count);
                 attacked = attacked | move_to.bitboard();
+                if king_bit_board.get(&move_to) {
+                    continue;
+                }
                 if friendly_piece_bit_board.get(&move_to) || enemy_piece_bit_board.get(&move_to) {
                     break;
                 }
@@ -158,7 +163,7 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
     fn knight_attack_bit_board(&self, square: Square) -> BitBoard {
         self.precomputed.knight_moves_at_square[square.index() as usize]
     }
-    
+
     fn gen_knight(&self, moves: &mut Vec<Move>, square: Square, friendly_pieces: &BitBoard) {
         let mut knight_moves = self.knight_attack_bit_board(square) & friendly_pieces.not();
         while !knight_moves.is_empty() {
@@ -176,16 +181,17 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
         square: Square,
         friendly_piece_bit_board: &BitBoard,
         enemy_piece_bit_board: &BitBoard,
-        attacked_bit_board: &BitBoard,
+        king_danger_bit_board: &BitBoard,
     ) {
-        let mut king_moves =
-            self.king_attack_bit_board(square) & friendly_piece_bit_board.not() & attacked_bit_board.not();
+        let mut king_moves = self.king_attack_bit_board(square)
+            & friendly_piece_bit_board.not()
+            & king_danger_bit_board.not();
         while !king_moves.is_empty() {
             let move_to = king_moves.pop_square();
             moves.push(Move::new(square, move_to));
         }
 
-        if attacked_bit_board.get(&square) {
+        if king_danger_bit_board.get(&square) {
             return;
         }
 
@@ -205,9 +211,7 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
         let occupied_squares = *friendly_piece_bit_board | *enemy_piece_bit_board;
         if king_side {
             let move_to = square.right(2);
-            if !occupied_squares.get(&square.right(1))
-                && !occupied_squares.get(&move_to)
-            {
+            if !occupied_squares.get(&square.right(1)) && !occupied_squares.get(&move_to) {
                 moves.push(Move::with_flag(square, move_to, Flag::Castle))
             }
         }
@@ -248,44 +252,70 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
             enemy_piece_bit_board = enemy_piece_bit_board | bit_board;
         }
 
-        let mut attacked_bit_board = BitBoard::empty();
+        let mut king_bit_board = *self.board.get_bit_board(friendly_pieces[5]);
+
+        let mut king_danger_bit_board = BitBoard::empty();
+        let mut is_in_check = false;
+        let mut is_in_double_check = false;
         for piece in enemy_pieces {
             let mut bit_board = *self.board.get_bit_board(piece);
             while !bit_board.is_empty() {
                 let square = bit_board.pop_square();
-                attacked_bit_board = attacked_bit_board
-                    | match piece {
-                        Piece::WhitePawn | Piece::BlackPawn => {
-                            self.pawn_attack_bit_board(square, !self.board.white_to_move)
-                        }
-                        Piece::WhiteKnight | Piece::BlackKnight => {
-                            self.knight_attack_bit_board(square)
-                        }
-                        Piece::WhiteBishop | Piece::BlackBishop => self
-                            .directional_attack_bit_board(
-                                square,
-                                &friendly_piece_bit_board,
-                                &enemy_piece_bit_board,
-                                &DIRECTIONS[4..8],
-                                &self.precomputed.squares_from_edge[square.index() as usize][4..8],
-                            ),
-                        Piece::WhiteRook | Piece::BlackRook => self.directional_attack_bit_board(
+                let dangerous = match piece {
+                    Piece::WhitePawn | Piece::BlackPawn => {
+                        self.pawn_attack_bit_board(square, !self.board.white_to_move)
+                    }
+                    Piece::WhiteKnight | Piece::BlackKnight => self.knight_attack_bit_board(square),
+                    Piece::WhiteBishop | Piece::BlackBishop => self
+                        .directional_king_danger_bit_board(
                             square,
+                            &king_bit_board,
                             &friendly_piece_bit_board,
                             &enemy_piece_bit_board,
-                            &DIRECTIONS[0..4],
-                            &self.precomputed.squares_from_edge[square.index() as usize][0..4],
+                            &DIRECTIONS[4..8],
+                            &self.precomputed.squares_from_edge[square.index() as usize][4..8],
                         ),
-                        Piece::WhiteQueen | Piece::BlackQueen => self.directional_attack_bit_board(
+                    Piece::WhiteRook | Piece::BlackRook => self.directional_king_danger_bit_board(
+                        square,
+                        &king_bit_board,
+                        &friendly_piece_bit_board,
+                        &enemy_piece_bit_board,
+                        &DIRECTIONS[0..4],
+                        &self.precomputed.squares_from_edge[square.index() as usize][0..4],
+                    ),
+                    Piece::WhiteQueen | Piece::BlackQueen => self
+                        .directional_king_danger_bit_board(
                             square,
+                            &king_bit_board,
                             &friendly_piece_bit_board,
                             &enemy_piece_bit_board,
                             &DIRECTIONS,
                             &self.precomputed.squares_from_edge[square.index() as usize],
                         ),
-                        Piece::WhiteKing | Piece::BlackKing => self.king_attack_bit_board(square),
+                    Piece::WhiteKing | Piece::BlackKing => self.king_attack_bit_board(square),
+                };
+                if !(dangerous & king_bit_board).is_empty() {
+                    if is_in_check {
+                        is_in_double_check = true;
                     }
+                    is_in_check = true;
+                }
+                king_danger_bit_board = king_danger_bit_board | dangerous
             }
+        }
+
+        while !king_bit_board.is_empty() {
+            let square = king_bit_board.pop_square();
+            self.gen_king(
+                moves,
+                square,
+                &friendly_piece_bit_board,
+                &enemy_piece_bit_board,
+                &king_danger_bit_board,
+            )
+        }
+        if is_in_double_check {
+            return;
         }
 
         self.gen_all_pawn_pushes(
@@ -338,17 +368,6 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
                 &enemy_piece_bit_board,
                 &DIRECTIONS,
                 &self.precomputed.squares_from_edge[square.index() as usize],
-            )
-        }
-        let mut king_bit_board = *self.board.get_bit_board(friendly_pieces[5]);
-        while !king_bit_board.is_empty() {
-            let square = king_bit_board.pop_square();
-            self.gen_king(
-                moves,
-                square,
-                &friendly_piece_bit_board,
-                &enemy_piece_bit_board,
-                &attacked_bit_board,
             )
         }
     }
