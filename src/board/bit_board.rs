@@ -1,6 +1,6 @@
 use super::square::Square;
 use std::fmt;
-use std::ops::{BitAnd, BitOr};
+use std::ops::{BitAnd, BitOr, Shl, Shr};
 
 #[derive(Copy, Clone, PartialEq)]
 pub struct BitBoard(u64);
@@ -25,6 +25,18 @@ impl fmt::Display for BitBoard {
 }
 
 impl BitBoard {
+    pub const RANK_1: BitBoard = Self::new(0b11111111);
+    pub const RANK_2: BitBoard = Self::new(0b11111111 << 8);
+    pub const RANK_3: BitBoard = Self::new(0b11111111 << 16);
+    pub const RANK_4: BitBoard = Self::new(0b11111111 << 24);
+    pub const RANK_5: BitBoard = Self::new(0b11111111 << 32);
+    pub const RANK_6: BitBoard = Self::new(0b11111111 << 40);
+    pub const RANK_7: BitBoard = Self::new(0b11111111 << 48);
+    pub const RANK_8: BitBoard = Self::new(0b11111111 << 56);
+
+    pub const fn new(bits: u64) -> Self {
+        BitBoard(bits)
+    }
     pub fn empty() -> Self {
         BitBoard(0)
     }
@@ -69,3 +81,18 @@ macro_rules! implement {
 }
 implement!(BitOr, bitor, |);
 implement!(BitAnd, bitand, &);
+
+macro_rules! shift {
+    ($op:ident, $name:ident, $operator:tt) => {
+        impl $op<u64> for BitBoard {
+            type Output = BitBoard;
+
+            fn $name(self, rhs: u64) -> Self::Output {
+               Self(self.0 $operator rhs)
+            }
+        }
+    };
+}
+
+shift!(Shl, shl, <<);
+shift!(Shr, shr, >>);

@@ -36,15 +36,70 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
             self.precomputed.black_pawn_attacks_at_square[square.index() as usize]
         }
     }
+    pub fn gen_all_pawn_pushes(
+        &self,
+        moves: &mut Vec<Move>,
+        pawns: &BitBoard,
+        friendly_pieces: &BitBoard,
+        enemy_pieces: &BitBoard,
+    ) {
+        let empty_squares = (*friendly_pieces | *enemy_pieces).not();
+
+        let (single_push, down_offset) = if self.board.white_to_move {
+            ((*pawns << 8) & empty_squares, -8)
+        } else {
+            ((*pawns >> 8) & empty_squares, 8)
+        };
+        {
+            // Move pawn one square up
+            let mut push_promotions = single_push
+                & (if self.board.white_to_move {
+                    BitBoard::RANK_8
+                } else {
+                    BitBoard::RANK_1
+                });
+
+            let mut single_push_no_promotions = single_push & push_promotions.not();
+            while !single_push_no_promotions.is_empty() {
+                let move_to = single_push_no_promotions.pop_square();
+                let from = move_to.offset(down_offset);
+                moves.push(Move::new(from, move_to));
+            }
+            while !push_promotions.is_empty() {
+                let move_to = push_promotions.pop_square();
+                let from = move_to.offset(down_offset);
+                self.gen_promotions(moves, from, move_to)
+            }
+        }
+
+        {
+            // Move pawn two squares up
+            let (double_push, double_down_offset) = if self.board.white_to_move {
+                (single_push << 8, -16)
+            } else {
+                (single_push >> 8, 16)
+            };
+            let mut double_push = double_push
+                & empty_squares
+                & if self.board.white_to_move {
+                    BitBoard::RANK_4
+                } else {
+                    BitBoard::RANK_5
+                };
+            while !double_push.is_empty() {
+                let move_to = double_push.pop_square();
+                let from = move_to.offset(double_down_offset);
+                moves.push(Move::with_flag(from, move_to, Flag::PawnTwoUp))
+            }
+        }
+    }
     pub fn gen_pawn(
         &self,
         moves: &mut Vec<Move>,
         square: Square,
-        friendly_pieces: &BitBoard,
         enemy_pieces: &BitBoard,
     ) {
         let mut attacks = self.pawn_attack_bit_board(square, self.board.white_to_move);
-        let pawn_up = if self.board.white_to_move { 1 } else { -1 };
 
         while !attacks.is_empty() {
             let attack = attacks.pop_square();
@@ -57,29 +112,6 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
             } else if let Some(en_passant_square) = self.board.game_state.en_passant_square {
                 if en_passant_square == attack {
                     moves.push(Move::with_flag(square, attack, Flag::EnPassant));
-                }
-            }
-        }
-
-        if !friendly_pieces.get(&square.up(pawn_up)) && !enemy_pieces.get(&square.up(pawn_up)) {
-            if self.is_promotion_rank(square.up(pawn_up).rank()) {
-                self.gen_promotions(moves, square, square.up(pawn_up))
-            } else {
-                moves.push(Move::new(square, square.up(pawn_up)));
-                let is_starting_rank = if self.board.white_to_move {
-                    square.rank() == 1
-                } else {
-                    square.rank() == 6
-                };
-                if is_starting_rank
-                    && !friendly_pieces.get(&square.up(pawn_up * 2))
-                    && !enemy_pieces.get(&square.up(pawn_up * 2))
-                {
-                    moves.push(Move::with_flag(
-                        square,
-                        square.up(pawn_up * 2),
-                        Flag::PawnTwoUp,
-                    ))
                 }
             }
         }
@@ -305,6 +337,13 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
             }
         }
 
+        self.gen_all_pawn_pushes(
+            moves,
+            self.board.get_bit_board(friendly_pieces[0]),
+            &friendly_piece_bit_board,
+            &enemy_piece_bit_board,
+        );
+
         for piece in friendly_pieces {
             let mut bit_board = *self.board.get_bit_board(piece);
             while !bit_board.is_empty() {
@@ -313,7 +352,6 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
                     Piece::WhitePawn | Piece::BlackPawn => self.gen_pawn(
                         moves,
                         square,
-                        &friendly_piece_bit_board,
                         &enemy_piece_bit_board,
                     ),
                     Piece::WhiteKnight | Piece::BlackKnight => {
