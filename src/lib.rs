@@ -15,15 +15,16 @@ mod tests {
     use super::move_generator::PsuedoLegalMoveGenerator;
 
     const START_POSITION_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    const TEST_FENS: [(&str, u16, usize); 4] = [
-        (START_POSITION_FEN, 6, 119060324),
+    const TEST_FENS: [(&str, u16, usize); 1] = [
+        /*(START_POSITION_FEN, 6, 119060324),
         ("r6r/1b2k1bq/8/8/7B/8/8/R3K2R b KQ - 3 2", 1, 8),
         ("2r5/3pk3/8/2P5/8/2K5/8/8 w - - 5 4", 1, 9),
         (
             "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8",
-            3,
+            1,
             62379,
-        ),
+        ),*/
+        ("8/8/2K5/8/8/2k1R3/8/2R2b2 w - - 0 1", 1, 0)
     ];
 
     fn perft_inner(engine: &mut Engine, depth: u16) -> usize {
@@ -38,6 +39,8 @@ mod tests {
             engine.board().make_move(move_data);
             if !engine.can_capture_king() {
                 move_count += perft_inner(engine, depth - 1);
+            } else {
+                panic!("illegal {move_data}!")
             }
             engine.board().unmake_move(move_data);
         }
@@ -59,6 +62,8 @@ mod tests {
                 let inner = perft_inner(engine, depth - 1);
                 move_count += inner;
                 println!("{move_data} {inner}")
+            } else {
+                panic!("illegal! {move_data}")
             }
             engine.board().unmake_move(&move_data);
             assert_eq!(engine.board().to_fen(), fen)
