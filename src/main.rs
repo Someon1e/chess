@@ -125,7 +125,7 @@ fn main() {
                     }
                     let captured = board.piece_at(to);
 
-                    move_data = Move::new(piece, from, to, captured);
+                    move_data = Move::new(from, to, captured);
                     board.make_move(&move_data)
                 }
                 moves.clear();

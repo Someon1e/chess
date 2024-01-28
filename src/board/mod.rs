@@ -9,7 +9,7 @@ use bit_board::BitBoard;
 use piece::{Piece, ALL_PIECES, BLACK_PIECES, WHITE_PIECES};
 use square::Square;
 
-use crate::move_generator::move_data::{Move, Promotion};
+use crate::move_generator::move_data::{Flag, Move};
 
 use self::game_state::{CastlingRights, GameState};
 
@@ -132,6 +132,20 @@ impl Board {
         }
         None
     }
+    pub fn friendly_piece_at(&self, square: Square) -> Option<Piece> {
+        if self.white_to_move {
+            self.white_piece_at(square)
+        } else {
+            self.black_piece_at(square)
+        }
+    }
+    pub fn enemy_piece_at(&self, square: Square) -> Option<Piece> {
+        if self.white_to_move {
+            self.black_piece_at(square)
+        } else {
+            self.white_piece_at(square)
+        }
+    }
     pub fn make_move(&mut self, move_data: &Move) {
         self.history.push(self.game_state);
 
@@ -158,25 +172,22 @@ impl Board {
 
         let white_to_move = self.white_to_move;
 
-        let moving_bit_board = self.get_bit_board_mut(move_data.piece());
-        let promotion = move_data.get_promotion();
-        match promotion {
-            Promotion::NoPromotion => {
-                moving_bit_board.toggle(&move_data.from(), &move_data.to());
-            }
-
-            _ => {
-                let promotion_piece = promotion.to_piece(white_to_move);
-                moving_bit_board.unset(&move_data.from());
-                self.get_bit_board_mut(promotion_piece).set(&move_data.to())
-            }
+        let piece = self.friendly_piece_at(move_data.from()).unwrap();
+        let moving_bit_board = self.get_bit_board_mut(piece);
+        let flag = move_data.flag();
+        let promotion_piece = flag.get_promotion_piece(white_to_move);
+        if let Some(promotion_piece) = promotion_piece {
+            moving_bit_board.unset(&move_data.from());
+            self.get_bit_board_mut(promotion_piece).set(&move_data.to());
+        } else {
+            moving_bit_board.toggle(&move_data.from(), &move_data.to());
         }
 
         let en_passant_square = self.game_state.en_passant_square;
         self.game_state.en_passant_square = None;
 
         if let Some(captured) = move_data.captured() {
-            let capture_position = if move_data.is_en_passant() {
+            let capture_position = if *flag == Flag::EnPassant {
                 en_passant_square
                     .unwrap()
                     .down(if self.white_to_move { 1 } else { -1 })
@@ -187,7 +198,7 @@ impl Board {
             capturing_bit_board.unset(&capture_position);
         }
 
-        if move_data.piece()
+        if piece
             == (if white_to_move {
                 Piece::WhiteKing
             } else {
@@ -201,7 +212,7 @@ impl Board {
                 self.game_state.castling_rights.unset_black_king_side();
                 self.game_state.castling_rights.unset_black_queen_side();
             }
-            if move_data.is_castle() {
+            if *flag == Flag::Castle {
                 let (rook_from, rook_to) = if move_data.to() == Square::from_notation("g1") {
                     (Square::from_notation("h1"), Square::from_notation("f1"))
                 } else {
@@ -214,7 +225,7 @@ impl Board {
                 };
                 rook_bit_board.toggle(&rook_from, &rook_to);
             }
-        } else if move_data.is_pawn_two_up() {
+        } else if *flag == Flag::PawnTwoUp {
             self.game_state.en_passant_square =
                 Some(move_data.from().up(if self.white_to_move { 1 } else { -1 }))
         }
@@ -226,22 +237,24 @@ impl Board {
         let white_to_move = !self.white_to_move;
         self.white_to_move = white_to_move;
 
-        let moving_bit_board = self.get_bit_board_mut(move_data.piece());
-        let promotion = move_data.get_promotion();
-        match promotion {
-            Promotion::NoPromotion => {
-                moving_bit_board.toggle(&move_data.from(), &move_data.to());
-            }
-
-            _ => {
-                let promotion_piece = promotion.to_piece(white_to_move);
-                moving_bit_board.set(&move_data.from());
-                self.get_bit_board_mut(promotion_piece)
-                    .unset(&move_data.to())
-            }
+        let flag = move_data.flag();
+        let promotion_piece = flag.get_promotion_piece(white_to_move);
+        if let Some(promotion_piece) = promotion_piece {
+            let moving_bit_board = if white_to_move {
+                self.get_bit_board_mut(Piece::WhitePawn)
+            } else {
+                self.get_bit_board_mut(Piece::BlackPawn)
+            };
+            moving_bit_board.set(&move_data.from());
+            self.get_bit_board_mut(promotion_piece)
+                .unset(&move_data.to());
+        } else {
+            let moving_bit_board =
+                self.get_bit_board_mut(self.friendly_piece_at(move_data.to()).unwrap());
+            moving_bit_board.toggle(&move_data.from(), &move_data.to());
         }
 
-        if move_data.is_castle() {
+        if *flag == Flag::Castle {
             let (rook_from, rook_to) = if move_data.to() == Square::from_notation("g1") {
                 (Square::from_notation("h1"), Square::from_notation("f1"))
             } else {
@@ -254,7 +267,7 @@ impl Board {
             };
             rook_bit_board.toggle(&rook_from, &rook_to)
         } else if let Some(captured) = move_data.captured() {
-            let capture_position = if move_data.is_en_passant() {
+            let capture_position = if *flag == Flag::EnPassant {
                 self.game_state
                     .en_passant_square
                     .unwrap()
