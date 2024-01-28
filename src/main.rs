@@ -19,7 +19,7 @@ fn main() {
         let mut input = String::new();
         stdin.read_line(&mut input).unwrap();
 
-        let args: Vec<&str> = input.trim().split_whitespace().collect();
+        let args: Vec<&str> = input.split_whitespace().collect();
         match args[0] {
             "uci" => {
                 println!("id name chess");
