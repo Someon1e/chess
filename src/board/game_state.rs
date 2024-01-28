@@ -1,5 +1,7 @@
 use crate::board::square::Square;
 
+use super::piece::Piece;
+
 macro_rules! define_castling_rights {
     ($getter:ident, $setter:ident, $unsetter:ident, $offset:expr) => {
         pub fn $getter(&self) -> bool {
@@ -90,4 +92,5 @@ pub struct GameState {
 
     pub half_move_clock: u64,
     pub full_move_counter: u64,
+    pub captured: Option<Piece>
 }

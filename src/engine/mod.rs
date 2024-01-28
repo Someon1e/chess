@@ -141,10 +141,16 @@ impl<'a> Engine<'a> {
         let mut moves = vec![];
         self.move_generator.gen(&mut moves);
 
+        let board = self.board();
+        let king = board.get_bit_board(if board.white_to_move {
+            Piece::BlackKing
+        } else {
+            Piece::WhiteKing
+        });
+
         for move_data in moves {
-            match move_data.captured() {
-                Some(Piece::WhiteKing) | Some(Piece::BlackKing) => return true,
-                _ => {}
+            if king.get(&move_data.to()) {
+                return true;
             }
         }
         false
