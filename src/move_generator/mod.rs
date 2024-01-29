@@ -46,9 +46,11 @@ impl<'a> MoveGenerator<'a> {
         diagonal_pin_rays: &BitBoard,
         friendly_piece_bit_board: &BitBoard,
         enemy_piece_bit_board: &BitBoard,
+        friendly_king_square: Square,
     ) {
         let pin_rays = *diagonal_pin_rays | *non_diagonal_pin_rays;
-        let empty_squares = (*friendly_piece_bit_board | *enemy_piece_bit_board).not();
+        let occupied_squares = *friendly_piece_bit_board | *enemy_piece_bit_board;
+        let empty_squares = occupied_squares.not();
 
         let (single_push, down_offset) = if self.board.white_to_move {
             ((*pawns << 8) & empty_squares, -8)
@@ -118,7 +120,14 @@ impl<'a> MoveGenerator<'a> {
                         self.pawn_attack_bit_board(en_passant_square, !self.board.white_to_move)
                     };
 
-                    while !pawns_able_to_enpassant.is_empty() {
+                    let (enemy_rook, enemy_queen) = if self.board.white_to_move {
+                        (Piece::BlackRook, Piece::BlackQueen)
+                    } else {
+                        (Piece::WhiteRook, Piece::WhiteQueen)
+                    };
+                    let enemy_rooks_and_queens_bit_board = *self.board.get_bit_board(enemy_rook)
+                        | *self.board.get_bit_board(enemy_queen);
+                    'en_passant_check: while !pawns_able_to_enpassant.is_empty() {
                         let from = pawns_able_to_enpassant.pop_square();
                         if non_diagonal_pin_rays.get(&from) {
                             continue;
@@ -128,6 +137,29 @@ impl<'a> MoveGenerator<'a> {
                             && !diagonal_pin_rays.get(&en_passant_square)
                         {
                             continue;
+                        }
+
+                        if friendly_king_square.rank() == from.rank() {
+                            // Check if en passant will reveal a check
+                            // Not covered by pin rays because enemy pawn was blocking
+                            // Check by scanning left and right from our king to find enemy queens/rooks that are not obstructed
+                            for (direction, distance_from_edge) in DIRECTIONS[2..4].iter().zip(
+                                &self.precomputed.squares_from_edge[from.index() as usize][2..4],
+                            ) {
+                                for count in 1..=*distance_from_edge {
+                                    let scanner = from.offset(direction * count);
+                                    if scanner == from || scanner == capture_position {
+                                        continue;
+                                    }
+                                    if enemy_rooks_and_queens_bit_board.get(&scanner)
+                                    {
+                                        continue 'en_passant_check;
+                                    }
+                                    if occupied_squares.get(&scanner) {
+                                        break;
+                                    };
+                                }
+                            }
                         }
 
                         moves.push(Move::with_flag(from, en_passant_square, Flag::EnPassant));
@@ -510,6 +542,7 @@ impl<'a> MoveGenerator<'a> {
             &diagonal_pin_rays,
             &friendly_piece_bit_board,
             &enemy_piece_bit_board,
+            king_square,
         );
         let mut pawn_bit_board = *self.board.get_bit_board(friendly_pieces[0]);
         while !pawn_bit_board.is_empty() {
