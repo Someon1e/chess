@@ -11,7 +11,10 @@ impl<'a> Engine<'a> {
     pub fn new(move_generator: &'a mut MoveGenerator<'a>) -> Self {
         Self { move_generator }
     }
-    pub fn board(&mut self) -> &mut Board {
+    pub fn board_mut(&mut self) -> &mut Board {
+        self.move_generator.board_mut()
+    }
+    pub fn board(&self) -> &Board {
         self.move_generator.board()
     }
     pub fn move_generator(&self) -> &MoveGenerator {
@@ -61,42 +64,63 @@ impl<'a> Engine<'a> {
         22, 23, 8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7,
     ];
 
-    pub fn evaluate(&mut self) -> i32 {
+    fn get_piece_value(&self, piece: &Piece, piece_square_table_index: usize) -> i32 {
+        match piece {
+            Piece::WhitePawn => 100 + Self::PAWN_PIECE_SQUARE_TABLE[piece_square_table_index],
+            Piece::WhiteKnight => 320 + Self::KNIGHT_PIECE_SQUARE_TABLE[piece_square_table_index],
+            Piece::WhiteBishop => 330 + Self::BISHOP_PIECE_SQUARE_TABLE[piece_square_table_index],
+            Piece::WhiteRook => 500 + Self::ROOK_PIECE_SQUARE_TABLE[piece_square_table_index],
+            Piece::WhiteQueen => 900 + Self::QUEEN_PIECE_SQUARE_TABLE[piece_square_table_index],
+            Piece::WhiteKing => 20000 + Self::KING_PIECE_SQUARE_TABLE[piece_square_table_index],
+
+            Piece::BlackPawn => {
+                -(100 + Self::PAWN_PIECE_SQUARE_TABLE[Self::FLIP[piece_square_table_index]])
+            }
+            Piece::BlackKnight => {
+                -(320 + Self::KNIGHT_PIECE_SQUARE_TABLE[Self::FLIP[piece_square_table_index]])
+            }
+            Piece::BlackBishop => {
+                -(330 + Self::BISHOP_PIECE_SQUARE_TABLE[Self::FLIP[piece_square_table_index]])
+            }
+            Piece::BlackRook => {
+                -(500 + Self::ROOK_PIECE_SQUARE_TABLE[Self::FLIP[piece_square_table_index]])
+            }
+            Piece::BlackQueen => {
+                -(900 + Self::QUEEN_PIECE_SQUARE_TABLE[Self::FLIP[piece_square_table_index]])
+            }
+            Piece::BlackKing => {
+                -(20000 + Self::KING_PIECE_SQUARE_TABLE[Self::FLIP[piece_square_table_index]])
+            }
+        }
+    }
+
+    fn evaluate(&mut self) -> i32 {
         let mut score = 0;
         for index in 0..64 {
             let square = Square::from_index(index);
             if let Some(piece) = self.board().piece_at(square) {
-                score += match piece {
-                    Piece::WhitePawn => 100 + Self::PAWN_PIECE_SQUARE_TABLE[index as usize],
-                    Piece::WhiteKnight => 320 + Self::KNIGHT_PIECE_SQUARE_TABLE[index as usize],
-                    Piece::WhiteBishop => 330 + Self::BISHOP_PIECE_SQUARE_TABLE[index as usize],
-                    Piece::WhiteRook => 500 + Self::ROOK_PIECE_SQUARE_TABLE[index as usize],
-                    Piece::WhiteQueen => 900 + Self::QUEEN_PIECE_SQUARE_TABLE[index as usize],
-                    Piece::WhiteKing => 20000 + Self::KING_PIECE_SQUARE_TABLE[index as usize],
-
-                    Piece::BlackPawn => {
-                        -(100 + Self::PAWN_PIECE_SQUARE_TABLE[Self::FLIP[index as usize]])
-                    }
-                    Piece::BlackKnight => {
-                        -(320 + Self::KNIGHT_PIECE_SQUARE_TABLE[Self::FLIP[index as usize]])
-                    }
-                    Piece::BlackBishop => {
-                        -(330 + Self::BISHOP_PIECE_SQUARE_TABLE[Self::FLIP[index as usize]])
-                    }
-                    Piece::BlackRook => {
-                        -(500 + Self::ROOK_PIECE_SQUARE_TABLE[Self::FLIP[index as usize]])
-                    }
-                    Piece::BlackQueen => {
-                        -(900 + Self::QUEEN_PIECE_SQUARE_TABLE[Self::FLIP[index as usize]])
-                    }
-                    Piece::BlackKing => {
-                        -(20000 + Self::KING_PIECE_SQUARE_TABLE[Self::FLIP[index as usize]])
-                    }
-                };
+                score += self.get_piece_value(&piece, index as usize);
             }
         }
         score
     }
+
+    fn guess_move_value(&self, move_data: &Move) -> i32 {
+        let capturing = self.board().enemy_piece_at(move_data.to());
+        // This won't take into account en passant
+        if let Some(capturing) = capturing {
+            self.get_piece_value(&capturing, move_data.to().index() as usize)
+        } else {
+            0
+        }
+    }
+
+    fn sort_moves(&self, moves: &mut Vec<Move>) {
+        moves.sort_unstable_by(|a, b| {
+            self.guess_move_value(a).partial_cmp(&self.guess_move_value(b)).unwrap()
+        });
+    }
+
     pub fn negamax(&mut self, depth: u16, mut alpha: i32, beta: i32) -> i32 {
         if depth == 0 {
             if self.board().white_to_move {
@@ -107,13 +131,14 @@ impl<'a> Engine<'a> {
 
         let mut moves = vec![];
         self.move_generator.gen(&mut moves);
+        self.sort_moves(&mut moves);
 
         let mut best_score = -i32::MAX;
 
         for move_data in moves {
-            self.board().make_move(&move_data);
+            self.board_mut().make_move(&move_data);
             best_score = best_score.max(-self.negamax(depth - 1, -beta, -alpha));
-            self.board().unmake_move(&move_data);
+            self.board_mut().unmake_move(&move_data);
             alpha = alpha.max(best_score);
             if alpha >= beta {
                 break;
@@ -124,13 +149,14 @@ impl<'a> Engine<'a> {
     pub fn best_move(&mut self, depth: u16) -> (Option<Move>, i32) {
         let mut moves = vec![];
         self.move_generator.gen(&mut moves);
+        self.sort_moves(&mut moves);
 
         let (mut best_move, mut best_score) = (None, -i32::MAX);
         for move_data in moves {
-            self.board().make_move(&move_data);
+            self.board_mut().make_move(&move_data);
             let score = -self.negamax(depth - 1, -i32::MAX, i32::MAX);
             println!("{} {}", move_data, score);
-            self.board().unmake_move(&move_data);
+            self.board_mut().unmake_move(&move_data);
             if score > best_score {
                 (best_move, best_score) = (Some(move_data), score);
             }

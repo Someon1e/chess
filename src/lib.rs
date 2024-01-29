@@ -76,9 +76,9 @@ mod tests {
         engine.move_generator().gen(&mut moves);
         let mut move_count = 0;
         for move_data in &moves {
-            engine.board().make_move(move_data);
+            engine.board_mut().make_move(move_data);
             move_count += perft_inner(engine, depth - 1);
-            engine.board().unmake_move(move_data);
+            engine.board_mut().unmake_move(move_data);
         }
 
         move_count
@@ -95,11 +95,11 @@ mod tests {
         let mut moves = Vec::new();
         engine.move_generator().gen(&mut moves);
         for move_data in moves {
-            engine.board().make_move(&move_data);
+            engine.board_mut().make_move(&move_data);
             let inner = perft_inner(engine, depth - 1);
             move_count += inner;
             println!("{move_data} {inner}");
-            engine.board().unmake_move(&move_data);
+            engine.board_mut().unmake_move(&move_data);
             assert_eq!(engine.board().to_fen(), fen)
         }
 
@@ -135,7 +135,7 @@ mod tests {
             let move_generator = &mut MoveGenerator::new(board);
             let engine = &mut Engine::new(move_generator);
             let (best_move, evaluation) = engine.best_move(6);
-            println!("{} {}", best_move.unwrap(), evaluation)
+            println!("Best move {} {}", best_move.unwrap(), evaluation)
         }
     }
 
