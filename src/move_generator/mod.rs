@@ -357,7 +357,6 @@ impl<'a> MoveGenerator<'a> {
             let move_to = from.left(2);
             if !cannot_castle_into.get(&from.left(1))
                 && !cannot_castle_into.get(&move_to)
-                && !cannot_castle_into.get(&from.left(3))
             {
                 moves.push(Move::with_flag(from, move_to, Flag::Castle))
             }
