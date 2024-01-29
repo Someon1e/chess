@@ -11,12 +11,12 @@ use move_data::Move;
 use self::move_data::Flag;
 use self::precomputed::PrecomputedData;
 
-pub struct PsuedoLegalMoveGenerator<'a> {
+pub struct MoveGenerator<'a> {
     board: &'a mut Board,
     precomputed: PrecomputedData,
 }
 
-impl<'a> PsuedoLegalMoveGenerator<'a> {
+impl<'a> MoveGenerator<'a> {
     fn is_promotion_rank(&self, rank: i8) -> bool {
         if self.board.white_to_move {
             rank == 7
@@ -40,11 +40,13 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
         &self,
         moves: &mut Vec<Move>,
         pawns: &BitBoard,
-        capture_mask: &BitBoard,
         push_mask: &BitBoard,
+        non_diagonal_pin_rays: &BitBoard,
+        diagonal_pin_rays: &BitBoard,
         friendly_piece_bit_board: &BitBoard,
         enemy_piece_bit_board: &BitBoard,
     ) {
+        let pin_rays = *diagonal_pin_rays | *non_diagonal_pin_rays;
         let empty_squares = (*friendly_piece_bit_board | *enemy_piece_bit_board).not();
 
         let (single_push, down_offset) = if self.board.white_to_move {
@@ -66,12 +68,16 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
             while !single_push_no_promotions.is_empty() {
                 let move_to = single_push_no_promotions.pop_square();
                 let from = move_to.offset(down_offset);
-                moves.push(Move::new(from, move_to));
+                if !pin_rays.get(&from) || pin_rays.get(&move_to) {
+                    moves.push(Move::new(from, move_to));
+                }
             }
             while !push_promotions.is_empty() {
                 let move_to = push_promotions.pop_square();
                 let from = move_to.offset(down_offset);
-                self.gen_promotions(moves, from, move_to)
+                if !pin_rays.get(&from) || pin_rays.get(&move_to) {
+                    self.gen_promotions(moves, from, move_to)
+                }
             }
         }
 
@@ -92,23 +98,35 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
             while !double_push.is_empty() {
                 let move_to = double_push.pop_square();
                 let from = move_to.offset(double_down_offset);
-                moves.push(Move::with_flag(from, move_to, Flag::PawnTwoUp))
+                if !pin_rays.get(&from) || pin_rays.get(&move_to) {
+                    moves.push(Move::with_flag(from, move_to, Flag::PawnTwoUp))
+                }
             }
         }
     }
-    pub fn gen_pawn(
+    pub fn gen_pawn_captures(
         &self,
         moves: &mut Vec<Move>,
         from: Square,
         capture_mask: &BitBoard,
         push_mask: &BitBoard,
+        non_diagonal_pin_rays: &BitBoard,
+        diagonal_pin_rays: &BitBoard,
         enemy_pieces: &BitBoard,
     ) {
+        if non_diagonal_pin_rays.get(&from) {
+            return
+        }
+        let is_diagonally_pinned = diagonal_pin_rays.get(&from);
+
         let mut attacks = self.pawn_attack_bit_board(from, self.board.white_to_move)
             & (*capture_mask | *push_mask);
 
         while !attacks.is_empty() {
             let attack = attacks.pop_square();
+            if is_diagonally_pinned && !diagonal_pin_rays.get(&attack) {
+                continue;
+            }
             if enemy_pieces.get(&attack) {
                 if self.is_promotion_rank(attack.rank()) {
                     self.gen_promotions(moves, from, attack)
@@ -163,15 +181,35 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
         from: Square,
         capture_mask: &BitBoard,
         push_mask: &BitBoard,
+        non_diagonal_pin_rays: &BitBoard,
+        diagonal_pin_rays: &BitBoard,
         friendly_piece_bit_board: &BitBoard,
         enemy_piece_bit_board: &BitBoard,
 
+        direction_index: usize,
         directions: &[i8],
         squares_from_edge: &[i8],
     ) {
-        for (direction, distance_from_edge) in directions.iter().zip(squares_from_edge) {
+        let is_pinned = non_diagonal_pin_rays.get(&from) || diagonal_pin_rays.get(&from);
+        for (index, (direction, distance_from_edge)) in
+            directions.iter().zip(squares_from_edge).enumerate()
+        {
+            let is_rook_movement = (index + direction_index) < 4;
             for count in 1..=*distance_from_edge {
                 let move_to = from.offset(direction * count);
+
+                if is_pinned {
+                    if is_rook_movement {
+                        if !non_diagonal_pin_rays.get(&move_to) {
+                            break;
+                        }
+                    } else {
+                        if !diagonal_pin_rays.get(&move_to) {
+                            break;
+                        }
+                    }
+                }
+
                 if friendly_piece_bit_board.get(&move_to) {
                     break;
                 }
@@ -194,8 +232,13 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
         from: Square,
         capture_mask: &BitBoard,
         push_mask: &BitBoard,
+        non_diagonal_pin_rays: &BitBoard,
+        diagonal_pin_rays: &BitBoard,
         friendly_pieces: &BitBoard,
     ) {
+        if diagonal_pin_rays.get(&from) || non_diagonal_pin_rays.get(&from) {
+            return;
+        }
         let mut knight_moves = self.knight_attack_bit_board(from)
             & friendly_pieces.not()
             & (*capture_mask | *push_mask);
@@ -241,18 +284,19 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
             )
         };
 
-        let occupied_squares = *friendly_piece_bit_board | *enemy_piece_bit_board;
+        let cannot_castle_into =
+            *friendly_piece_bit_board | *enemy_piece_bit_board | *king_danger_bit_board;
         if king_side {
             let move_to = from.right(2);
-            if !occupied_squares.get(&from.right(1)) && !occupied_squares.get(&move_to) {
+            if !cannot_castle_into.get(&from.right(1)) && !cannot_castle_into.get(&move_to) {
                 moves.push(Move::with_flag(from, move_to, Flag::Castle))
             }
         }
         if queen_side {
             let move_to = from.left(2);
-            if !occupied_squares.get(&from.left(1))
-                && !occupied_squares.get(&move_to)
-                && !occupied_squares.get(&from.left(3))
+            if !cannot_castle_into.get(&from.left(1))
+                && !cannot_castle_into.get(&move_to)
+                && !cannot_castle_into.get(&from.left(3))
             {
                 moves.push(Move::with_flag(from, move_to, Flag::Castle))
             }
@@ -364,6 +408,55 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
             }
         }
 
+        let mut non_diagonal_pin_rays = BitBoard::empty();
+        let mut diagonal_pin_rays = BitBoard::empty();
+        for (index, (direction, distance_from_edge)) in DIRECTIONS
+            .iter()
+            .zip(&self.precomputed.squares_from_edge[king_square.index() as usize])
+            .enumerate()
+        {
+            let is_rook_movement = index < 4;
+
+            let mut ray = BitBoard::empty();
+            let mut is_friendly_piece_on_ray = false;
+            for count in 1..=*distance_from_edge {
+                let move_to = king_square.offset(direction * count);
+                ray.set(&move_to);
+
+                if friendly_piece_bit_board.get(&move_to) {
+                    // Friendly piece blocks ray
+
+                    if is_friendly_piece_on_ray {
+                        // This is the second time a friendly piece has blocked the ray
+                        // Not pinned.
+                        break;
+                    } else {
+                        is_friendly_piece_on_ray = true;
+                    }
+                } else if let Some(enemy_piece) = self.board.enemy_piece_at(move_to) {
+                    let is_queen =
+                        enemy_piece == Piece::WhiteQueen || enemy_piece == Piece::BlackQueen;
+                    let is_rook =
+                        enemy_piece == Piece::WhiteRook || enemy_piece == Piece::BlackRook;
+                    let is_bishop =
+                        enemy_piece == Piece::WhiteBishop || enemy_piece == Piece::BlackBishop;
+                    if is_queen || (is_rook_movement && is_rook) || (!is_rook_movement && is_bishop)
+                    {
+                        if is_friendly_piece_on_ray {
+                            // Friendly piece is blocking check, it is pinned
+                            if is_rook_movement {
+                                non_diagonal_pin_rays = non_diagonal_pin_rays | ray
+                            } else {
+                                diagonal_pin_rays = diagonal_pin_rays | ray
+                            }
+                        }
+                    } else {
+                        break;
+                    }
+                }
+            }
+        }
+
         self.gen_king(
             moves,
             king_square,
@@ -382,19 +475,22 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
         self.gen_all_pawn_pushes(
             moves,
             self.board.get_bit_board(friendly_pieces[0]),
-            &capture_mask,
             &push_mask,
+            &non_diagonal_pin_rays,
+            &diagonal_pin_rays,
             &friendly_piece_bit_board,
             &enemy_piece_bit_board,
         );
         let mut pawn_bit_board = *self.board.get_bit_board(friendly_pieces[0]);
         while !pawn_bit_board.is_empty() {
             let square = pawn_bit_board.pop_square();
-            self.gen_pawn(
+            self.gen_pawn_captures(
                 moves,
                 square,
                 &capture_mask,
                 &push_mask,
+                &non_diagonal_pin_rays,
+                &diagonal_pin_rays,
                 &enemy_piece_bit_board,
             )
         }
@@ -406,6 +502,8 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
                 square,
                 &capture_mask,
                 &push_mask,
+                &non_diagonal_pin_rays,
+                &diagonal_pin_rays,
                 &friendly_piece_bit_board,
             )
         }
@@ -417,8 +515,11 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
                 square,
                 &capture_mask,
                 &push_mask,
+                &non_diagonal_pin_rays,
+                &diagonal_pin_rays,
                 &friendly_piece_bit_board,
                 &enemy_piece_bit_board,
+                4,
                 &DIRECTIONS[4..8],
                 &self.precomputed.squares_from_edge[square.index() as usize][4..8],
             )
@@ -431,8 +532,11 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
                 square,
                 &capture_mask,
                 &push_mask,
+                &non_diagonal_pin_rays,
+                &diagonal_pin_rays,
                 &friendly_piece_bit_board,
                 &enemy_piece_bit_board,
+                0,
                 &DIRECTIONS[0..4],
                 &self.precomputed.squares_from_edge[square.index() as usize][0..4],
             )
@@ -445,8 +549,11 @@ impl<'a> PsuedoLegalMoveGenerator<'a> {
                 square,
                 &capture_mask,
                 &push_mask,
+                &non_diagonal_pin_rays,
+                &diagonal_pin_rays,
                 &friendly_piece_bit_board,
                 &enemy_piece_bit_board,
+                0,
                 &DIRECTIONS,
                 &self.precomputed.squares_from_edge[square.index() as usize],
             )

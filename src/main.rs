@@ -3,7 +3,7 @@ use std::io::{stdin, BufRead, Write};
 use chess::{
     board::{piece::Piece, square::Square, Board},
     engine::Engine,
-    move_generator::{move_data::Move, PsuedoLegalMoveGenerator},
+    move_generator::{move_data::Move, MoveGenerator},
 };
 
 const START_POSITION_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -129,7 +129,7 @@ fn main() {
                 }
                 moves.clear();
 
-                let move_generator = &mut PsuedoLegalMoveGenerator::new(&mut board);
+                let move_generator = &mut MoveGenerator::new(&mut board);
                 let engine = &mut Engine::new(move_generator);
                 let best_move = engine.best_move(4).0;
                 if let Some(best_move) = &best_move {

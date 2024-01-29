@@ -12,23 +12,19 @@ mod tests {
 
     use super::board::Board;
     use super::engine::Engine;
-    use super::move_generator::PsuedoLegalMoveGenerator;
+    use super::move_generator::MoveGenerator;
 
     const START_POSITION_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    const TEST_FENS: [(&str, u16, usize); 1] = [
-        /*(START_POSITION_FEN, 6, 119060324),
+    const TEST_FENS: [(&str, u16, usize); 5] = [
+        (START_POSITION_FEN, 6, 119060324),
         ("r6r/1b2k1bq/8/8/7B/8/8/R3K2R b KQ - 3 2", 1, 8),
         ("2r5/3pk3/8/2P5/8/2K5/8/8 w - - 5 4", 1, 9),
         (
             "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8",
             3,
             62379,
-        )*/
-        (
-            "r1bqkbnr/ppp1pppp/2n5/1B1p4/4P3/8/PPPPKPPP/RNBQ2NR b kq - 0 1",
-            1,
-            0,
-        )
+        ),
+        ("rnbqkbnr/p1p1pppp/3p4/1p6/Q1P5/7N/PP1PPPPP/RNB1KB1R b KQkq - 0 1", 28, 0)
     ];
 
     fn perft_inner(engine: &mut Engine, depth: u16) -> usize {
@@ -41,11 +37,7 @@ mod tests {
         let mut move_count = 0;
         for move_data in &moves {
             engine.board().make_move(move_data);
-            if !engine.can_capture_king() {
-                move_count += perft_inner(engine, depth - 1);
-            } else {
-                //panic!("Illegal {move_data}")
-            }
+            move_count += perft_inner(engine, depth - 1);
             engine.board().unmake_move(move_data);
         }
 
@@ -53,7 +45,7 @@ mod tests {
     }
     fn perft_run(fen: &str, depth: u16, expected_move_count: usize) {
         let board = &mut Board::from_fen(fen);
-        let move_generator = &mut PsuedoLegalMoveGenerator::new(board);
+        let move_generator = &mut MoveGenerator::new(board);
         let engine = &mut Engine::new(move_generator);
 
         let mut move_count = 0;
@@ -62,13 +54,9 @@ mod tests {
         engine.move_generator().gen(&mut moves);
         for move_data in moves {
             engine.board().make_move(&move_data);
-            if !engine.can_capture_king() {
-                let inner = perft_inner(engine, depth - 1);
-                move_count += inner;
-                println!("{move_data} {inner}")
-            } else {
-                //panic!("Illegal {move_data}")
-            }
+            let inner = perft_inner(engine, depth - 1);
+            move_count += inner;
+            println!("{move_data} {inner}");
             engine.board().unmake_move(&move_data);
             assert_eq!(engine.board().to_fen(), fen)
         }
@@ -91,7 +79,7 @@ mod tests {
             let mut fen = String::new();
             stdin.read_line(&mut fen).unwrap();
             let board = &mut Board::from_fen(&fen);
-            let move_generator = &mut PsuedoLegalMoveGenerator::new(board);
+            let move_generator = &mut MoveGenerator::new(board);
             let engine = &mut Engine::new(move_generator);
             let (best_move, evaluation) = engine.best_move(6);
             println!("{} {}", best_move.unwrap(), evaluation)
