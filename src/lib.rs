@@ -16,9 +16,8 @@ mod tests {
     use super::move_generator::MoveGenerator;
 
     const START_POSITION_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    const TEST_FENS: [(u16, usize, &str); 1] = [
-        (1, 1274206, "r3k2r/1b4bq/8/8/8/8/7B/R3K2R w KQkq - 0 1"),
-        /*(6, 119060324, START_POSITION_FEN),
+    const TEST_FENS: [(u16, usize, &str); 24] = [
+        (6, 119060324, START_POSITION_FEN),
         (1, 8, "r6r/1b2k1bq/8/8/7B/8/8/R3K2R b KQ - 3 2"),
         (1, 8, "8/8/8/2k5/2pP4/8/B7/4K3 b - d3 0 3"),
         (
@@ -65,7 +64,7 @@ mod tests {
         (6, 92683, "8/P1k5/K7/8/8/8/8/8 w - - 0 1"),
         (6, 2217, "K1k5/8/P7/8/8/8/8/8 w - - 0 1"),
         (7, 567584, "8/k1P5/8/1K6/8/8/8/8 w - - 0 1"),
-        (4, 23527, "8/8/2k5/5q2/5n2/8/5K2/8 b - - 0 1"),*/
+        (4, 23527, "8/8/2k5/5q2/5n2/8/5K2/8 b - - 0 1"),
     ];
 
     fn perft_inner(engine: &mut Engine, depth: u16) -> usize {

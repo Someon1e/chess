@@ -230,17 +230,18 @@ impl Board {
                 self.game_state.castling_rights.unset_black_queen_side();
             }
             if *flag == Flag::Castle {
-                let (rook_from, rook_to) = if move_data.to() == Square::from_notation("g1") {
-                    (Square::from_notation("h1"), Square::from_notation("f1"))
-                } else {
-                    (Square::from_notation("a1"), Square::from_notation("d1"))
-                };
+                let is_king_side = move_data.to().file() == 6;
+                let rook_to_offset = if is_king_side { -1 } else { 1 };
+                let rook_from_offset = if is_king_side { 1 } else { -2 };
                 let rook_bit_board = if self.white_to_move {
                     self.get_bit_board_mut(Piece::WhiteRook)
                 } else {
                     self.get_bit_board_mut(Piece::BlackRook)
                 };
-                rook_bit_board.toggle(&rook_from, &rook_to);
+                rook_bit_board.toggle(
+                    &move_data.to().offset(rook_from_offset),
+                    &move_data.to().offset(rook_to_offset),
+                );
             }
         } else if *flag == Flag::PawnTwoUp {
             self.game_state.en_passant_square =
@@ -273,17 +274,18 @@ impl Board {
         }
 
         if *flag == Flag::Castle {
-            let (rook_from, rook_to) = if move_data.to() == Square::from_notation("g1") {
-                (Square::from_notation("h1"), Square::from_notation("f1"))
-            } else {
-                (Square::from_notation("a1"), Square::from_notation("d1"))
-            };
+            let is_king_side = move_data.to().file() == 6;
+            let rook_to_offset = if is_king_side { -1 } else { 1 };
+            let rook_from_offset = if is_king_side { 1 } else { -2 };
             let rook_bit_board = if white_to_move {
                 self.get_bit_board_mut(Piece::WhiteRook)
             } else {
                 self.get_bit_board_mut(Piece::BlackRook)
             };
-            rook_bit_board.toggle(&rook_from, &rook_to)
+            rook_bit_board.toggle(
+                &move_data.to().offset(rook_from_offset),
+                &move_data.to().offset(rook_to_offset),
+            );
         } else if let Some(captured) = capture {
             let capture_position = if *flag == Flag::EnPassant {
                 self.game_state
