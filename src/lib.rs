@@ -16,9 +16,9 @@ mod tests {
     use super::move_generator::MoveGenerator;
 
     const START_POSITION_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    const TEST_FENS: [(u16, usize, &str); 1] = [
-        (6, 119060324, START_POSITION_FEN),
-        /*(1, 8, "r6r/1b2k1bq/8/8/7B/8/8/R3K2R b KQ - 3 2"),
+    const TEST_FENS: [(u16, usize, &str); 23] = [
+        //(6, 119060324, START_POSITION_FEN),
+        (1, 8, "r6r/1b2k1bq/8/8/7B/8/8/R3K2R b KQ - 3 2"),
         (1, 8, "8/8/8/2k5/2pP4/8/B7/4K3 b - d3 0 3"),
         (
             1,
@@ -64,7 +64,7 @@ mod tests {
         (6, 92683, "8/P1k5/K7/8/8/8/8/8 w - - 0 1"),
         (6, 2217, "K1k5/8/P7/8/8/8/8/8 w - - 0 1"),
         (7, 567584, "8/k1P5/8/1K6/8/8/8/8 w - - 0 1"),
-        (4, 23527, "8/8/2k5/5q2/5n2/8/5K2/8 b - - 0 1"),*/
+        (4, 23527, "8/8/2k5/5q2/5n2/8/5K2/8 b - - 0 1"),
     ];
 
     fn perft_inner(engine: &mut Engine, depth: u16) -> usize {
@@ -106,7 +106,7 @@ mod tests {
         let seconds_elapsed = start.elapsed().as_secs_f32();
         println!("Done in {} seconds, {} nodes per second", seconds_elapsed, (move_count as f32)/seconds_elapsed);
         if move_count != expected_move_count {
-            panic!("{fen}: Expected {expected_move_count} got {move_count}")
+            panic!("Expected {expected_move_count} got {move_count}")
         } else {
             println!("Nodes searched: {move_count}");
         }
@@ -115,6 +115,7 @@ mod tests {
     #[test]
     fn test_perft() {
         for (depth, expected_move_count, fen) in TEST_FENS {
+            println!("{fen}");
             perft_run(fen, depth, expected_move_count);
             println!();
         }
