@@ -1,20 +1,20 @@
 use crate::{
     board::{piece::Piece, square::Square, Board},
-    move_generator::{move_data::Move, PsuedoLegalMoveGenerator},
+    move_generator::{move_data::Move, MoveGenerator},
 };
 
 pub struct Engine<'a> {
-    move_generator: &'a mut PsuedoLegalMoveGenerator<'a>,
+    move_generator: &'a mut MoveGenerator<'a>,
 }
 
 impl<'a> Engine<'a> {
-    pub fn new(move_generator: &'a mut PsuedoLegalMoveGenerator<'a>) -> Self {
+    pub fn new(move_generator: &'a mut MoveGenerator<'a>) -> Self {
         Self { move_generator }
     }
     pub fn board(&mut self) -> &mut Board {
         self.move_generator.board()
     }
-    pub fn move_generator(&self) -> &PsuedoLegalMoveGenerator {
+    pub fn move_generator(&self) -> &MoveGenerator {
         self.move_generator
     }
 
@@ -136,23 +136,5 @@ impl<'a> Engine<'a> {
             }
         }
         (best_move, best_score)
-    }
-    pub fn can_capture_king(&mut self) -> bool {
-        let mut moves = vec![];
-        self.move_generator.gen(&mut moves);
-
-        let board = self.board();
-        let king = board.get_bit_board(if board.white_to_move {
-            Piece::BlackKing
-        } else {
-            Piece::WhiteKing
-        });
-
-        for move_data in moves {
-            if king.get(&move_data.to()) {
-                return true;
-            }
-        }
-        false
     }
 }
