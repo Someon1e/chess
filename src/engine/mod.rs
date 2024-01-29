@@ -108,7 +108,7 @@ impl<'a> Engine<'a> {
         let mut moves = vec![];
         self.move_generator.gen(&mut moves);
 
-        let mut best_score = i32::MIN;
+        let mut best_score = -i32::MAX;
 
         for move_data in moves {
             self.board().make_move(&move_data);
@@ -125,10 +125,10 @@ impl<'a> Engine<'a> {
         let mut moves = vec![];
         self.move_generator.gen(&mut moves);
 
-        let (mut best_move, mut best_score) = (None, i32::MIN);
+        let (mut best_move, mut best_score) = (None, -i32::MAX);
         for move_data in moves {
             self.board().make_move(&move_data);
-            let score = -self.negamax(depth - 1, i32::MIN, i32::MAX);
+            let score = -self.negamax(depth - 1, -i32::MAX, i32::MAX);
             println!("{} {}", move_data, score);
             self.board().unmake_move(&move_data);
             if score > best_score {
