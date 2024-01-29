@@ -167,7 +167,7 @@ impl<'a> MoveGenerator<'a> {
             }
         }
     }
-    pub fn gen_pawn_captures(
+    fn gen_pawn_captures(
         &self,
         moves: &mut Vec<Move>,
         from: Square,
@@ -382,7 +382,10 @@ impl<'a> MoveGenerator<'a> {
         let precomputed = PrecomputedData::compute();
         Self { board, precomputed }
     }
-    pub fn board(&mut self) -> &mut Board {
+    pub fn board(&self) -> &Board {
+        self.board
+    }
+    pub fn board_mut(&mut self) -> &mut Board {
         self.board
     }
 
