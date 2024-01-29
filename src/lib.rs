@@ -115,7 +115,8 @@ mod tests {
     #[test]
     fn test_perft() {
         for (depth, expected_move_count, fen) in TEST_FENS {
-            perft_run(fen, depth, expected_move_count)
+            perft_run(fen, depth, expected_move_count);
+            println!();
         }
     }
 
