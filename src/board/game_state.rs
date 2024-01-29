@@ -92,5 +92,5 @@ pub struct GameState {
 
     pub half_move_clock: u64,
     pub full_move_counter: u64,
-    pub captured: Option<Piece>
+    pub captured: Option<Piece>,
 }

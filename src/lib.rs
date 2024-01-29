@@ -104,7 +104,11 @@ mod tests {
         }
 
         let seconds_elapsed = start.elapsed().as_secs_f32();
-        println!("Done in {} seconds, {} nodes per second", seconds_elapsed, (move_count as f32)/seconds_elapsed);
+        println!(
+            "Done in {} seconds, {} nodes per second",
+            seconds_elapsed,
+            (move_count as f32) / seconds_elapsed
+        );
         if move_count != expected_move_count {
             panic!("Expected {expected_move_count} got {move_count}")
         } else {

@@ -151,8 +151,7 @@ impl<'a> MoveGenerator<'a> {
                                     if scanner == from || scanner == capture_position {
                                         continue;
                                     }
-                                    if enemy_rooks_and_queens_bit_board.get(&scanner)
-                                    {
+                                    if enemy_rooks_and_queens_bit_board.get(&scanner) {
                                         continue 'en_passant_check;
                                     }
                                     if occupied_squares.get(&scanner) {
@@ -345,20 +344,37 @@ impl<'a> MoveGenerator<'a> {
             )
         };
 
-        let cannot_castle_into =
-            *friendly_piece_bit_board | *enemy_piece_bit_board | *king_danger_bit_board;
+        let occupied_squares = *friendly_piece_bit_board | *enemy_piece_bit_board;
+        let cannot_castle_into = occupied_squares | *king_danger_bit_board;
         if king_side {
             let move_to = from.right(2);
-            if !cannot_castle_into.get(&from.right(1)) && !cannot_castle_into.get(&move_to) {
+            let castle_mask = if self.board.white_to_move {
+                BitBoard::new(0b01100000)
+            } else {
+                BitBoard::new(0b01100000 << 56)
+            };
+
+            if (castle_mask & cannot_castle_into).is_empty() {
                 moves.push(Move::with_flag(from, move_to, Flag::Castle))
             }
         }
         if queen_side {
             let move_to = from.left(2);
-            if !cannot_castle_into.get(&from.left(1))
-                && !cannot_castle_into.get(&move_to)
-            {
-                moves.push(Move::with_flag(from, move_to, Flag::Castle))
+            let castle_block_mask = if self.board.white_to_move {
+                BitBoard::new(0b00001110)
+            } else {
+                BitBoard::new(0b00001110 << 56)
+            };
+
+            if (castle_block_mask & occupied_squares).is_empty() {
+                let castle_mask = if self.board.white_to_move {
+                    BitBoard::new(0b00001100)
+                } else {
+                    BitBoard::new(0b00001100 << 56)
+                };
+                if (castle_mask & cannot_castle_into).is_empty() {
+                    moves.push(Move::with_flag(from, move_to, Flag::Castle))
+                }
             }
         }
     }
