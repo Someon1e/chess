@@ -1,6 +1,6 @@
 use super::square::Square;
 use std::fmt;
-use std::ops::{BitAnd, BitOr, Shl, Shr};
+use std::ops::{BitAnd, BitOr, Not, Shl, Shr};
 
 #[derive(Copy, Clone, PartialEq)]
 pub struct BitBoard(u64);
@@ -55,9 +55,6 @@ impl BitBoard {
     pub fn toggle(&mut self, a: &Square, b: &Square) {
         self.0 ^= (a.bitboard() | b.bitboard()).0;
     }
-    pub fn not(&self) -> Self {
-        Self(!self.0)
-    }
     pub fn get(&self, square: &Square) -> bool {
         !((*self & square.bitboard()).is_empty())
     }
@@ -99,3 +96,11 @@ macro_rules! shift {
 
 shift!(Shl, shl, <<);
 shift!(Shr, shr, >>);
+
+impl Not for BitBoard {
+    type Output = BitBoard;
+
+    fn not(self) -> Self::Output {
+       Self(!self.0)
+    }
+}

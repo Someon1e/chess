@@ -50,7 +50,7 @@ impl<'a> MoveGenerator<'a> {
     ) {
         let pin_rays = *diagonal_pin_rays | *non_diagonal_pin_rays;
         let occupied_squares = *friendly_piece_bit_board | *enemy_piece_bit_board;
-        let empty_squares = occupied_squares.not();
+        let empty_squares = !occupied_squares;
 
         let (single_push, down_offset) = if self.board.white_to_move {
             ((*pawns << 8) & empty_squares, -8)
@@ -67,7 +67,7 @@ impl<'a> MoveGenerator<'a> {
                     BitBoard::RANK_1
                 });
 
-            let mut single_push_no_promotions = single_push & *push_mask & push_promotions.not();
+            let mut single_push_no_promotions = single_push & *push_mask & !push_promotions;
             while !single_push_no_promotions.is_empty() {
                 let move_to = single_push_no_promotions.pop_square();
                 let from = move_to.offset(down_offset);
@@ -296,17 +296,17 @@ impl<'a> MoveGenerator<'a> {
         diagonal_pin_rays: &BitBoard,
         friendly_pieces: &BitBoard,
     ) {
-        let mut non_pinned_knights = *knights & (*diagonal_pin_rays | *non_diagonal_pin_rays).not();
+        let mut non_pinned_knights = *knights & !(*diagonal_pin_rays | *non_diagonal_pin_rays);
         while !non_pinned_knights.is_empty() {
             let from = non_pinned_knights.pop_square();
             let mut knight_moves = self.knight_attack_bit_board(from)
-                & friendly_pieces.not()
+                & !(*friendly_pieces)
                 & (*capture_mask | *push_mask);
             while !knight_moves.is_empty() {
                 let move_to = knight_moves.pop_square();
                 moves.push(Move::new(from, move_to))
             }
-        };
+        }
     }
 
     fn king_attack_bit_board(&self, square: Square) -> BitBoard {
@@ -321,8 +321,8 @@ impl<'a> MoveGenerator<'a> {
         king_danger_bit_board: &BitBoard,
     ) {
         let mut king_moves = self.king_attack_bit_board(from)
-            & friendly_piece_bit_board.not()
-            & king_danger_bit_board.not();
+            & !(*friendly_piece_bit_board)
+            & !(*king_danger_bit_board);
         while !king_moves.is_empty() {
             let move_to = king_moves.pop_square();
             moves.push(Move::new(from, move_to));
@@ -548,8 +548,8 @@ impl<'a> MoveGenerator<'a> {
             return;
         }
         if !is_in_check {
-            capture_mask = BitBoard::empty().not();
-            push_mask = BitBoard::empty().not();
+            capture_mask = !BitBoard::empty();
+            push_mask = !BitBoard::empty();
         }
 
         self.gen_all_pawn_pushes(
