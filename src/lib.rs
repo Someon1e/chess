@@ -134,8 +134,11 @@ mod tests {
             let board = &mut Board::from_fen(&fen);
             let move_generator = &mut MoveGenerator::new(board);
             let engine = &mut Engine::new(move_generator);
-            let (best_move, evaluation) = engine.best_move(6);
-            println!("Best move {} {}", best_move.unwrap(), evaluation)
+            let search_start = Instant::now();
+            let (depth, best_move, evaluation) = engine.iterative_deepening(&mut || {
+                search_start.elapsed().as_millis() > 1*100
+            });
+            println!("Best move at depth {depth} is {} {}", best_move.unwrap(), evaluation)
         }
     }
 
