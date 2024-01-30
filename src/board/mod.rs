@@ -187,7 +187,26 @@ impl Board {
         let en_passant_square = self.game_state.en_passant_square;
         self.game_state.en_passant_square = None;
 
-        if *flag == Flag::EnPassant {
+        let is_castle = *flag == Flag::Castle;
+
+        if *flag == Flag::PawnTwoUp {
+            self.game_state.en_passant_square =
+                Some(move_data.from().up(if self.white_to_move { 1 } else { -1 }));
+            self.game_state.captured = None;
+        } else if is_castle {
+            let is_king_side = move_data.to().file() == 6;
+            let rook_to_offset = if is_king_side { -1 } else { 1 };
+            let rook_from_offset = if is_king_side { 1 } else { -2 };
+            let rook_bit_board = if self.white_to_move {
+                self.get_bit_board_mut(Piece::WhiteRook)
+            } else {
+                self.get_bit_board_mut(Piece::BlackRook)
+            };
+            rook_bit_board.toggle(
+                &move_data.to().offset(rook_from_offset),
+                &move_data.to().offset(rook_to_offset),
+            );
+        } else if *flag == Flag::EnPassant {
             let capture_position =
                 en_passant_square
                     .unwrap()
@@ -203,24 +222,18 @@ impl Board {
         } else {
             self.game_state.captured = self.enemy_piece_at(move_data.to());
             if let Some(captured) = self.game_state.captured {
-                let capture_position = if *flag == Flag::EnPassant {
-                    en_passant_square
-                        .unwrap()
-                        .down(if self.white_to_move { 1 } else { -1 })
-                } else {
-                    move_data.to()
-                };
                 let capturing_bit_board = self.get_bit_board_mut(captured);
-                capturing_bit_board.unset(&capture_position);
+                capturing_bit_board.unset(&move_data.to());
             }
         }
 
-        if piece
-            == (if white_to_move {
-                Piece::WhiteKing
-            } else {
-                Piece::BlackKing
-            })
+        if is_castle
+            || piece
+                == (if white_to_move {
+                    Piece::WhiteKing
+                } else {
+                    Piece::BlackKing
+                })
         {
             if white_to_move {
                 self.game_state.castling_rights.unset_white_king_side();
@@ -229,23 +242,6 @@ impl Board {
                 self.game_state.castling_rights.unset_black_king_side();
                 self.game_state.castling_rights.unset_black_queen_side();
             }
-            if *flag == Flag::Castle {
-                let is_king_side = move_data.to().file() == 6;
-                let rook_to_offset = if is_king_side { -1 } else { 1 };
-                let rook_from_offset = if is_king_side { 1 } else { -2 };
-                let rook_bit_board = if self.white_to_move {
-                    self.get_bit_board_mut(Piece::WhiteRook)
-                } else {
-                    self.get_bit_board_mut(Piece::BlackRook)
-                };
-                rook_bit_board.toggle(
-                    &move_data.to().offset(rook_from_offset),
-                    &move_data.to().offset(rook_to_offset),
-                );
-            }
-        } else if *flag == Flag::PawnTwoUp {
-            self.game_state.en_passant_square =
-                Some(move_data.from().up(if self.white_to_move { 1 } else { -1 }))
         }
         self.white_to_move = !white_to_move;
     }
