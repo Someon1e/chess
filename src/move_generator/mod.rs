@@ -225,7 +225,7 @@ impl<'a> MoveGenerator<'a> {
                     ray.set(&move_to);
                 } else {
                     ray.set(&move_to);
-                    if friendly_piece_bit_board.get(&move_to) || enemy_piece_bit_board.get(&move_to)
+                    if (*friendly_piece_bit_board | *enemy_piece_bit_board).get(&move_to)
                     {
                         break;
                     }
@@ -246,16 +246,17 @@ impl<'a> MoveGenerator<'a> {
         friendly_piece_bit_board: &BitBoard,
         enemy_piece_bit_board: &BitBoard,
 
-        direction_index: usize,
-        directions: &[i8],
-        squares_from_edge: &[i8],
+        direction_start_index: usize,
+        direction_end_index: usize,
     ) {
-        let is_pinned = non_diagonal_pin_rays.get(&from) || diagonal_pin_rays.get(&from);
-        for (index, (direction, distance_from_edge)) in
-            directions.iter().zip(squares_from_edge).enumerate()
-        {
-            let is_rook_movement = (index + direction_index) < 4;
-            for count in 1..=*distance_from_edge {
+        let is_pinned = (*non_diagonal_pin_rays | *diagonal_pin_rays).get(&from);
+
+        let squares_from_edge = &self.precomputed.squares_from_edge[from.index() as usize];
+        for index in direction_start_index..direction_end_index {
+            let is_rook_movement = (index + direction_start_index) < 4;
+            let direction = DIRECTIONS[index];
+
+            for count in 1..=squares_from_edge[index] {
                 let move_to = from.offset(direction * count);
 
                 if is_pinned {
@@ -273,7 +274,7 @@ impl<'a> MoveGenerator<'a> {
                 if friendly_piece_bit_board.get(&move_to) {
                     break;
                 }
-                if capture_mask.get(&move_to) || push_mask.get(&move_to) {
+                if (*capture_mask | *push_mask).get(&move_to) {
                     moves.push(Move::new(from, move_to));
                 }
                 if enemy_piece_bit_board.get(&move_to) {
@@ -598,8 +599,7 @@ impl<'a> MoveGenerator<'a> {
                 &friendly_piece_bit_board,
                 &enemy_piece_bit_board,
                 4,
-                &DIRECTIONS[4..8],
-                &self.precomputed.squares_from_edge[square.index() as usize][4..8],
+                8
             )
         }
         let mut rook_bit_board = *self.board.get_bit_board(friendly_pieces[3]);
@@ -615,8 +615,7 @@ impl<'a> MoveGenerator<'a> {
                 &friendly_piece_bit_board,
                 &enemy_piece_bit_board,
                 0,
-                &DIRECTIONS[0..4],
-                &self.precomputed.squares_from_edge[square.index() as usize][0..4],
+                4
             )
         }
         let mut queen_bit_board = *self.board.get_bit_board(friendly_pieces[4]);
@@ -632,8 +631,7 @@ impl<'a> MoveGenerator<'a> {
                 &friendly_piece_bit_board,
                 &enemy_piece_bit_board,
                 0,
-                &DIRECTIONS,
-                &self.precomputed.squares_from_edge[square.index() as usize],
+                8
             )
         }
     }
