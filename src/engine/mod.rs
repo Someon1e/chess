@@ -129,7 +129,7 @@ impl<'a> Engine<'a> {
             return -self.evaluate();
         };
 
-        let mut moves = vec![];
+        let mut moves = Vec::with_capacity(10);
         self.move_generator.gen(&mut moves);
         self.sort_moves(&mut moves);
 
@@ -147,7 +147,7 @@ impl<'a> Engine<'a> {
         best_score
     }
     pub fn best_move(&mut self, depth: u16) -> (Option<Move>, i32) {
-        let mut moves = vec![];
+        let mut moves = Vec::with_capacity(10);
         self.move_generator.gen(&mut moves);
         self.sort_moves(&mut moves);
 

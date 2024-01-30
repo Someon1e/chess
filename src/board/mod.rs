@@ -103,7 +103,7 @@ impl Board {
 
             game_state,
 
-            history: vec![],
+            history: Vec::new()
         }
     }
     pub fn piece_at(&self, square: Square) -> Option<Piece> {
