@@ -286,26 +286,27 @@ impl<'a> MoveGenerator<'a> {
         self.precomputed.knight_moves_at_square[square.index() as usize]
     }
 
-    fn gen_knight(
+    fn gen_knights(
         &self,
         moves: &mut Vec<Move>,
-        from: Square,
+        knights: &BitBoard,
         capture_mask: &BitBoard,
         push_mask: &BitBoard,
         non_diagonal_pin_rays: &BitBoard,
         diagonal_pin_rays: &BitBoard,
         friendly_pieces: &BitBoard,
     ) {
-        if diagonal_pin_rays.get(&from) || non_diagonal_pin_rays.get(&from) {
-            return;
-        }
-        let mut knight_moves = self.knight_attack_bit_board(from)
-            & friendly_pieces.not()
-            & (*capture_mask | *push_mask);
-        while !knight_moves.is_empty() {
-            let move_to = knight_moves.pop_square();
-            moves.push(Move::new(from, move_to))
-        }
+        let mut non_pinned_knights = *knights & (*diagonal_pin_rays | *non_diagonal_pin_rays).not();
+        while !non_pinned_knights.is_empty() {
+            let from = non_pinned_knights.pop_square();
+            let mut knight_moves = self.knight_attack_bit_board(from)
+                & friendly_pieces.not()
+                & (*capture_mask | *push_mask);
+            while !knight_moves.is_empty() {
+                let move_to = knight_moves.pop_square();
+                moves.push(Move::new(from, move_to))
+            }
+        };
     }
 
     fn king_attack_bit_board(&self, square: Square) -> BitBoard {
@@ -575,19 +576,15 @@ impl<'a> MoveGenerator<'a> {
                 &enemy_piece_bit_board,
             )
         }
-        let mut knight_bit_board = *self.board.get_bit_board(friendly_pieces[1]);
-        while !knight_bit_board.is_empty() {
-            let square = knight_bit_board.pop_square();
-            self.gen_knight(
-                moves,
-                square,
-                &capture_mask,
-                &push_mask,
-                &non_diagonal_pin_rays,
-                &diagonal_pin_rays,
-                &friendly_piece_bit_board,
-            )
-        }
+        self.gen_knights(
+            moves,
+            self.board.get_bit_board(friendly_pieces[1]),
+            &capture_mask,
+            &push_mask,
+            &non_diagonal_pin_rays,
+            &diagonal_pin_rays,
+            &friendly_piece_bit_board,
+        );
         let mut bishop_bit_board = *self.board.get_bit_board(friendly_pieces[2]);
         while !bishop_bit_board.is_empty() {
             let square = bishop_bit_board.pop_square();
