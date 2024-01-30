@@ -170,7 +170,13 @@ impl<'a> Engine<'a> {
         let mut depth = 0;
         while !should_cancel() {
             depth += 1;
-            depth_completed(depth, self.best_move(depth, should_cancel));
+            let best_move = self.best_move(depth, should_cancel);
+            if should_cancel() {
+                // Incomplete search.
+                // TODO: don't throw away result (need to search best move first)
+            } else {
+                depth_completed(depth, best_move);
+            }
         }
     }
 }
