@@ -36,7 +36,7 @@ impl<'a> MoveGenerator<'a> {
             self.precomputed.black_pawn_attacks_at_square[from.index() as usize]
         }
     }
-    fn gen_all_pawn_pushes(
+    fn gen_pawns(
         &self,
         moves: &mut Vec<Move>,
         pawns: &BitBoard,
@@ -108,6 +108,33 @@ impl<'a> MoveGenerator<'a> {
         }
 
         {
+            // Captures
+            let mut non_non_diagonally_pinned_pawns = *pawns & !(*non_diagonal_pin_rays);
+            while !non_non_diagonally_pinned_pawns.is_empty() {
+                let from = non_non_diagonally_pinned_pawns.pop_square();
+                let is_diagonally_pinned = diagonal_pin_rays.get(&from);
+        
+                let mut attacks = self.pawn_attack_bit_board(from, self.board.white_to_move)
+                    & (*capture_mask | *push_mask);
+        
+                while !attacks.is_empty() {
+                    let attack = attacks.pop_square();
+        
+                    if is_diagonally_pinned && !diagonal_pin_rays.get(&attack) {
+                        continue;
+                    }
+                    if enemy_piece_bit_board.get(&attack) {
+                        if self.is_promotion_rank(attack.rank()) {
+                            self.gen_promotions(moves, from, attack)
+                        } else {
+                            moves.push(Move::new(from, attack));
+                        }
+                    }
+                }
+            }
+        }
+
+        {
             // En passant
 
             if let Some(en_passant_square) = self.board.game_state.en_passant_square {
@@ -163,39 +190,6 @@ impl<'a> MoveGenerator<'a> {
 
                         moves.push(Move::with_flag(from, en_passant_square, Flag::EnPassant));
                     }
-                }
-            }
-        }
-    }
-    fn gen_pawn_captures(
-        &self,
-        moves: &mut Vec<Move>,
-        from: Square,
-        capture_mask: &BitBoard,
-        push_mask: &BitBoard,
-        non_diagonal_pin_rays: &BitBoard,
-        diagonal_pin_rays: &BitBoard,
-        enemy_pieces: &BitBoard,
-    ) {
-        if non_diagonal_pin_rays.get(&from) {
-            return;
-        }
-        let is_diagonally_pinned = diagonal_pin_rays.get(&from);
-
-        let mut attacks = self.pawn_attack_bit_board(from, self.board.white_to_move)
-            & (*capture_mask | *push_mask);
-
-        while !attacks.is_empty() {
-            let attack = attacks.pop_square();
-
-            if is_diagonally_pinned && !diagonal_pin_rays.get(&attack) {
-                continue;
-            }
-            if enemy_pieces.get(&attack) {
-                if self.is_promotion_rank(attack.rank()) {
-                    self.gen_promotions(moves, from, attack)
-                } else {
-                    moves.push(Move::new(from, attack));
                 }
             }
         }
@@ -553,7 +547,7 @@ impl<'a> MoveGenerator<'a> {
             push_mask = !BitBoard::empty();
         }
 
-        self.gen_all_pawn_pushes(
+        self.gen_pawns(
             moves,
             self.board.get_bit_board(friendly_pieces[0]),
             &capture_mask,
@@ -564,19 +558,6 @@ impl<'a> MoveGenerator<'a> {
             &enemy_piece_bit_board,
             king_square,
         );
-        let mut pawn_bit_board = *self.board.get_bit_board(friendly_pieces[0]);
-        while !pawn_bit_board.is_empty() {
-            let square = pawn_bit_board.pop_square();
-            self.gen_pawn_captures(
-                moves,
-                square,
-                &capture_mask,
-                &push_mask,
-                &non_diagonal_pin_rays,
-                &diagonal_pin_rays,
-                &enemy_piece_bit_board,
-            )
-        }
         self.gen_knights(
             moves,
             self.board.get_bit_board(friendly_pieces[1]),
