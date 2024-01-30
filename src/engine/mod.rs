@@ -163,4 +163,13 @@ impl<'a> Engine<'a> {
         }
         (best_move, best_score)
     }
+    pub fn iterative_deepening(&mut self, is_cancelled: &mut dyn FnMut() -> bool) -> (u16, Option<Move>, i32) {
+        let (mut best_move, mut best_score) = (None, -i32::MAX);
+        let mut depth = 0;
+        while !is_cancelled() {
+            depth += 1;
+            (best_move, best_score) = self.best_move(depth);
+        }
+        (depth, best_move, best_score)
+    }
 }
