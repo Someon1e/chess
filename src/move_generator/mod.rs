@@ -113,13 +113,13 @@ impl<'a> MoveGenerator<'a> {
             while !non_non_diagonally_pinned_pawns.is_empty() {
                 let from = non_non_diagonally_pinned_pawns.pop_square();
                 let is_diagonally_pinned = diagonal_pin_rays.get(&from);
-        
+
                 let mut attacks = self.pawn_attack_bit_board(from, self.board.white_to_move)
                     & (*capture_mask | *push_mask);
-        
+
                 while !attacks.is_empty() {
                     let attack = attacks.pop_square();
-        
+
                     if is_diagonally_pinned && !diagonal_pin_rays.get(&attack) {
                         continue;
                     }
@@ -219,8 +219,7 @@ impl<'a> MoveGenerator<'a> {
                     ray.set(&move_to);
                 } else {
                     ray.set(&move_to);
-                    if (*friendly_piece_bit_board | *enemy_piece_bit_board).get(&move_to)
-                    {
+                    if (*friendly_piece_bit_board | *enemy_piece_bit_board).get(&move_to) {
                         break;
                     }
                 }
@@ -580,7 +579,7 @@ impl<'a> MoveGenerator<'a> {
                 &friendly_piece_bit_board,
                 &enemy_piece_bit_board,
                 4,
-                8
+                8,
             )
         }
         let mut rook_bit_board = *self.board.get_bit_board(friendly_pieces[3]);
@@ -596,7 +595,7 @@ impl<'a> MoveGenerator<'a> {
                 &friendly_piece_bit_board,
                 &enemy_piece_bit_board,
                 0,
-                4
+                4,
             )
         }
         let mut queen_bit_board = *self.board.get_bit_board(friendly_pieces[4]);
@@ -612,7 +611,7 @@ impl<'a> MoveGenerator<'a> {
                 &friendly_piece_bit_board,
                 &enemy_piece_bit_board,
                 0,
-                8
+                8,
             )
         }
     }

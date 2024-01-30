@@ -72,7 +72,7 @@ mod tests {
             return 1;
         };
 
-        let mut moves = Vec::new();
+        let mut moves = Vec::with_capacity(10);
         engine.move_generator().gen(&mut moves);
         let mut move_count = 0;
         for move_data in &moves {
@@ -92,7 +92,7 @@ mod tests {
 
         let mut move_count = 0;
 
-        let mut moves = Vec::new();
+        let mut moves = Vec::with_capacity(10);
         engine.move_generator().gen(&mut moves);
         for move_data in moves {
             engine.board_mut().make_move(&move_data);
