@@ -116,8 +116,8 @@ impl<'a> Engine<'a> {
     }
 
     fn sort_moves(&self, moves: &mut Vec<Move>) {
-        moves.sort_unstable_by(|a, b| {
-            self.guess_move_value(a).partial_cmp(&self.guess_move_value(b)).unwrap()
+        moves.sort_by_cached_key(|v| {
+            self.guess_move_value(v)
         });
     }
 
