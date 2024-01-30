@@ -4,7 +4,7 @@ use crate::{
 };
 
 pub struct Engine<'a> {
-    move_generator: &'a mut MoveGenerator<'a>,
+    move_generator: &'a mut MoveGenerator<'a>
 }
 
 impl<'a> Engine<'a> {
@@ -146,13 +146,16 @@ impl<'a> Engine<'a> {
         }
         best_score
     }
-    pub fn best_move(&mut self, depth: u16) -> (Option<Move>, i32) {
+    pub fn best_move(&mut self, depth: u16, should_cancel: &mut dyn FnMut() -> bool) -> (Option<Move>, i32) {
         let mut moves = Vec::with_capacity(10);
         self.move_generator.gen(&mut moves);
         self.sort_moves(&mut moves);
 
         let (mut best_move, mut best_score) = (None, -i32::MAX);
         for move_data in moves {
+            if should_cancel() {
+                break
+            }
             self.board_mut().make_move(&move_data);
             let score = -self.negamax(depth - 1, -i32::MAX, i32::MAX);
             println!("{} {}", move_data, score);
@@ -163,13 +166,11 @@ impl<'a> Engine<'a> {
         }
         (best_move, best_score)
     }
-    pub fn iterative_deepening(&mut self, is_cancelled: &mut dyn FnMut() -> bool) -> (u16, Option<Move>, i32) {
-        let (mut best_move, mut best_score) = (None, -i32::MAX);
+    pub fn iterative_deepening(&mut self, depth_completed: &mut dyn FnMut(u16, (Option<Move>, i32)), should_cancel: &mut dyn FnMut() -> bool) {
         let mut depth = 0;
-        while !is_cancelled() {
+        while !should_cancel() {
             depth += 1;
-            (best_move, best_score) = self.best_move(depth);
+            depth_completed(depth, self.best_move(depth, should_cancel));
         }
-        (depth, best_move, best_score)
     }
 }
