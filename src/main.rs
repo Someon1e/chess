@@ -1,4 +1,4 @@
-use std::io::{stdin, BufRead, Write};
+use std::{io::{stdin, BufRead, Write}, time::Instant};
 
 use chess::{
     board::{piece::Piece, square::Square, Board},
@@ -131,7 +131,13 @@ fn main() {
 
                 let move_generator = &mut MoveGenerator::new(&mut board);
                 let engine = &mut Engine::new(move_generator);
-                let best_move = engine.best_move(4).0;
+                let search_start = Instant::now();
+                let mut best_move = None;
+                engine.iterative_deepening(&mut |depth, new_best| {
+                    best_move = new_best.0;
+                }, &mut || {
+                    search_start.elapsed().as_millis() > 5*100
+                });
                 if let Some(best_move) = &best_move {
                     println!(
                         "bestmove {}{}",
