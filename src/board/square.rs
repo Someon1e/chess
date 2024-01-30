@@ -72,9 +72,10 @@ impl Square {
         let file = self.file();
         let rank = self.rank();
         let file_char = (b'a' + file as u8) as char;
-        let rank_number = (rank + 1).to_string();
+        let rank_number = rank + 1;
         format!("{}{}", file_char, rank_number)
     }
+
     pub fn from_notation(notation: &str) -> Square {
         let file = notation.as_bytes().first().expect("Invalid notation") - b'a';
         let rank = notation

@@ -101,6 +101,6 @@ impl Not for BitBoard {
     type Output = BitBoard;
 
     fn not(self) -> Self::Output {
-       Self(!self.0)
+        Self(!self.0)
     }
 }
