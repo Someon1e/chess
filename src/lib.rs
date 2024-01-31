@@ -10,6 +10,7 @@ mod tests {
     use crate::board::bit_board::BitBoard;
 
     use crate::board::square::Square;
+    use crate::board::zobrist::Zobrist;
 
     use super::board::Board;
     use super::engine::Engine;
@@ -77,6 +78,7 @@ mod tests {
         let mut move_count = 0;
         for move_data in &moves {
             engine.board_mut().make_move(move_data);
+
             move_count += perft_inner(engine, depth - 1);
             engine.board_mut().unmake_move(move_data);
         }
@@ -96,11 +98,12 @@ mod tests {
         engine.move_generator().gen(&mut moves);
         for move_data in moves {
             engine.board_mut().make_move(&move_data);
+            assert!(Zobrist::compute(engine.board()) == engine.board().zobrist_key());
+
             let inner = perft_inner(engine, depth - 1);
             move_count += inner;
             println!("{move_data} {inner}");
             engine.board_mut().unmake_move(&move_data);
-            assert_eq!(engine.board().to_fen(), fen)
         }
 
         let seconds_elapsed = start.elapsed().as_secs_f32();

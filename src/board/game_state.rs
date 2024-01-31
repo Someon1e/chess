@@ -1,6 +1,6 @@
 use crate::board::square::Square;
 
-use super::piece::Piece;
+use super::{piece::Piece, zobrist::Zobrist};
 
 macro_rules! define_castling_rights {
     ($getter:ident, $setter:ident, $unsetter:ident, $offset:expr) => {
@@ -82,6 +82,9 @@ impl CastlingRights {
     pub fn none(&self) -> bool {
         self.0 == 0
     }
+    pub fn internal_value(&self) -> u8 {
+        self.0
+    }
 }
 
 #[derive(Copy, Clone)]
@@ -93,4 +96,6 @@ pub struct GameState {
     pub half_move_clock: u64,
     pub full_move_counter: u64,
     pub captured: Option<Piece>,
+
+    pub zobrist_key: Zobrist,
 }
