@@ -1,3 +1,5 @@
+use lazy_static::lazy_static;
+
 use crate::board::{
     bit_board::BitBoard,
     square::{Square, DIRECTIONS},
@@ -11,8 +13,8 @@ pub struct PrecomputedData {
     pub squares_from_edge: [[i8; 8]; 64],
 }
 
-impl PrecomputedData {
-    pub fn compute() -> Self {
+lazy_static! {
+    pub static ref PRECOMPUTED: PrecomputedData = {
         let mut white_pawn_attacks_at_square = [BitBoard::empty(); 64];
         let mut black_pawn_attacks_at_square = [BitBoard::empty(); 64];
         let mut knight_moves_at_square = [BitBoard::empty(); 64];
@@ -82,12 +84,12 @@ impl PrecomputedData {
             }
         }
 
-        Self {
+        PrecomputedData {
             white_pawn_attacks_at_square,
             black_pawn_attacks_at_square,
             knight_moves_at_square,
             king_moves_at_square,
             squares_from_edge,
         }
-    }
+    };
 }
