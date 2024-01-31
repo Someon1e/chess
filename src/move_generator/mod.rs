@@ -12,7 +12,7 @@ use self::move_data::Flag;
 use self::precomputed::PRECOMPUTED;
 
 pub struct MoveGenerator<'a> {
-    board: &'a mut Board
+    board: &'a mut Board,
 }
 
 impl<'a> MoveGenerator<'a> {
@@ -169,9 +169,10 @@ impl<'a> MoveGenerator<'a> {
                             // Check if en passant will reveal a check
                             // Not covered by pin rays because enemy pawn was blocking
                             // Check by scanning left and right from our king to find enemy queens/rooks that are not obstructed
-                            for (direction, distance_from_edge) in DIRECTIONS[2..4].iter().zip(
-                                &PRECOMPUTED.squares_from_edge[from.index() as usize][2..4],
-                            ) {
+                            for (direction, distance_from_edge) in DIRECTIONS[2..4]
+                                .iter()
+                                .zip(&PRECOMPUTED.squares_from_edge[from.index() as usize][2..4])
+                            {
                                 for count in 1..=*distance_from_edge {
                                     let scanner = from.offset(direction * count);
                                     if scanner == from || scanner == capture_position {

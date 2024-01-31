@@ -1,7 +1,4 @@
-use crate::board::{
-    piece::Piece,
-    square::Square,
-};
+use crate::board::{piece::Piece, square::Square};
 use std::fmt;
 
 #[derive(PartialEq, Clone, Copy)]
@@ -127,10 +124,7 @@ impl Move {
 #[cfg(test)]
 mod tests {
     use super::Move;
-    use crate::{
-        board::square::Square,
-        move_generator::move_data::Flag,
-    };
+    use crate::{board::square::Square, move_generator::move_data::Flag};
 
     // TODO: add more test cases
     const TEST_MOVES: [(Square, Square, Flag); 2] = [

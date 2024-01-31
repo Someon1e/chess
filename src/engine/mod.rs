@@ -1,7 +1,10 @@
 mod piece_square_table;
 
 use crate::{
-    board::{piece::{self, Piece}, Board},
+    board::{
+        piece::{self, Piece},
+        Board,
+    },
     move_generator::{move_data::Move, MoveGenerator},
 };
 
@@ -52,38 +55,30 @@ impl<'a> Engine<'a> {
             Piece::WhiteRook => 500 + piece_square_table::ROOK[square_index],
             Piece::WhiteQueen => 900 + piece_square_table::QUEEN[square_index],
             Piece::WhiteKing => 20000 + piece_square_table::KING[square_index],
-            _ => unreachable!()
+            _ => unreachable!(),
         }
     }
     fn get_absolute_black_piece_value(&self, piece: &Piece, square_index: usize) -> i32 {
         match piece {
             Piece::BlackPawn => {
-                100
-                    + piece_square_table::PAWN[piece_square_table::FLIP[square_index]]
+                100 + piece_square_table::PAWN[piece_square_table::FLIP[square_index]]
             }
             Piece::BlackKnight => {
-                320
-                    + piece_square_table::KNIGHT
-                        [piece_square_table::FLIP[square_index]]
+                320 + piece_square_table::KNIGHT[piece_square_table::FLIP[square_index]]
             }
             Piece::BlackBishop => {
-                330
-                    + piece_square_table::BISHOP
-                        [piece_square_table::FLIP[square_index]]
+                330 + piece_square_table::BISHOP[piece_square_table::FLIP[square_index]]
             }
             Piece::BlackRook => {
-                500
-                    + piece_square_table::ROOK[piece_square_table::FLIP[square_index]]
+                500 + piece_square_table::ROOK[piece_square_table::FLIP[square_index]]
             }
             Piece::BlackQueen => {
-                900
-                    + piece_square_table::QUEEN[piece_square_table::FLIP[square_index]]
+                900 + piece_square_table::QUEEN[piece_square_table::FLIP[square_index]]
             }
             Piece::BlackKing => {
-                20000
-                    + piece_square_table::KING[piece_square_table::FLIP[square_index]]
+                20000 + piece_square_table::KING[piece_square_table::FLIP[square_index]]
             }
-            _ => unreachable!()
+            _ => unreachable!(),
         }
     }
 
@@ -121,11 +116,13 @@ impl<'a> Engine<'a> {
     }
 
     fn sort_moves(&self, moves: &mut Vec<Move>, hash_move: &Move) {
-        moves.sort_by_cached_key(|move_data| i32::MAX - {
-            if *move_data == *hash_move {
-                return 100000;
+        moves.sort_by_cached_key(|move_data| {
+            i32::MAX - {
+                if *move_data == *hash_move {
+                    return 100000;
+                }
+                self.guess_move_value(move_data)
             }
-            self.guess_move_value(move_data)
         });
     }
 
