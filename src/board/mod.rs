@@ -1,20 +1,17 @@
 use core::fmt::Display;
 
 pub mod bit_board;
+pub mod fen;
 pub mod game_state;
 pub mod piece;
 pub mod square;
 pub mod zobrist;
-pub mod fen;
 
 use bit_board::BitBoard;
 use piece::{Piece, ALL_PIECES, BLACK_PIECES, WHITE_PIECES};
 use square::Square;
 
-use self::{
-    game_state::GameState,
-    zobrist::Zobrist,
-};
+use self::{game_state::GameState, zobrist::Zobrist};
 
 pub struct Board {
     pub white_to_move: bool,

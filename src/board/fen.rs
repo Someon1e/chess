@@ -1,14 +1,21 @@
-use super::{bit_board::BitBoard, game_state::{CastlingRights, GameState}, piece, square::Square, zobrist::Zobrist, Board};
+use super::{
+    bit_board::BitBoard,
+    game_state::{CastlingRights, GameState},
+    piece,
+    square::Square,
+    zobrist::Zobrist,
+    Board,
+};
 
 impl Board {
     pub fn from_fen(fen: &str) -> Self {
         let mut bit_boards = [BitBoard::empty(); 12];
         let mut zobrist_key = Zobrist::empty();
-    
+
         let (mut rank, mut file) = (7, 0);
-    
+
         let mut characters = fen.chars().peekable();
-    
+
         for character in characters.by_ref() {
             if character == '/' {
                 continue;
@@ -30,10 +37,10 @@ impl Board {
                 file = 0;
             }
         }
-    
+
         let state = characters.collect::<String>();
         let mut split = state.split_whitespace();
-    
+
         let white_to_move = match split.next().expect("Missing w/b to move") {
             "w" => true,
             "b" => {
@@ -42,11 +49,11 @@ impl Board {
             }
             _ => panic!("No w/b to move"),
         };
-    
+
         let castling_rights =
             CastlingRights::from_fen_section(split.next().expect("Missing castling rights"));
         zobrist_key.xor_castling_rights(&castling_rights);
-    
+
         let en_passant = split.next().expect("Missing en passant");
         let en_passant_square = if en_passant == "-" {
             None
@@ -65,26 +72,26 @@ impl Board {
             .expect("No full move counter")
             .parse()
             .expect("No full move counter");
-    
+
         let game_state = GameState {
             en_passant_square,
-    
+
             castling_rights,
-    
+
             half_move_clock,
             full_move_counter,
             captured: None,
-    
-            zobrist_key
+
+            zobrist_key,
         };
-    
+
         Self {
             bit_boards,
-    
+
             white_to_move,
-    
+
             game_state,
-    
+
             history: Vec::new(),
         }
     }
