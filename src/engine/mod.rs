@@ -1,3 +1,5 @@
+mod piece_square_table;
+
 use crate::{
     board::{piece::Piece, square::Square, Board},
     move_generator::{move_data::Move, MoveGenerator},
@@ -21,75 +23,32 @@ impl<'a> Engine<'a> {
         self.move_generator
     }
 
-    const PAWN_PIECE_SQUARE_TABLE: [i32; 64] = [
-        0, 0, 0, 0, 0, 0, 0, 0, 50, 50, 50, 50, 50, 50, 50, 50, 10, 10, 20, 30, 30, 20, 10, 10, 5,
-        5, 10, 25, 25, 10, 5, 5, 0, 0, 0, 20, 20, 0, 0, 0, 5, -5, -10, 0, 0, -10, -5, 5, 5, 10, 10,
-        -20, -20, 10, 10, 5, 0, 0, 0, 0, 0, 0, 0, 0,
-    ];
-
-    const KNIGHT_PIECE_SQUARE_TABLE: [i32; 64] = [
-        -50, -40, -30, -30, -30, -30, -40, -50, -40, -20, 0, 0, 0, 0, -20, -40, -30, 0, 10, 15, 15,
-        10, 0, -30, -30, 5, 15, 20, 20, 15, 5, -30, -30, 0, 15, 20, 20, 15, 0, -30, -30, 5, 10, 15,
-        15, 10, 5, -30, -40, -20, 0, 5, 5, 0, -20, -40, -50, -40, -30, -30, -30, -30, -40, -50,
-    ];
-
-    const BISHOP_PIECE_SQUARE_TABLE: [i32; 64] = [
-        -20, -10, -10, -10, -10, -10, -10, -20, -10, 0, 0, 0, 0, 0, 0, -10, -10, 0, 5, 10, 10, 5,
-        0, -10, -10, 5, 5, 10, 10, 5, 5, -10, -10, 0, 10, 10, 10, 10, 0, -10, -10, 10, 10, 10, 10,
-        10, 10, -10, -10, 5, 0, 0, 0, 0, 5, -10, -20, -10, -10, -10, -10, -10, -10, -20,
-    ];
-
-    const ROOK_PIECE_SQUARE_TABLE: [i32; 64] = [
-        0, 0, 0, 0, 0, 0, 0, 0, 5, 10, 10, 10, 10, 10, 10, 5, -5, 0, 0, 0, 0, 0, 0, -5, -5, 0, 0,
-        0, 0, 0, 0, -5, -5, 0, 0, 0, 0, 0, 0, -5, -5, 0, 0, 0, 0, 0, 0, -5, -5, 0, 0, 0, 0, 0, 0,
-        -5, 0, 0, 0, 5, 5, 0, 0, 0,
-    ];
-
-    const QUEEN_PIECE_SQUARE_TABLE: [i32; 64] = [
-        -20, -10, -10, -5, -5, -10, -10, -20, -10, 0, 0, 0, 0, 0, 0, -10, -10, 0, 5, 5, 5, 5, 0,
-        -10, -5, 0, 5, 5, 5, 5, 0, -5, 0, 0, 5, 5, 5, 5, 0, -5, -10, 5, 5, 5, 5, 5, 0, -10, -10, 0,
-        5, 0, 0, 0, 0, -10, -20, -10, -10, -5, -5, -10, -10, -20,
-    ];
-
-    const KING_PIECE_SQUARE_TABLE: [i32; 64] = [
-        -30, -40, -40, -50, -50, -40, -40, -30, -30, -40, -40, -50, -50, -40, -40, -30, -30, -40,
-        -40, -50, -50, -40, -40, -30, -30, -40, -40, -50, -50, -40, -40, -30, -20, -30, -30, -40,
-        -40, -30, -30, -20, -10, -20, -20, -20, -20, -20, -20, -10, 20, 20, 0, 0, 0, 0, 20, 20, 20,
-        30, 10, 0, 0, 10, 30, 20,
-    ];
-
-    pub const FLIP: [usize; 64] = [
-        56, 57, 58, 59, 60, 61, 62, 63, 48, 49, 50, 51, 52, 53, 54, 55, 40, 41, 42, 43, 44, 45, 46,
-        47, 32, 33, 34, 35, 36, 37, 38, 39, 24, 25, 26, 27, 28, 29, 30, 31, 16, 17, 18, 19, 20, 21,
-        22, 23, 8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7,
-    ];
-
     fn get_piece_value(&self, piece: &Piece, piece_square_table_index: usize) -> i32 {
         match piece {
-            Piece::WhitePawn => 100 + Self::PAWN_PIECE_SQUARE_TABLE[piece_square_table_index],
-            Piece::WhiteKnight => 320 + Self::KNIGHT_PIECE_SQUARE_TABLE[piece_square_table_index],
-            Piece::WhiteBishop => 330 + Self::BISHOP_PIECE_SQUARE_TABLE[piece_square_table_index],
-            Piece::WhiteRook => 500 + Self::ROOK_PIECE_SQUARE_TABLE[piece_square_table_index],
-            Piece::WhiteQueen => 900 + Self::QUEEN_PIECE_SQUARE_TABLE[piece_square_table_index],
-            Piece::WhiteKing => 20000 + Self::KING_PIECE_SQUARE_TABLE[piece_square_table_index],
+            Piece::WhitePawn => 100 + piece_square_table::PAWN[piece_square_table_index],
+            Piece::WhiteKnight => 320 + piece_square_table::KNIGHT[piece_square_table_index],
+            Piece::WhiteBishop => 330 + piece_square_table::BISHOP[piece_square_table_index],
+            Piece::WhiteRook => 500 + piece_square_table::ROOK[piece_square_table_index],
+            Piece::WhiteQueen => 900 + piece_square_table::QUEEN[piece_square_table_index],
+            Piece::WhiteKing => 20000 + piece_square_table::KING[piece_square_table_index],
 
             Piece::BlackPawn => {
-                -(100 + Self::PAWN_PIECE_SQUARE_TABLE[Self::FLIP[piece_square_table_index]])
+                -(100 + piece_square_table::PAWN[piece_square_table::FLIP[piece_square_table_index]])
             }
             Piece::BlackKnight => {
-                -(320 + Self::KNIGHT_PIECE_SQUARE_TABLE[Self::FLIP[piece_square_table_index]])
+                -(320 + piece_square_table::KNIGHT[piece_square_table::FLIP[piece_square_table_index]])
             }
             Piece::BlackBishop => {
-                -(330 + Self::BISHOP_PIECE_SQUARE_TABLE[Self::FLIP[piece_square_table_index]])
+                -(330 + piece_square_table::BISHOP[piece_square_table::FLIP[piece_square_table_index]])
             }
             Piece::BlackRook => {
-                -(500 + Self::ROOK_PIECE_SQUARE_TABLE[Self::FLIP[piece_square_table_index]])
+                -(500 + piece_square_table::ROOK[piece_square_table::FLIP[piece_square_table_index]])
             }
             Piece::BlackQueen => {
-                -(900 + Self::QUEEN_PIECE_SQUARE_TABLE[Self::FLIP[piece_square_table_index]])
+                -(900 + piece_square_table::QUEEN[piece_square_table::FLIP[piece_square_table_index]])
             }
             Piece::BlackKing => {
-                -(20000 + Self::KING_PIECE_SQUARE_TABLE[Self::FLIP[piece_square_table_index]])
+                -(20000 + piece_square_table::KING[piece_square_table::FLIP[piece_square_table_index]])
             }
         }
     }
