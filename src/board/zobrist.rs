@@ -87,4 +87,8 @@ impl Zobrist {
     pub fn flip_side_to_move(&mut self) {
         self.0 ^= *SIDE_TO_MOVE;
     }
+
+    pub fn index(&self, size: usize) -> usize {
+        self.0 as usize % size
+    }
 }
