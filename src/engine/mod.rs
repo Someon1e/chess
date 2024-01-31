@@ -1,7 +1,7 @@
 mod piece_square_table;
 
 use crate::{
-    board::{piece::Piece, square::Square, Board},
+    board::{piece::{self, Piece}, Board},
     move_generator::{move_data::Move, MoveGenerator},
 };
 
@@ -44,50 +44,63 @@ impl<'a> Engine<'a> {
         self.move_generator
     }
 
-    fn get_piece_value(&self, piece: &Piece, piece_square_table_index: usize) -> i32 {
+    fn get_absolute_white_piece_value(&self, piece: &Piece, square_index: usize) -> i32 {
         match piece {
-            Piece::WhitePawn => 100 + piece_square_table::PAWN[piece_square_table_index],
-            Piece::WhiteKnight => 320 + piece_square_table::KNIGHT[piece_square_table_index],
-            Piece::WhiteBishop => 330 + piece_square_table::BISHOP[piece_square_table_index],
-            Piece::WhiteRook => 500 + piece_square_table::ROOK[piece_square_table_index],
-            Piece::WhiteQueen => 900 + piece_square_table::QUEEN[piece_square_table_index],
-            Piece::WhiteKing => 20000 + piece_square_table::KING[piece_square_table_index],
-
+            Piece::WhitePawn => 100 + piece_square_table::PAWN[square_index],
+            Piece::WhiteKnight => 320 + piece_square_table::KNIGHT[square_index],
+            Piece::WhiteBishop => 330 + piece_square_table::BISHOP[square_index],
+            Piece::WhiteRook => 500 + piece_square_table::ROOK[square_index],
+            Piece::WhiteQueen => 900 + piece_square_table::QUEEN[square_index],
+            Piece::WhiteKing => 20000 + piece_square_table::KING[square_index],
+            _ => unreachable!()
+        }
+    }
+    fn get_absolute_black_piece_value(&self, piece: &Piece, square_index: usize) -> i32 {
+        match piece {
             Piece::BlackPawn => {
-                -(100
-                    + piece_square_table::PAWN[piece_square_table::FLIP[piece_square_table_index]])
+                100
+                    + piece_square_table::PAWN[piece_square_table::FLIP[square_index]]
             }
             Piece::BlackKnight => {
-                -(320
+                320
                     + piece_square_table::KNIGHT
-                        [piece_square_table::FLIP[piece_square_table_index]])
+                        [piece_square_table::FLIP[square_index]]
             }
             Piece::BlackBishop => {
-                -(330
+                330
                     + piece_square_table::BISHOP
-                        [piece_square_table::FLIP[piece_square_table_index]])
+                        [piece_square_table::FLIP[square_index]]
             }
             Piece::BlackRook => {
-                -(500
-                    + piece_square_table::ROOK[piece_square_table::FLIP[piece_square_table_index]])
+                500
+                    + piece_square_table::ROOK[piece_square_table::FLIP[square_index]]
             }
             Piece::BlackQueen => {
-                -(900
-                    + piece_square_table::QUEEN[piece_square_table::FLIP[piece_square_table_index]])
+                900
+                    + piece_square_table::QUEEN[piece_square_table::FLIP[square_index]]
             }
             Piece::BlackKing => {
-                -(20000
-                    + piece_square_table::KING[piece_square_table::FLIP[piece_square_table_index]])
+                20000
+                    + piece_square_table::KING[piece_square_table::FLIP[square_index]]
             }
+            _ => unreachable!()
         }
     }
 
     fn evaluate(&mut self) -> i32 {
         let mut score = 0;
-        for index in 0..64 {
-            let square = Square::from_index(index);
-            if let Some(piece) = self.board().piece_at(square) {
-                score += self.get_piece_value(&piece, index as usize);
+        for piece in piece::WHITE_PIECES {
+            let mut bit_board = *self.board().get_bit_board(piece);
+            while !bit_board.is_empty() {
+                let square = bit_board.pop_square();
+                score += self.get_absolute_white_piece_value(&piece, square.index() as usize);
+            }
+        }
+        for piece in piece::BLACK_PIECES {
+            let mut bit_board = *self.board().get_bit_board(piece);
+            while !bit_board.is_empty() {
+                let square = bit_board.pop_square();
+                score -= self.get_absolute_black_piece_value(&piece, square.index() as usize);
             }
         }
         score
@@ -97,14 +110,18 @@ impl<'a> Engine<'a> {
         let capturing = self.board().enemy_piece_at(move_data.to());
         // This won't take into account en passant
         if let Some(capturing) = capturing {
-            self.get_piece_value(&capturing, move_data.to().index() as usize)
+            if self.board().white_to_move {
+                self.get_absolute_black_piece_value(&capturing, move_data.to().index() as usize)
+            } else {
+                self.get_absolute_white_piece_value(&capturing, move_data.to().index() as usize)
+            }
         } else {
             0
         }
     }
 
     fn sort_moves(&self, moves: &mut Vec<Move>, hash_move: &Move) {
-        moves.sort_by_cached_key(|move_data| {
+        moves.sort_by_cached_key(|move_data| i32::MAX - {
             if *move_data == *hash_move {
                 return 100000;
             }
