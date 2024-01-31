@@ -132,13 +132,10 @@ fn main() {
                 let move_generator = &mut MoveGenerator::new(&mut board);
                 let engine = &mut Engine::new(move_generator);
                 let search_start = Instant::now();
-                let mut best_move = None;
-                engine.iterative_deepening(&mut |depth, new_best| {
-                    best_move = new_best.0;
-                }, &mut || {
+                let (best_move, evaluation) = engine.iterative_deepening(&mut |depth, (_best_move, _evaluation)| {}, &mut || {
                     search_start.elapsed().as_millis() > 5*100
                 });
-                if let Some(best_move) = &best_move {
+                if !best_move.is_none() {
                     println!(
                         "bestmove {}{}",
                         best_move.from().to_notation(),

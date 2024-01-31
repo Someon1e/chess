@@ -4,6 +4,7 @@ use crate::board::{
 };
 use std::fmt;
 
+#[derive(PartialEq, Clone, Copy)]
 pub struct Move(u16);
 
 impl fmt::Display for Move {
@@ -95,6 +96,14 @@ impl Move {
         data |= (to.index() as u16) << 6;
 
         Self(data)
+    }
+
+    pub fn none() -> Move {
+        Self(0)
+    }
+
+    pub fn is_none(&self) -> bool {
+        self.0 == 0
     }
 
     pub fn from(&self) -> Square {
