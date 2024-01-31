@@ -133,7 +133,7 @@ fn main() {
                 let engine = &mut Engine::new(move_generator);
                 let search_start = Instant::now();
                 let (best_move, evaluation) = engine.iterative_deepening(&mut |depth, (_best_move, _evaluation)| {}, &mut || {
-                    search_start.elapsed().as_millis() > 5*100
+                    search_start.elapsed().as_millis() > 5*1000
                 });
                 if !best_move.is_none() {
                     println!(
