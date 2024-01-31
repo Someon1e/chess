@@ -9,11 +9,10 @@ mod precomputed;
 use move_data::Move;
 
 use self::move_data::Flag;
-use self::precomputed::PrecomputedData;
+use self::precomputed::PRECOMPUTED;
 
 pub struct MoveGenerator<'a> {
-    board: &'a mut Board,
-    precomputed: PrecomputedData,
+    board: &'a mut Board
 }
 
 impl<'a> MoveGenerator<'a> {
@@ -31,9 +30,9 @@ impl<'a> MoveGenerator<'a> {
     }
     fn pawn_attack_bit_board(&self, from: Square, white: bool) -> BitBoard {
         if white {
-            self.precomputed.white_pawn_attacks_at_square[from.index() as usize]
+            PRECOMPUTED.white_pawn_attacks_at_square[from.index() as usize]
         } else {
-            self.precomputed.black_pawn_attacks_at_square[from.index() as usize]
+            PRECOMPUTED.black_pawn_attacks_at_square[from.index() as usize]
         }
     }
     fn gen_pawns(
@@ -171,7 +170,7 @@ impl<'a> MoveGenerator<'a> {
                             // Not covered by pin rays because enemy pawn was blocking
                             // Check by scanning left and right from our king to find enemy queens/rooks that are not obstructed
                             for (direction, distance_from_edge) in DIRECTIONS[2..4].iter().zip(
-                                &self.precomputed.squares_from_edge[from.index() as usize][2..4],
+                                &PRECOMPUTED.squares_from_edge[from.index() as usize][2..4],
                             ) {
                                 for count in 1..=*distance_from_edge {
                                     let scanner = from.offset(direction * count);
@@ -244,7 +243,7 @@ impl<'a> MoveGenerator<'a> {
     ) {
         let is_pinned = (*non_diagonal_pin_rays | *diagonal_pin_rays).get(&from);
 
-        let squares_from_edge = &self.precomputed.squares_from_edge[from.index() as usize];
+        let squares_from_edge = &PRECOMPUTED.squares_from_edge[from.index() as usize];
         for index in direction_start_index..direction_end_index {
             let is_rook_movement = (index + direction_start_index) < 4;
             let direction = DIRECTIONS[index];
@@ -277,7 +276,7 @@ impl<'a> MoveGenerator<'a> {
         }
     }
     fn knight_attack_bit_board(&self, square: Square) -> BitBoard {
-        self.precomputed.knight_moves_at_square[square.index() as usize]
+        PRECOMPUTED.knight_moves_at_square[square.index() as usize]
     }
 
     fn gen_knights(
@@ -304,7 +303,7 @@ impl<'a> MoveGenerator<'a> {
     }
 
     fn king_attack_bit_board(&self, square: Square) -> BitBoard {
-        self.precomputed.king_moves_at_square[square.index() as usize]
+        PRECOMPUTED.king_moves_at_square[square.index() as usize]
     }
     fn gen_king(
         &self,
@@ -374,8 +373,7 @@ impl<'a> MoveGenerator<'a> {
         }
     }
     pub fn new(board: &'a mut Board) -> Self {
-        let precomputed = PrecomputedData::compute();
-        Self { board, precomputed }
+        Self { board }
     }
     pub fn board(&self) -> &Board {
         self.board
@@ -446,7 +444,7 @@ impl<'a> MoveGenerator<'a> {
                             &friendly_piece_bit_board,
                             &enemy_piece_bit_board,
                             &DIRECTIONS[4..8],
-                            &self.precomputed.squares_from_edge[from.index() as usize][4..8],
+                            &PRECOMPUTED.squares_from_edge[from.index() as usize][4..8],
                         ),
                     Piece::WhiteRook | Piece::BlackRook => self.directional_king_danger_bit_board(
                         from,
@@ -456,7 +454,7 @@ impl<'a> MoveGenerator<'a> {
                         &friendly_piece_bit_board,
                         &enemy_piece_bit_board,
                         &DIRECTIONS[0..4],
-                        &self.precomputed.squares_from_edge[from.index() as usize][0..4],
+                        &PRECOMPUTED.squares_from_edge[from.index() as usize][0..4],
                     ),
                     Piece::WhiteQueen | Piece::BlackQueen => self
                         .directional_king_danger_bit_board(
@@ -467,7 +465,7 @@ impl<'a> MoveGenerator<'a> {
                             &friendly_piece_bit_board,
                             &enemy_piece_bit_board,
                             &DIRECTIONS,
-                            &self.precomputed.squares_from_edge[from.index() as usize],
+                            &PRECOMPUTED.squares_from_edge[from.index() as usize],
                         ),
                     Piece::WhiteKing | Piece::BlackKing => self.king_attack_bit_board(from),
                 };
@@ -486,7 +484,7 @@ impl<'a> MoveGenerator<'a> {
         let mut diagonal_pin_rays = BitBoard::empty();
         for (index, (direction, distance_from_edge)) in DIRECTIONS
             .iter()
-            .zip(&self.precomputed.squares_from_edge[king_square.index() as usize])
+            .zip(&PRECOMPUTED.squares_from_edge[king_square.index() as usize])
             .enumerate()
         {
             let is_rook_movement = index < 4;
