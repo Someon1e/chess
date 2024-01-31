@@ -1,9 +1,11 @@
 use core::fmt::Display;
+use std::io::empty;
 
 pub mod bit_board;
 pub mod game_state;
 pub mod piece;
 pub mod square;
+pub mod zobrist;
 
 use bit_board::BitBoard;
 use piece::{Piece, ALL_PIECES, BLACK_PIECES, WHITE_PIECES};
@@ -11,7 +13,10 @@ use square::Square;
 
 use crate::move_generator::move_data::{Flag, Move};
 
-use self::game_state::{CastlingRights, GameState};
+use self::{
+    game_state::{CastlingRights, GameState},
+    zobrist::Zobrist,
+};
 
 pub struct Board {
     pub white_to_move: bool,
@@ -31,8 +36,8 @@ impl Display for Board {
 impl Board {
     pub fn from_fen(fen: &str) -> Self {
         let mut bit_boards = [BitBoard::empty(); 12];
+        let mut zobrist_key = Zobrist::empty();
 
-        // rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR
         let (mut rank, mut file) = (7, 0);
 
         let mut characters = fen.chars().peekable();
@@ -45,7 +50,9 @@ impl Board {
                 file += digit as i8;
             } else {
                 let piece = piece::from_fen_char(&character).expect("{square} {character}");
-                bit_boards[piece as usize].set(&Square::from_coords(rank, file));
+                let square = &Square::from_coords(rank, file);
+                bit_boards[piece as usize].set(&square);
+                zobrist_key.xor_piece(piece as usize, square.index() as usize);
                 file += 1;
             }
             if file == 8 {
@@ -62,18 +69,24 @@ impl Board {
 
         let white_to_move = match split.next().expect("Missing w/b to move") {
             "w" => true,
-            "b" => false,
+            "b" => {
+                zobrist_key.flip_side_to_move();
+                false
+            }
             _ => panic!("No w/b to move"),
         };
 
         let castling_rights =
             CastlingRights::from_fen_section(split.next().expect("Missing castling rights"));
+        zobrist_key.xor_castling_rights(&castling_rights);
 
         let en_passant = split.next().expect("Missing en passant");
         let en_passant_square = if en_passant == "-" {
             None
         } else {
-            Some(Square::from_notation(en_passant))
+            let en_passant_square = Square::from_notation(en_passant);
+            zobrist_key.xor_en_passant(&en_passant_square);
+            Some(en_passant_square)
         };
         let half_move_clock = split
             .next()
@@ -94,6 +107,8 @@ impl Board {
             half_move_clock,
             full_move_counter,
             captured: None,
+
+            zobrist_key
         };
 
         Self {
@@ -103,7 +118,7 @@ impl Board {
 
             game_state,
 
-            history: Vec::new()
+            history: Vec::new(),
         }
     }
     pub fn piece_at(&self, square: Square) -> Option<Piece> {
@@ -147,86 +162,27 @@ impl Board {
             self.white_piece_at(square)
         }
     }
+    pub fn zobrist_key(&self) -> Zobrist {
+        self.game_state.zobrist_key
+    }
     pub fn make_move(&mut self, move_data: &Move) {
-        self.history.push(self.game_state);
-
-        if move_data.from() == Square::from_notation("a1")
-            || move_data.to() == Square::from_notation("a1")
-        {
-            self.game_state.castling_rights.unset_white_queen_side();
-        }
-        if move_data.from() == Square::from_notation("h1")
-            || move_data.to() == Square::from_notation("h1")
-        {
-            self.game_state.castling_rights.unset_white_king_side();
-        }
-        if move_data.from() == Square::from_notation("a8")
-            || move_data.to() == Square::from_notation("a8")
-        {
-            self.game_state.castling_rights.unset_black_queen_side();
-        }
-        if move_data.from() == Square::from_notation("h8")
-            || move_data.to() == Square::from_notation("h8")
-        {
-            self.game_state.castling_rights.unset_black_king_side();
-        }
-
         let white_to_move = self.white_to_move;
 
-        let piece = self.friendly_piece_at(move_data.from()).unwrap();
-        let moving_bit_board = self.get_bit_board_mut(piece);
-        let flag = move_data.flag();
-        let promotion_piece = flag.get_promotion_piece(white_to_move);
-        if let Some(promotion_piece) = promotion_piece {
-            moving_bit_board.unset(&move_data.from());
-            self.get_bit_board_mut(promotion_piece).set(&move_data.to());
-        } else {
-            moving_bit_board.toggle(&move_data.from(), &move_data.to());
-        }
+        self.history.push(self.game_state);
 
-        let en_passant_square = self.game_state.en_passant_square;
-        self.game_state.en_passant_square = None;
+        self.game_state.zobrist_key.flip_side_to_move();
+
+        let piece = self.friendly_piece_at(move_data.from()).unwrap();
+
+        self.game_state.zobrist_key
+            .xor_piece(piece as usize, move_data.from().index() as usize);
+
+        let flag = move_data.flag();
+
+        self.game_state.zobrist_key
+            .xor_castling_rights(&self.game_state.castling_rights);
 
         let is_castle = *flag == Flag::Castle;
-
-        if *flag == Flag::PawnTwoUp {
-            self.game_state.en_passant_square =
-                Some(move_data.from().up(if self.white_to_move { 1 } else { -1 }));
-            self.game_state.captured = None;
-        } else if is_castle {
-            let is_king_side = move_data.to().file() == 6;
-            let rook_to_offset = if is_king_side { -1 } else { 1 };
-            let rook_from_offset = if is_king_side { 1 } else { -2 };
-            let rook_bit_board = if self.white_to_move {
-                self.get_bit_board_mut(Piece::WhiteRook)
-            } else {
-                self.get_bit_board_mut(Piece::BlackRook)
-            };
-            rook_bit_board.toggle(
-                &move_data.to().offset(rook_from_offset),
-                &move_data.to().offset(rook_to_offset),
-            );
-        } else if *flag == Flag::EnPassant {
-            let capture_position =
-                en_passant_square
-                    .unwrap()
-                    .down(if self.white_to_move { 1 } else { -1 });
-            let captured = if white_to_move {
-                Piece::BlackPawn
-            } else {
-                Piece::WhitePawn
-            };
-            self.game_state.captured = Some(captured);
-            let capturing_bit_board = self.get_bit_board_mut(captured);
-            capturing_bit_board.unset(&capture_position);
-        } else {
-            self.game_state.captured = self.enemy_piece_at(move_data.to());
-            if let Some(captured) = self.game_state.captured {
-                let capturing_bit_board = self.get_bit_board_mut(captured);
-                capturing_bit_board.unset(&move_data.to());
-            }
-        }
-
         if is_castle
             || piece
                 == (if white_to_move {
@@ -242,7 +198,102 @@ impl Board {
                 self.game_state.castling_rights.unset_black_king_side();
                 self.game_state.castling_rights.unset_black_queen_side();
             }
+        } else {
+            if move_data.from() == Square::from_notation("a1")
+                || move_data.to() == Square::from_notation("a1")
+            {
+                self.game_state.castling_rights.unset_white_queen_side();
+            }
+            if move_data.from() == Square::from_notation("h1")
+                || move_data.to() == Square::from_notation("h1")
+            {
+                self.game_state.castling_rights.unset_white_king_side();
+            }
+            if move_data.from() == Square::from_notation("a8")
+                || move_data.to() == Square::from_notation("a8")
+            {
+                self.game_state.castling_rights.unset_black_queen_side();
+            }
+            if move_data.from() == Square::from_notation("h8")
+                || move_data.to() == Square::from_notation("h8")
+            {
+                self.game_state.castling_rights.unset_black_king_side();
+            }
         }
+
+        self.game_state.zobrist_key
+            .xor_castling_rights(&self.game_state.castling_rights);
+
+        let promotion_piece = flag.get_promotion_piece(white_to_move);
+
+        let moving_bit_board = self.get_bit_board_mut(piece);
+
+        if let Some(promotion_piece) = promotion_piece {
+            moving_bit_board.unset(&move_data.from());
+            self.get_bit_board_mut(promotion_piece).set(&move_data.to());
+            self.game_state.zobrist_key
+                .xor_piece(promotion_piece as usize, move_data.to().index() as usize);
+        } else {
+            moving_bit_board.toggle(&move_data.from(), &move_data.to());
+            self.game_state.zobrist_key
+                .xor_piece(piece as usize, move_data.to().index() as usize);
+        }
+
+        let en_passant_square = self.game_state.en_passant_square;
+
+        if let Some(en_passant_square) = en_passant_square {
+            self.game_state.zobrist_key.xor_en_passant(&en_passant_square);
+        }
+        self.game_state.en_passant_square = None;
+
+        if *flag == Flag::PawnTwoUp {
+            let en_passant_square = move_data.from().up(if self.white_to_move { 1 } else { -1 });
+            self.game_state.en_passant_square = Some(en_passant_square);
+            self.game_state.zobrist_key.xor_en_passant(&en_passant_square);
+            self.game_state.captured = None;
+        } else if is_castle {
+            let is_king_side = move_data.to().file() == 6;
+            let rook_to_offset = if is_king_side { -1 } else { 1 };
+            let rook_from_offset = if is_king_side { 1 } else { -2 };
+            let rook = if white_to_move {
+                Piece::WhiteRook
+            } else {
+                Piece::BlackRook
+            };
+            let rook_bit_board = self.get_bit_board_mut(rook);
+            let rook_from = &move_data.to().offset(rook_from_offset);
+            let rook_to = &move_data.to().offset(rook_to_offset);
+            rook_bit_board.toggle(&rook_from, &rook_to);
+            self.game_state.zobrist_key
+                .xor_piece(rook as usize, rook_from.index() as usize);
+            self.game_state.zobrist_key
+                .xor_piece(rook as usize, rook_to.index() as usize);
+        } else if *flag == Flag::EnPassant {
+            let capture_position =
+                en_passant_square
+                    .unwrap()
+                    .down(if self.white_to_move { 1 } else { -1 });
+            let captured = if white_to_move {
+                Piece::BlackPawn
+            } else {
+                Piece::WhitePawn
+            };
+            self.game_state.captured = Some(captured);
+
+            let capturing_bit_board = self.get_bit_board_mut(captured);
+            capturing_bit_board.unset(&capture_position);
+            self.game_state.zobrist_key
+                .xor_piece(captured as usize, capture_position.index() as usize);
+        } else {
+            self.game_state.captured = self.enemy_piece_at(move_data.to());
+            if let Some(captured) = self.game_state.captured {
+                let capturing_bit_board = self.get_bit_board_mut(captured);
+                capturing_bit_board.unset(&move_data.to());
+                self.game_state.zobrist_key
+                    .xor_piece(captured as usize, move_data.to().index() as usize);
+            }
+        }
+
         self.white_to_move = !white_to_move;
     }
     pub fn unmake_move(&mut self, move_data: &Move) {
