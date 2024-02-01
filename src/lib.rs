@@ -68,19 +68,19 @@ mod tests {
         (4, 23527, "8/8/2k5/5q2/5n2/8/5K2/8 b - - 0 1"),
     ];
 
-    fn perft_inner(engine: &mut Engine, depth: u16) -> usize {
+    fn perft_inner(move_generator: &mut MoveGenerator, depth: u16) -> usize {
         if depth == 0 {
             return 1;
         };
 
         let mut moves = Vec::with_capacity(10);
-        engine.move_generator().gen(&mut moves);
+        move_generator.gen(&mut moves);
         let mut move_count = 0;
         for move_data in &moves {
-            engine.board_mut().make_move(move_data);
+            move_generator.board_mut().make_move(move_data);
 
-            move_count += perft_inner(engine, depth - 1);
-            engine.board_mut().unmake_move(move_data);
+            move_count += perft_inner(move_generator, depth - 1);
+            move_generator.board_mut().unmake_move(move_data);
         }
 
         move_count
@@ -90,20 +90,19 @@ mod tests {
 
         let board = &mut Board::from_fen(fen);
         let move_generator = &mut MoveGenerator::new(board);
-        let engine = &mut Engine::new(move_generator);
 
         let mut move_count = 0;
 
         let mut moves = Vec::with_capacity(10);
-        engine.move_generator().gen(&mut moves);
+        move_generator.gen(&mut moves);
         for move_data in moves {
-            engine.board_mut().make_move(&move_data);
-            assert!(Zobrist::compute(engine.board()) == engine.board().zobrist_key());
+            move_generator.board_mut().make_move(&move_data);
+            assert!(Zobrist::compute(move_generator.board()) == move_generator.board().zobrist_key());
 
-            let inner = perft_inner(engine, depth - 1);
+            let inner = perft_inner(move_generator, depth - 1);
             move_count += inner;
             println!("{move_data} {inner}");
-            engine.board_mut().unmake_move(&move_data);
+            move_generator.board_mut().unmake_move(&move_data);
         }
 
         let seconds_elapsed = start.elapsed().as_secs_f32();
