@@ -41,13 +41,13 @@ impl<'a> MoveGenerator<'a> {
         pawns: &BitBoard,
         capture_mask: &BitBoard,
         push_mask: &BitBoard,
-        non_diagonal_pin_rays: &BitBoard,
+        orthogonal_pin_rays: &BitBoard,
         diagonal_pin_rays: &BitBoard,
         friendly_piece_bit_board: &BitBoard,
         enemy_piece_bit_board: &BitBoard,
         friendly_king_square: Square,
     ) {
-        let pin_rays = *diagonal_pin_rays | *non_diagonal_pin_rays;
+        let pin_rays = *diagonal_pin_rays | *orthogonal_pin_rays;
         let occupied_squares = *friendly_piece_bit_board | *enemy_piece_bit_board;
         let empty_squares = !occupied_squares;
 
@@ -108,9 +108,9 @@ impl<'a> MoveGenerator<'a> {
 
         {
             // Captures
-            let mut non_non_diagonally_pinned_pawns = *pawns & !(*non_diagonal_pin_rays);
-            while !non_non_diagonally_pinned_pawns.is_empty() {
-                let from = non_non_diagonally_pinned_pawns.pop_square();
+            let mut non_orthogonally_pinned_pawns = *pawns & !(*orthogonal_pin_rays);
+            while !non_orthogonally_pinned_pawns.is_empty() {
+                let from = non_orthogonally_pinned_pawns.pop_square();
                 let is_diagonally_pinned = diagonal_pin_rays.get(&from);
 
                 let mut attacks = self.pawn_attack_bit_board(from, self.board.white_to_move)
@@ -155,7 +155,7 @@ impl<'a> MoveGenerator<'a> {
                         | *self.board.get_bit_board(enemy_queen);
                     'en_passant_check: while !pawns_able_to_enpassant.is_empty() {
                         let from = pawns_able_to_enpassant.pop_square();
-                        if non_diagonal_pin_rays.get(&from) {
+                        if orthogonal_pin_rays.get(&from) {
                             continue;
                         }
 
@@ -234,7 +234,7 @@ impl<'a> MoveGenerator<'a> {
         from: Square,
         capture_mask: &BitBoard,
         push_mask: &BitBoard,
-        non_diagonal_pin_rays: &BitBoard,
+        orthogonal_pin_rays: &BitBoard,
         diagonal_pin_rays: &BitBoard,
         friendly_piece_bit_board: &BitBoard,
         enemy_piece_bit_board: &BitBoard,
@@ -242,25 +242,31 @@ impl<'a> MoveGenerator<'a> {
         direction_start_index: usize,
         direction_end_index: usize,
     ) {
-        let is_pinned = (*non_diagonal_pin_rays | *diagonal_pin_rays).get(&from);
+        let is_pinned_orthogonally = orthogonal_pin_rays.get(&from);
+        let is_pinned_diagonally = diagonal_pin_rays.get(&from);
 
         let squares_from_edge = &PRECOMPUTED.squares_from_edge[from.index() as usize];
         for index in direction_start_index..direction_end_index {
             let is_rook_movement = (index + direction_start_index) < 4;
+            if is_rook_movement {
+                if is_pinned_diagonally {
+                    continue;
+                }
+            } else if is_pinned_orthogonally {
+                continue;
+            }
             let direction = DIRECTIONS[index];
 
             for count in 1..=squares_from_edge[index] {
                 let move_to = from.offset(direction * count);
 
-                if is_pinned {
-                    if is_rook_movement {
-                        if !non_diagonal_pin_rays.get(&move_to) {
-                            break;
-                        }
-                    } else {
-                        if !diagonal_pin_rays.get(&move_to) {
-                            break;
-                        }
+                if is_rook_movement {
+                    if is_pinned_orthogonally && !(orthogonal_pin_rays.get(&move_to)) {
+                        break;
+                    }
+                } else if is_pinned_diagonally {
+                    if !(diagonal_pin_rays.get(&move_to)) {
+                        break;
                     }
                 }
 
@@ -286,11 +292,11 @@ impl<'a> MoveGenerator<'a> {
         knights: &BitBoard,
         capture_mask: &BitBoard,
         push_mask: &BitBoard,
-        non_diagonal_pin_rays: &BitBoard,
+        orthogonal_pin_rays: &BitBoard,
         diagonal_pin_rays: &BitBoard,
         friendly_pieces: &BitBoard,
     ) {
-        let mut non_pinned_knights = *knights & !(*diagonal_pin_rays | *non_diagonal_pin_rays);
+        let mut non_pinned_knights = *knights & !(*diagonal_pin_rays | *orthogonal_pin_rays);
         while !non_pinned_knights.is_empty() {
             let from = non_pinned_knights.pop_square();
             let mut knight_moves = self.knight_attack_bit_board(from)
@@ -481,7 +487,7 @@ impl<'a> MoveGenerator<'a> {
             }
         }
 
-        let mut non_diagonal_pin_rays = BitBoard::empty();
+        let mut orthogonal_pin_rays = BitBoard::empty();
         let mut diagonal_pin_rays = BitBoard::empty();
         for (index, (direction, distance_from_edge)) in DIRECTIONS
             .iter()
@@ -518,7 +524,7 @@ impl<'a> MoveGenerator<'a> {
                         if is_friendly_piece_on_ray {
                             // Friendly piece is blocking check, it is pinned
                             if is_rook_movement {
-                                non_diagonal_pin_rays = non_diagonal_pin_rays | ray
+                                orthogonal_pin_rays = orthogonal_pin_rays | ray
                             } else {
                                 diagonal_pin_rays = diagonal_pin_rays | ray
                             }
@@ -550,7 +556,7 @@ impl<'a> MoveGenerator<'a> {
             self.board.get_bit_board(friendly_pieces[0]),
             &capture_mask,
             &push_mask,
-            &non_diagonal_pin_rays,
+            &orthogonal_pin_rays,
             &diagonal_pin_rays,
             &friendly_piece_bit_board,
             &enemy_piece_bit_board,
@@ -561,7 +567,7 @@ impl<'a> MoveGenerator<'a> {
             self.board.get_bit_board(friendly_pieces[1]),
             &capture_mask,
             &push_mask,
-            &non_diagonal_pin_rays,
+            &orthogonal_pin_rays,
             &diagonal_pin_rays,
             &friendly_piece_bit_board,
         );
@@ -573,7 +579,7 @@ impl<'a> MoveGenerator<'a> {
                 square,
                 &capture_mask,
                 &push_mask,
-                &non_diagonal_pin_rays,
+                &orthogonal_pin_rays,
                 &diagonal_pin_rays,
                 &friendly_piece_bit_board,
                 &enemy_piece_bit_board,
@@ -589,7 +595,7 @@ impl<'a> MoveGenerator<'a> {
                 square,
                 &capture_mask,
                 &push_mask,
-                &non_diagonal_pin_rays,
+                &orthogonal_pin_rays,
                 &diagonal_pin_rays,
                 &friendly_piece_bit_board,
                 &enemy_piece_bit_board,
@@ -605,7 +611,7 @@ impl<'a> MoveGenerator<'a> {
                 square,
                 &capture_mask,
                 &push_mask,
-                &non_diagonal_pin_rays,
+                &orthogonal_pin_rays,
                 &diagonal_pin_rays,
                 &friendly_piece_bit_board,
                 &enemy_piece_bit_board,
