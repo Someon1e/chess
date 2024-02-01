@@ -73,7 +73,7 @@ mod tests {
             return 1;
         };
 
-        let mut moves = Vec::with_capacity(10);
+        let mut moves = Vec::with_capacity(30);
         move_generator.gen(&mut moves);
         let mut move_count = 0;
         for move_data in &moves {
@@ -93,11 +93,13 @@ mod tests {
 
         let mut move_count = 0;
 
-        let mut moves = Vec::with_capacity(10);
+        let mut moves = Vec::with_capacity(30);
         move_generator.gen(&mut moves);
         for move_data in moves {
             move_generator.board_mut().make_move(&move_data);
-            assert!(Zobrist::compute(move_generator.board()) == move_generator.board().zobrist_key());
+            assert!(
+                Zobrist::compute(move_generator.board()) == move_generator.board().zobrist_key()
+            );
 
             let inner = perft_inner(move_generator, depth - 1);
             move_count += inner;

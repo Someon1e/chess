@@ -115,14 +115,13 @@ impl<'a> Engine<'a> {
         }
     }
 
-    fn sort_moves(&self, moves: &mut Vec<Move>, hash_move: &Move) {
+    fn sort_moves_ascending(&self, moves: &mut Vec<Move>, hash_move: &Move) {
+        // Best moves will be at the back, so iterate in reverse later.
         moves.sort_by_cached_key(|move_data| {
-            i32::MAX - {
-                if *move_data == *hash_move {
-                    return 100000;
-                }
-                self.guess_move_value(move_data)
+            if *move_data == *hash_move {
+                return 100000;
             }
+            self.guess_move_value(move_data)
         });
     }
 
@@ -171,9 +170,9 @@ impl<'a> Engine<'a> {
             return evaluation;
         };
 
-        let mut moves = Vec::with_capacity(10);
+        let mut moves = Vec::with_capacity(30);
         self.move_generator.gen(&mut moves);
-        self.sort_moves(&mut moves, &hash_move);
+        self.sort_moves_ascending(&mut moves, &hash_move);
 
         let mut best_move = Move::none();
         for move_data in moves.iter().rev() {
@@ -213,21 +212,21 @@ impl<'a> Engine<'a> {
         should_cancel: &mut dyn FnMut() -> bool,
         best_move: Move,
     ) -> (Move, i32) {
-        let mut moves = Vec::with_capacity(10);
+        let mut moves = Vec::with_capacity(30);
         self.move_generator.gen(&mut moves);
-        self.sort_moves(&mut moves, &best_move);
+        self.sort_moves_ascending(&mut moves, &best_move);
 
         let (mut best_move, mut best_score) = (Move::none(), -i32::MAX);
-        for move_data in moves {
+        for move_data in moves.iter().rev() {
             if should_cancel() {
                 break;
             }
-            self.board_mut().make_move(&move_data);
+            self.board_mut().make_move(move_data);
             let score = -self.negamax(depth - 1, -i32::MAX, i32::MAX);
             println!("{} {}", move_data, score);
-            self.board_mut().unmake_move(&move_data);
+            self.board_mut().unmake_move(move_data);
             if score > best_score {
-                (best_move, best_score) = (move_data, score);
+                (best_move, best_score) = (*move_data, score);
             }
         }
         (best_move, best_score)
