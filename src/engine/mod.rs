@@ -150,8 +150,8 @@ impl<'a> Engine<'a> {
                         }
                     }
                 }
-                hash_move = &saved.best_move
             }
+            hash_move = &saved.best_move
         }
 
         let mut node_type = NodeType::Alpha;
