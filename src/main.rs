@@ -6,7 +6,7 @@ use std::{
 use chess::{
     board::{piece::Piece, square::Square, Board},
     engine::Engine,
-    move_generator::{move_data::Move, MoveGenerator},
+    move_generator::{move_data::{Flag, Move}, MoveGenerator},
 };
 
 const START_POSITION_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -61,7 +61,6 @@ fn main() {
                 let mut move_time = None;
                 let mut index = 1;
                 while let Some(label) = args.get(index) {
-                    println!("{label}");
                     match *label {
                         "searchmoves" => {}
                         "ponder" => {}
@@ -119,24 +118,38 @@ fn main() {
                     let (from, to) = (Square::from_notation(from), Square::from_notation(to));
                     let piece = board.piece_at(from).unwrap();
 
-                    // TODO: castling, en passant
-                    let move_data;
+                    let mut flag = Flag::None;
                     if piece == Piece::WhitePawn || piece == Piece::BlackPawn {
                         if let Some(promotion) = uci_move.chars().nth(4) {
-                            println!("{promotion}")
+                            flag = match promotion {
+                                'q' => Flag::QueenPromotion,
+                                'r' => Flag::RookPromotion,
+                                'n' => Flag::KnightPromotion,
+                                'b' => Flag::BishopPromotion,
+                                _ => {panic!("Invalid promotion notation")}
+                            }
+                        }
+                    } else if piece == Piece::BlackKing || piece == Piece::WhiteKing {
+                        if (from.file() - to.file()).abs() > 1 {
+                            flag = Flag::Castle
+                        }
+                    } else if piece == Piece::BlackPawn || piece == Piece::WhitePawn {
+                        if board.game_state.en_passant_square == Some(to) {
+                            flag = Flag::EnPassant
                         }
                     }
 
-                    move_data = Move::new(from, to);
-                    board.make_move(&move_data)
+                    board.make_move(&Move::with_flag(from, to, flag))
                 }
                 moves.clear();
 
+                let think_time = 5 * 1000;
+
                 let engine = &mut Engine::new(&mut board);
                 let search_start = Instant::now();
-                let (best_move, evaluation) = engine
+                let (best_move, _evaluation) = engine
                     .iterative_deepening(&mut |depth, (_best_move, _evaluation)| {}, &mut || {
-                        search_start.elapsed().as_millis() > 5 * 1000
+                        search_start.elapsed().as_millis() > think_time
                     });
                 if !best_move.is_none() {
                     println!(
