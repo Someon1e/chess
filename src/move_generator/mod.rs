@@ -213,8 +213,7 @@ impl MoveGenerator {
         capture_mask: &mut BitBoard,
         push_mask: &mut BitBoard,
         king_bit_board: &BitBoard,
-        friendly_piece_bit_board: &BitBoard,
-        enemy_piece_bit_board: &BitBoard,
+        occupied_squares: &BitBoard,
 
         directions: &[i8],
         squares_from_edge: &[i8],
@@ -231,7 +230,7 @@ impl MoveGenerator {
                     ray.set(&move_to);
                 } else {
                     ray.set(&move_to);
-                    if (*friendly_piece_bit_board | *enemy_piece_bit_board).get(&move_to) {
+                    if occupied_squares.get(&move_to) {
                         break;
                     }
                 }
@@ -446,8 +445,7 @@ impl MoveGenerator {
                             &mut capture_mask,
                             &mut push_mask,
                             &friendly_king,
-                            &friendly_piece_bit_board,
-                            &enemy_piece_bit_board,
+                            &occupied_squares,
                             &DIRECTIONS[4..8],
                             &PRECOMPUTED.squares_from_edge[from.index() as usize][4..8],
                         )
@@ -457,8 +455,7 @@ impl MoveGenerator {
                         &mut capture_mask,
                         &mut push_mask,
                         &friendly_king,
-                        &friendly_piece_bit_board,
-                        &enemy_piece_bit_board,
+                        &occupied_squares,
                         &DIRECTIONS[0..4],
                         &PRECOMPUTED.squares_from_edge[from.index() as usize][0..4],
                     ),
@@ -468,8 +465,7 @@ impl MoveGenerator {
                             &mut capture_mask,
                             &mut push_mask,
                             &friendly_king,
-                            &friendly_piece_bit_board,
-                            &enemy_piece_bit_board,
+                            &occupied_squares,
                             &DIRECTIONS,
                             &PRECOMPUTED.squares_from_edge[from.index() as usize],
                         )
