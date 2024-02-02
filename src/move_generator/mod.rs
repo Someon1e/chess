@@ -24,12 +24,12 @@ impl<'a> MoveGenerator<'a> {
             rank == 0
         }
     }
-    fn gen_promotions(&self, moves: &mut Vec<Move>, from: Square, to: Square) {
+    fn gen_promotions(moves: &mut Vec<Move>, from: Square, to: Square) {
         for promotion in Flag::PROMOTIONS {
             moves.push(Move::with_flag(from, to, promotion));
         }
     }
-    fn pawn_attack_bit_board(&self, from: Square, white: bool) -> BitBoard {
+    fn pawn_attack_bit_board(from: Square, white: bool) -> BitBoard {
         if white {
             PRECOMPUTED.white_pawn_attacks_at_square[from.index() as usize]
         } else {
@@ -79,7 +79,7 @@ impl<'a> MoveGenerator<'a> {
                 let move_to = push_promotions.pop_square();
                 let from = move_to.offset(down_offset);
                 if !pin_rays.get(&from) || pin_rays.get(&move_to) {
-                    self.gen_promotions(moves, from, move_to)
+                    Self::gen_promotions(moves, from, move_to)
                 }
             }
         }
@@ -114,7 +114,7 @@ impl<'a> MoveGenerator<'a> {
                 let from = non_orthogonally_pinned_pawns.pop_square();
                 let is_diagonally_pinned = diagonal_pin_rays.get(&from);
 
-                let mut attacks = self.pawn_attack_bit_board(from, self.board.white_to_move)
+                let mut attacks = Self::pawn_attack_bit_board(from, self.board.white_to_move)
                     & (*capture_mask | *push_mask);
 
                 while !attacks.is_empty() {
@@ -125,7 +125,7 @@ impl<'a> MoveGenerator<'a> {
                     }
                     if enemy_piece_bit_board.get(&attack) {
                         if self.is_promotion_rank(attack.rank()) {
-                            self.gen_promotions(moves, from, attack)
+                            Self::gen_promotions(moves, from, attack)
                         } else {
                             moves.push(Move::new(from, attack));
                         }
@@ -144,7 +144,7 @@ impl<'a> MoveGenerator<'a> {
                     let mut pawns_able_to_enpassant = *pawns & {
                         // Generate attacks for an imaginary enemy pawn at the en passant square
                         // The up-left and up-right of en_passant_square are squares that we can en passant from
-                        self.pawn_attack_bit_board(en_passant_square, !self.board.white_to_move)
+                        Self::pawn_attack_bit_board(en_passant_square, !self.board.white_to_move)
                     };
 
                     let (enemy_rook, enemy_queen) = if self.board.white_to_move {
@@ -283,7 +283,7 @@ impl<'a> MoveGenerator<'a> {
             }
         }
     }
-    fn knight_attack_bit_board(&self, square: Square) -> BitBoard {
+    fn knight_attack_bit_board(square: Square) -> BitBoard {
         PRECOMPUTED.knight_moves_at_square[square.index() as usize]
     }
 
@@ -300,7 +300,7 @@ impl<'a> MoveGenerator<'a> {
         let mut non_pinned_knights = *knights & !(*diagonal_pin_rays | *orthogonal_pin_rays);
         while !non_pinned_knights.is_empty() {
             let from = non_pinned_knights.pop_square();
-            let mut knight_moves = self.knight_attack_bit_board(from)
+            let mut knight_moves = Self::knight_attack_bit_board(from)
                 & !(*friendly_pieces)
                 & (*capture_mask | *push_mask);
             while !knight_moves.is_empty() {
@@ -428,7 +428,7 @@ impl<'a> MoveGenerator<'a> {
                 let dangerous = match piece {
                     Piece::WhitePawn | Piece::BlackPawn => {
                         let pawn_attacks =
-                            self.pawn_attack_bit_board(from, !self.board.white_to_move);
+                        Self::pawn_attack_bit_board(from, !self.board.white_to_move);
                         if pawn_attacks.get(&king_square) {
                             // Pawn is checking the king
                             capture_mask.set(&from)
@@ -436,7 +436,7 @@ impl<'a> MoveGenerator<'a> {
                         pawn_attacks
                     }
                     Piece::WhiteKnight | Piece::BlackKnight => {
-                        let knight_attacks = self.knight_attack_bit_board(from);
+                        let knight_attacks = Self::knight_attack_bit_board(from);
                         if knight_attacks.get(&king_square) {
                             // Knight is checking the king
                             capture_mask.set(&from)
