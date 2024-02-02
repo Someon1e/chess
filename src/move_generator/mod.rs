@@ -297,7 +297,8 @@ impl<'a> MoveGenerator<'a> {
         diagonal_pin_rays: &BitBoard,
         friendly_piece_bit_board: &BitBoard,
     ) {
-        let mut non_pinned_knights = *friendly_knights & !(*diagonal_pin_rays | *orthogonal_pin_rays);
+        let mut non_pinned_knights =
+            *friendly_knights & !(*diagonal_pin_rays | *orthogonal_pin_rays);
         while !non_pinned_knights.is_empty() {
             let from = non_pinned_knights.pop_square();
             let mut knight_moves = Self::knight_attack_bit_board(from)
@@ -428,7 +429,7 @@ impl<'a> MoveGenerator<'a> {
                 let dangerous = match piece {
                     Piece::WhitePawn | Piece::BlackPawn => {
                         let pawn_attacks =
-                        Self::pawn_attack_bit_board(from, !self.board.white_to_move);
+                            Self::pawn_attack_bit_board(from, !self.board.white_to_move);
                         if pawn_attacks.get(&king_square) {
                             // Pawn is checking the king
                             capture_mask.set(&from)
@@ -448,7 +449,7 @@ impl<'a> MoveGenerator<'a> {
                             from,
                             &mut capture_mask,
                             &mut push_mask,
-                            &mut friendly_king_bit_board,
+                            &friendly_king_bit_board,
                             &friendly_piece_bit_board,
                             &enemy_piece_bit_board,
                             &DIRECTIONS[4..8],
@@ -458,7 +459,7 @@ impl<'a> MoveGenerator<'a> {
                         from,
                         &mut capture_mask,
                         &mut push_mask,
-                        &mut friendly_king_bit_board,
+                        &friendly_king_bit_board,
                         &friendly_piece_bit_board,
                         &enemy_piece_bit_board,
                         &DIRECTIONS[0..4],
@@ -469,7 +470,7 @@ impl<'a> MoveGenerator<'a> {
                             from,
                             &mut capture_mask,
                             &mut push_mask,
-                            &mut friendly_king_bit_board,
+                            &friendly_king_bit_board,
                             &friendly_piece_bit_board,
                             &enemy_piece_bit_board,
                             &DIRECTIONS,
