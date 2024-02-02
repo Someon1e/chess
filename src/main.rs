@@ -132,8 +132,7 @@ fn main() {
                 }
                 moves.clear();
 
-                let move_generator = &mut MoveGenerator::new(&mut board);
-                let engine = &mut Engine::new(move_generator);
+                let engine = &mut Engine::new(&mut board);
                 let search_start = Instant::now();
                 let (best_move, evaluation) = engine
                     .iterative_deepening(&mut |depth, (_best_move, _evaluation)| {}, &mut || {
