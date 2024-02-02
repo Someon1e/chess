@@ -73,7 +73,7 @@ impl<'a> Engine<'a> {
         }
     }
 
-    fn evaluate(&mut self) -> i32 {
+    fn evaluate(&self) -> i32 {
         let mut score = 0;
         for piece in piece::WHITE_PIECES {
             let mut bit_board = *self.board.get_bit_board(piece);
