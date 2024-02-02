@@ -170,9 +170,16 @@ fn main() {
                     });
                 if !best_move.is_none() {
                     println!(
-                        "bestmove {}{}",
+                        "bestmove {}{}{}",
                         best_move.from().to_notation(),
-                        best_move.to().to_notation()
+                        best_move.to().to_notation(),
+                        match best_move.flag() {
+                            Flag::QueenPromotion => "q",
+                            Flag::RookPromotion => "r",
+                            Flag::KnightPromotion => "n",
+                            Flag::BishopPromotion => "b",
+                            _ => ""
+                        }
                     )
                 }
             }
