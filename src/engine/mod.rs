@@ -166,31 +166,28 @@ impl<'a> Engine<'a> {
             alpha = stand_pat;
         }
 
-        let mut captures = Vec::with_capacity(10);
-        MoveGenerator::new(&self.board).gen(&mut |move_data| {
-            // TODO: This is extremely inefficient, the move generator should have a parameter to only generate captures.
-            if *move_data.flag() == Flag::EnPassant {
-                captures.push(move_data)
-            } else {
-                let capturing = self.board.enemy_piece_at(move_data.to());
-                if capturing.is_some() {
-                    captures.push(move_data)
+        let mut return_value = None;
+        MoveGenerator::new(&self.board).gen(
+            &mut |capture| {
+                if return_value.is_some() {
+                    return;
                 }
-            }
-        });
-        for capture in captures {
-            self.board.make_move(&capture);
-            let score = -self.quiescence_search(-beta, -alpha);
-            self.board.unmake_move(&capture);
 
-            if score >= beta {
-                return beta;
-            }
-            if score > alpha {
-                alpha = score;
-            }
-        }
-        alpha
+                self.board.make_move(&capture);
+                let score = -self.quiescence_search(-beta, -alpha);
+                self.board.unmake_move(&capture);
+
+                if score >= beta {
+                    return_value = Some(beta);
+                    return;
+                }
+                if score > alpha {
+                    alpha = score;
+                }
+            },
+            true,
+        );
+        return_value.unwrap_or(alpha)
     }
 
     pub fn negamax(&mut self, depth: u16, mut alpha: i32, beta: i32) -> i32 {
@@ -239,7 +236,7 @@ impl<'a> Engine<'a> {
         };
 
         let mut moves = Vec::with_capacity(30);
-        MoveGenerator::new(&self.board).gen(&mut |move_data| moves.push(move_data));
+        MoveGenerator::new(&self.board).gen(&mut |move_data| moves.push(move_data), false);
         self.sort_moves_ascending(&mut moves, &hash_move);
 
         let mut best_move = Move::none();
@@ -281,7 +278,7 @@ impl<'a> Engine<'a> {
         best_move: Move,
     ) -> (Move, i32) {
         let mut moves = Vec::with_capacity(30);
-        MoveGenerator::new(&self.board).gen(&mut |move_data| moves.push(move_data));
+        MoveGenerator::new(&self.board).gen(&mut |move_data| moves.push(move_data), false);
         self.sort_moves_ascending(&mut moves, &best_move);
 
         let (mut best_move, mut best_score) = (Move::none(), -i32::MAX);

@@ -74,12 +74,15 @@ mod tests {
         };
 
         let mut move_count = 0;
-        MoveGenerator::new(board).gen(&mut |move_data| {
-            board.make_move(&move_data);
+        MoveGenerator::new(board).gen(
+            &mut |move_data| {
+                board.make_move(&move_data);
 
-            move_count += perft_inner(board, depth - 1);
-            board.unmake_move(&move_data);
-        });
+                move_count += perft_inner(board, depth - 1);
+                board.unmake_move(&move_data);
+            },
+            false,
+        );
 
         move_count
     }
@@ -90,15 +93,18 @@ mod tests {
 
         let mut move_count = 0;
 
-        MoveGenerator::new(board).gen(&mut |move_data| {
-            board.make_move(&move_data);
-            assert!(Zobrist::compute(board) == board.zobrist_key());
+        MoveGenerator::new(board).gen(
+            &mut |move_data| {
+                board.make_move(&move_data);
+                assert!(Zobrist::compute(board) == board.zobrist_key());
 
-            let inner = perft_inner(board, depth - 1);
-            move_count += inner;
-            println!("{move_data} {inner}");
-            board.unmake_move(&move_data);
-        });
+                let inner = perft_inner(board, depth - 1);
+                move_count += inner;
+                println!("{move_data} {inner}");
+                board.unmake_move(&move_data);
+            },
+            false,
+        );
 
         let seconds_elapsed = start.elapsed().as_secs_f32();
         println!(
