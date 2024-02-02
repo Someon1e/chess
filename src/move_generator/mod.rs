@@ -58,9 +58,9 @@ impl MoveGenerator {
             rank == 0
         }
     }
-    fn gen_promotions(moves: &mut Vec<Move>, from: Square, to: Square) {
+    fn gen_promotions(add_move: &mut dyn FnMut(Move), from: Square, to: Square) {
         for promotion in Flag::PROMOTIONS {
-            moves.push(Move::with_flag(from, to, promotion));
+            add_move(Move::with_flag(from, to, promotion));
         }
     }
     fn pawn_attack_bit_board(from: Square, white: bool) -> BitBoard {
@@ -70,7 +70,7 @@ impl MoveGenerator {
             PRECOMPUTED.black_pawn_attacks_at_square[from.index() as usize]
         }
     }
-    fn gen_pawns(&self, moves: &mut Vec<Move>) {
+    fn gen_pawns(&self, add_move: &mut dyn FnMut(Move)) {
         let (single_push, down_offset) = if self.white_to_move {
             ((self.friendly_pawns << 8) & self.empty_squares, -8)
         } else {
@@ -91,14 +91,14 @@ impl MoveGenerator {
                 let move_to = single_push_no_promotions.pop_square();
                 let from = move_to.offset(down_offset);
                 if !self.pin_rays.get(&from) || self.pin_rays.get(&move_to) {
-                    moves.push(Move::new(from, move_to));
+                    add_move(Move::new(from, move_to));
                 }
             }
             while !push_promotions.is_empty() {
                 let move_to = push_promotions.pop_square();
                 let from = move_to.offset(down_offset);
                 if !self.pin_rays.get(&from) || self.pin_rays.get(&move_to) {
-                    Self::gen_promotions(moves, from, move_to)
+                    Self::gen_promotions(add_move, from, move_to)
                 }
             }
         }
@@ -121,7 +121,7 @@ impl MoveGenerator {
                 let move_to = double_push.pop_square();
                 let from = move_to.offset(double_down_offset);
                 if !self.pin_rays.get(&from) || self.pin_rays.get(&move_to) {
-                    moves.push(Move::with_flag(from, move_to, Flag::PawnTwoUp))
+                    add_move(Move::with_flag(from, move_to, Flag::PawnTwoUp))
                 }
             }
         }
@@ -145,9 +145,9 @@ impl MoveGenerator {
                     }
                     if self.enemy_piece_bit_board.get(&attack) {
                         if self.is_promotion_rank(attack.rank()) {
-                            Self::gen_promotions(moves, from, attack)
+                            Self::gen_promotions(add_move, from, attack)
                         } else {
-                            moves.push(Move::new(from, attack));
+                            add_move(Move::new(from, attack));
                         }
                     }
                 }
@@ -201,7 +201,7 @@ impl MoveGenerator {
                             }
                         }
 
-                        moves.push(Move::with_flag(from, en_passant_square, Flag::EnPassant));
+                        add_move(Move::with_flag(from, en_passant_square, Flag::EnPassant));
                     }
                 }
             }
@@ -242,7 +242,7 @@ impl MoveGenerator {
     }
     fn gen_directional(
         &self,
-        moves: &mut Vec<Move>,
+        add_move: &mut dyn FnMut(Move),
         from: Square,
         direction_start_index: usize,
         direction_end_index: usize,
@@ -279,7 +279,7 @@ impl MoveGenerator {
                     break;
                 }
                 if (self.capture_mask | self.push_mask).get(&move_to) {
-                    moves.push(Move::new(from, move_to));
+                    add_move(Move::new(from, move_to));
                 }
                 if self.enemy_piece_bit_board.get(&move_to) {
                     break;
@@ -291,7 +291,7 @@ impl MoveGenerator {
         PRECOMPUTED.knight_moves_at_square[square.index() as usize]
     }
 
-    fn gen_knights(&self, moves: &mut Vec<Move>) {
+    fn gen_knights(&self, add_move: &mut dyn FnMut(Move)) {
         let mut non_pinned_knights =
             self.friendly_knights & !(self.diagonal_pin_rays | self.orthogonal_pin_rays);
         while !non_pinned_knights.is_empty() {
@@ -301,7 +301,7 @@ impl MoveGenerator {
                 & (self.capture_mask | self.push_mask);
             while !knight_moves.is_empty() {
                 let move_to = knight_moves.pop_square();
-                moves.push(Move::new(from, move_to))
+                add_move(Move::new(from, move_to))
             }
         }
     }
@@ -309,13 +309,13 @@ impl MoveGenerator {
     fn king_attack_bit_board(square: Square) -> BitBoard {
         PRECOMPUTED.king_moves_at_square[square.index() as usize]
     }
-    fn gen_king(&self, moves: &mut Vec<Move>) {
+    fn gen_king(&self, add_move: &mut dyn FnMut(Move)) {
         let mut king_moves = Self::king_attack_bit_board(self.friendly_king_square)
             & !(self.friendly_piece_bit_board)
             & !(self.king_danger_bit_board);
         while !king_moves.is_empty() {
             let move_to = king_moves.pop_square();
-            moves.push(Move::new(self.friendly_king_square, move_to));
+            add_move(Move::new(self.friendly_king_square, move_to));
         }
 
         if self.is_in_check {
@@ -332,7 +332,7 @@ impl MoveGenerator {
             };
 
             if (castle_mask & cannot_castle_into).is_empty() {
-                moves.push(Move::with_flag(
+                add_move(Move::with_flag(
                     self.friendly_king_square,
                     move_to,
                     Flag::Castle,
@@ -354,7 +354,7 @@ impl MoveGenerator {
                     BitBoard::new(0b00001100 << 56)
                 };
                 if (castle_mask & cannot_castle_into).is_empty() {
-                    moves.push(Move::with_flag(
+                    add_move(Move::with_flag(
                         self.friendly_king_square,
                         move_to,
                         Flag::Castle,
@@ -568,28 +568,28 @@ impl MoveGenerator {
         }
     }
 
-    pub fn gen(&self, moves: &mut Vec<Move>) {
-        self.gen_king(moves);
+    pub fn gen(&self, add_move: &mut dyn FnMut(Move)) {
+        self.gen_king(add_move);
         if self.is_in_double_check {
             return;
         }
 
-        self.gen_pawns(moves);
-        self.gen_knights(moves);
+        self.gen_pawns(add_move);
+        self.gen_knights(add_move);
         let mut friendly_bishops = self.friendly_bishops;
         while !friendly_bishops.is_empty() {
             let from = friendly_bishops.pop_square();
-            self.gen_directional(moves, from, 4, 8)
+            self.gen_directional(add_move, from, 4, 8)
         }
         let mut friendly_rooks = self.friendly_rooks;
         while !friendly_rooks.is_empty() {
             let from = friendly_rooks.pop_square();
-            self.gen_directional(moves, from, 0, 4)
+            self.gen_directional(add_move, from, 0, 4)
         }
         let mut friendly_queens = self.friendly_queens;
         while !friendly_queens.is_empty() {
             let from = friendly_queens.pop_square();
-            self.gen_directional(moves, from, 0, 8)
+            self.gen_directional(add_move, from, 0, 8)
         }
     }
 }

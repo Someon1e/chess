@@ -162,7 +162,7 @@ impl<'a> Engine<'a> {
         };
 
         let mut moves = Vec::with_capacity(30);
-        MoveGenerator::new(&self.board).gen(&mut moves);
+        MoveGenerator::new(&self.board).gen(&mut |move_data| moves.push(move_data));
         self.sort_moves_ascending(&mut moves, &hash_move);
 
         let mut best_move = Move::none();
@@ -204,7 +204,7 @@ impl<'a> Engine<'a> {
         best_move: Move,
     ) -> (Move, i32) {
         let mut moves = Vec::with_capacity(30);
-        MoveGenerator::new(&self.board).gen(&mut moves);
+        MoveGenerator::new(&self.board).gen(&mut |move_data| moves.push(move_data));
         self.sort_moves_ascending(&mut moves, &best_move);
 
         let (mut best_move, mut best_score) = (Move::none(), -i32::MAX);
