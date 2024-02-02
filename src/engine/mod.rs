@@ -1,4 +1,4 @@
-mod piece_square_table;
+mod eval_data;
 
 use crate::{
     board::{
@@ -38,69 +38,107 @@ impl<'a> Engine<'a> {
         }
     }
 
-    fn get_absolute_white_piece_value(&self, piece: &Piece, square_index: usize) -> i32 {
-        match piece {
-            Piece::WhitePawn => 100 + piece_square_table::PAWN[square_index],
-            Piece::WhiteKnight => 320 + piece_square_table::KNIGHT[square_index],
-            Piece::WhiteBishop => 330 + piece_square_table::BISHOP[square_index],
-            Piece::WhiteRook => 500 + piece_square_table::ROOK[square_index],
-            Piece::WhiteQueen => 900 + piece_square_table::QUEEN[square_index],
-            Piece::WhiteKing => 20000 + piece_square_table::KING[square_index],
-            _ => unreachable!(),
+    fn get_phase(&self) -> i32 {
+        let mut phase = 0;
+        for piece in piece::ALL_PIECES {
+            let mut bit_board = *self.board.get_bit_board(piece);
+            let piece_index = piece as usize;
+            while !bit_board.is_empty() {
+                bit_board.pop_square();
+
+                phase += eval_data::PIECE_PHASES[piece_index]
+            }
         }
+        phase
     }
-    fn get_absolute_black_piece_value(&self, piece: &Piece, square_index: usize) -> i32 {
-        match piece {
-            Piece::BlackPawn => {
-                100 + piece_square_table::PAWN[piece_square_table::FLIP[square_index]]
-            }
-            Piece::BlackKnight => {
-                320 + piece_square_table::KNIGHT[piece_square_table::FLIP[square_index]]
-            }
-            Piece::BlackBishop => {
-                330 + piece_square_table::BISHOP[piece_square_table::FLIP[square_index]]
-            }
-            Piece::BlackRook => {
-                500 + piece_square_table::ROOK[piece_square_table::FLIP[square_index]]
-            }
-            Piece::BlackQueen => {
-                900 + piece_square_table::QUEEN[piece_square_table::FLIP[square_index]]
-            }
-            Piece::BlackKing => {
-                20000 + piece_square_table::KING[piece_square_table::FLIP[square_index]]
-            }
-            _ => unreachable!(),
-        }
+
+    fn get_piece_value(piece_index: usize, square_index: usize) -> (i32, i32) {
+        let middle_game_piece_score = eval_data::MIDDLE_GAME_PIECE_VALUES[piece_index];
+        let end_game_piece_score = eval_data::END_GAME_PIECE_VALUES[piece_index];
+
+        let middle_game_piece_square_score =
+            eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLES[piece_index][square_index];
+
+        let end_game_piece_square_score =
+            eval_data::END_GAME_PIECE_SQUARE_TABLES[piece_index][square_index];
+
+        (
+            middle_game_piece_score + middle_game_piece_square_score,
+            end_game_piece_score + end_game_piece_square_score,
+        )
+    }
+
+    fn calculate_score(phase: i32, middle_game_score: i32, end_game_score: i32) -> i32 {
+        let mut middle_game_phase = phase;
+        if middle_game_phase > 24 {
+            middle_game_phase = 24
+        };
+        let end_game_phase = 24 - middle_game_phase;
+        (middle_game_score * middle_game_phase + end_game_score * end_game_phase) / 24
     }
 
     fn evaluate(&self) -> i32 {
-        let mut score = 0;
+        let mut middle_game_score_white = 0;
+        let mut end_game_score_white = 0;
+
         for piece in piece::WHITE_PIECES {
             let mut bit_board = *self.board.get_bit_board(piece);
+            let piece_index = piece as usize;
             while !bit_board.is_empty() {
-                let square = bit_board.pop_square();
-                score += self.get_absolute_white_piece_value(&piece, square.index() as usize);
+                let square_index = bit_board.pop_square().index() as usize;
+
+                let (middle_game_value, end_game_value) =
+                    Self::get_piece_value(piece_index, square_index);
+
+                middle_game_score_white += middle_game_value;
+                end_game_score_white += end_game_value;
             }
         }
+
+        let mut middle_game_score_black = 0;
+        let mut end_game_score_black = 0;
+
         for piece in piece::BLACK_PIECES {
             let mut bit_board = *self.board.get_bit_board(piece);
+            let piece_index = piece as usize - 6;
             while !bit_board.is_empty() {
-                let square = bit_board.pop_square();
-                score -= self.get_absolute_black_piece_value(&piece, square.index() as usize);
+                let square_index = bit_board.pop_square().index() as usize;
+
+                let (middle_game_value, end_game_value) =
+                    Self::get_piece_value(piece_index, eval_data::FLIP[square_index]);
+
+                middle_game_score_black += middle_game_value;
+                end_game_score_black += end_game_value;
             }
         }
-        score
+
+        let phase = self.get_phase();
+        Self::calculate_score(
+            phase,
+            middle_game_score_white - middle_game_score_black,
+            end_game_score_white - end_game_score_black,
+        )
     }
 
     fn guess_move_value(&self, move_data: &Move) -> i32 {
         let capturing = self.board.enemy_piece_at(move_data.to());
         // This won't take into account en passant
         if let Some(capturing) = capturing {
-            if self.board.white_to_move {
-                self.get_absolute_black_piece_value(&capturing, move_data.to().index() as usize)
-            } else {
-                self.get_absolute_white_piece_value(&capturing, move_data.to().index() as usize)
-            }
+            let capturing_index = capturing as usize % 6;
+            let moving_index = self.board.friendly_piece_at(move_data.from()).unwrap() as usize % 6;
+
+            let (moving_middle_game_value, moving_end_game_value) =
+                Self::get_piece_value(moving_index, move_data.to().index() as usize);
+
+            let (capturing_middle_game_value, capturing_end_game_value) =
+                Self::get_piece_value(capturing_index, move_data.to().index() as usize);
+
+            let phase = self.get_phase();
+            Self::calculate_score(
+                phase,
+                capturing_middle_game_value - moving_middle_game_value,
+                capturing_end_game_value - moving_end_game_value,
+            )
         } else {
             0
         }
