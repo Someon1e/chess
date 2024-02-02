@@ -135,7 +135,7 @@ mod tests {
                 &mut |depth, (best_move, evaluation)| {
                     println!("Best move at depth {depth} is {} {}", best_move, evaluation);
                 },
-                &mut || search_start.elapsed().as_millis() > 5 * 1000,
+                &mut || search_start.elapsed().as_millis() > 3 * 1000,
             );
             println!("Result: {best_move} {evaluation}")
         }
