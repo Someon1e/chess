@@ -9,7 +9,7 @@ use crate::{
 };
 
 pub struct Engine<'a> {
-    move_generator: &'a mut MoveGenerator<'a>,
+    board: &'a mut Board,
     transposition_table: Vec<Option<NodeValue>>,
 }
 
@@ -31,20 +31,11 @@ enum NodeType {
 const TRANSPOSITION_CAPACITY: usize = 500000;
 
 impl<'a> Engine<'a> {
-    pub fn new(move_generator: &'a mut MoveGenerator<'a>) -> Self {
+    pub fn new(board: &'a mut Board) -> Self {
         Self {
-            move_generator,
+            board,
             transposition_table: vec![None; TRANSPOSITION_CAPACITY as usize],
         }
-    }
-    pub fn board_mut(&mut self) -> &mut Board {
-        self.move_generator.board_mut()
-    }
-    pub fn board(&self) -> &Board {
-        self.move_generator.board()
-    }
-    pub fn move_generator(&self) -> &MoveGenerator {
-        self.move_generator
     }
 
     fn get_absolute_white_piece_value(&self, piece: &Piece, square_index: usize) -> i32 {
@@ -85,14 +76,14 @@ impl<'a> Engine<'a> {
     fn evaluate(&mut self) -> i32 {
         let mut score = 0;
         for piece in piece::WHITE_PIECES {
-            let mut bit_board = *self.board().get_bit_board(piece);
+            let mut bit_board = *self.board.get_bit_board(piece);
             while !bit_board.is_empty() {
                 let square = bit_board.pop_square();
                 score += self.get_absolute_white_piece_value(&piece, square.index() as usize);
             }
         }
         for piece in piece::BLACK_PIECES {
-            let mut bit_board = *self.board().get_bit_board(piece);
+            let mut bit_board = *self.board.get_bit_board(piece);
             while !bit_board.is_empty() {
                 let square = bit_board.pop_square();
                 score -= self.get_absolute_black_piece_value(&piece, square.index() as usize);
@@ -102,10 +93,10 @@ impl<'a> Engine<'a> {
     }
 
     fn guess_move_value(&self, move_data: &Move) -> i32 {
-        let capturing = self.board().enemy_piece_at(move_data.to());
+        let capturing = self.board.enemy_piece_at(move_data.to());
         // This won't take into account en passant
         if let Some(capturing) = capturing {
-            if self.board().white_to_move {
+            if self.board.white_to_move {
                 self.get_absolute_black_piece_value(&capturing, move_data.to().index() as usize)
             } else {
                 self.get_absolute_white_piece_value(&capturing, move_data.to().index() as usize)
@@ -126,7 +117,7 @@ impl<'a> Engine<'a> {
     }
 
     pub fn negamax(&mut self, depth: u16, mut alpha: i32, beta: i32) -> i32 {
-        let zobrist_key = self.board().zobrist_key();
+        let zobrist_key = self.board.zobrist_key();
 
         let mut hash_move = &Move::none();
 
@@ -156,7 +147,7 @@ impl<'a> Engine<'a> {
         let mut node_type = NodeType::Alpha;
 
         if depth == 0 {
-            let evaluation = if self.board().white_to_move {
+            let evaluation = if self.board.white_to_move {
                 self.evaluate()
             } else {
                 -self.evaluate()
@@ -171,14 +162,14 @@ impl<'a> Engine<'a> {
         };
 
         let mut moves = Vec::with_capacity(30);
-        self.move_generator.gen(&mut moves);
+        MoveGenerator::new(&self.board).gen(&mut moves);
         self.sort_moves_ascending(&mut moves, &hash_move);
 
         let mut best_move = Move::none();
         for move_data in moves.iter().rev() {
-            self.board_mut().make_move(&move_data);
+            self.board.make_move(&move_data);
             let score = -self.negamax(depth - 1, -beta, -alpha);
-            self.board_mut().unmake_move(&move_data);
+            self.board.unmake_move(&move_data);
             if score >= beta {
                 node_type = NodeType::Beta;
                 best_move = *move_data;
@@ -213,7 +204,7 @@ impl<'a> Engine<'a> {
         best_move: Move,
     ) -> (Move, i32) {
         let mut moves = Vec::with_capacity(30);
-        self.move_generator.gen(&mut moves);
+        MoveGenerator::new(&self.board).gen(&mut moves);
         self.sort_moves_ascending(&mut moves, &best_move);
 
         let (mut best_move, mut best_score) = (Move::none(), -i32::MAX);
@@ -221,10 +212,10 @@ impl<'a> Engine<'a> {
             if should_cancel() {
                 break;
             }
-            self.board_mut().make_move(move_data);
+            self.board.make_move(move_data);
             let score = -self.negamax(depth - 1, -i32::MAX, i32::MAX);
             println!("{} {}", move_data, score);
-            self.board_mut().unmake_move(move_data);
+            self.board.unmake_move(move_data);
             if score > best_score {
                 (best_move, best_score) = (*move_data, score);
             }
