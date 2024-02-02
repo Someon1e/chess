@@ -6,7 +6,10 @@ use std::{
 use chess::{
     board::{piece::Piece, square::Square, Board},
     engine::Engine,
-    move_generator::{move_data::{Flag, Move}, MoveGenerator},
+    move_generator::{
+        move_data::{Flag, Move},
+        MoveGenerator,
+    },
 };
 
 const START_POSITION_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -58,7 +61,7 @@ fn main() {
                 let mut depth = None;
                 let mut nodes = None;
                 let mut find_mate = None;
-                let mut move_time = None;
+                let mut move_time_in_ms = None;
                 let mut index = 1;
                 while let Some(label) = args.get(index) {
                     match *label {
@@ -66,19 +69,21 @@ fn main() {
                         "ponder" => {}
                         "wtime" => {
                             index += 1;
-                            white_time = args.get(index);
+                            white_time = Some(args.get(index).unwrap().parse::<u128>().unwrap());
                         }
                         "btime" => {
                             index += 1;
-                            black_time = args.get(index);
+                            black_time = Some(args.get(index).unwrap().parse::<u128>().unwrap());
                         }
                         "winc" => {
                             index += 1;
-                            white_increment = args.get(index);
+                            white_increment =
+                                Some(args.get(index).unwrap().parse::<u128>().unwrap());
                         }
                         "binc" => {
                             index += 1;
-                            black_increment = args.get(index);
+                            black_increment =
+                                Some(args.get(index).unwrap().parse::<u128>().unwrap());
                         }
                         "movestogo" => {
                             index += 1;
@@ -98,14 +103,15 @@ fn main() {
                         }
                         "movetime" => {
                             index += 1;
-                            move_time = args.get(index);
+                            move_time_in_ms =
+                                Some(args.get(index).unwrap().parse::<u128>().unwrap());
                         }
                         "perft" => {
                             index += 1;
                             depth = args.get(index);
                         }
                         "infinite" => {
-                            move_time = None;
+                            move_time_in_ms = None;
                         }
                         _ => unimplemented!(),
                     }
@@ -126,7 +132,9 @@ fn main() {
                                 'r' => Flag::RookPromotion,
                                 'n' => Flag::KnightPromotion,
                                 'b' => Flag::BishopPromotion,
-                                _ => {panic!("Invalid promotion notation")}
+                                _ => {
+                                    panic!("Invalid promotion notation")
+                                }
                             }
                         }
                     } else if piece == Piece::BlackKing || piece == Piece::WhiteKing {
@@ -143,7 +151,16 @@ fn main() {
                 }
                 moves.clear();
 
-                let think_time = 5 * 1000;
+                let think_time = move_time_in_ms.unwrap_or_else(|| {
+                    let clock_time = (if board.white_to_move {
+                        white_time
+                    } else {
+                        black_time
+                    })
+                    .unwrap();
+                    (clock_time * 4 / 100).min(5 * 1000) // Use 4% of clock time, but don't use more than 5 seconds.
+                                                         // TODO: take into account increment
+                });
 
                 let engine = &mut Engine::new(&mut board);
                 let search_start = Instant::now();
