@@ -66,6 +66,9 @@ impl BitBoard {
         self.0 &= self.0 - 1;
         index
     }
+    pub fn count(&self) -> u32 {
+        self.0.count_ones()
+    }
 }
 
 macro_rules! implement {
