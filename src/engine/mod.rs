@@ -5,7 +5,10 @@ use crate::{
         piece::{self, Piece},
         Board,
     },
-    move_generator::{move_data::Move, MoveGenerator},
+    move_generator::{
+        move_data::{Flag, Move},
+        MoveGenerator,
+    },
 };
 
 pub struct Engine<'a> {
@@ -154,6 +157,42 @@ impl<'a> Engine<'a> {
         });
     }
 
+    fn quiescence_search(&mut self, mut alpha: i32, beta: i32) -> i32 {
+        let stand_pat = self.evaluate();
+        if stand_pat >= beta {
+            return beta;
+        }
+        if alpha < stand_pat {
+            alpha = stand_pat;
+        }
+
+        let mut captures = Vec::with_capacity(10);
+        MoveGenerator::new(&self.board).gen(&mut |move_data| {
+            // TODO: This is extremely inefficient, the move generator should have a parameter to only generate captures.
+            if *move_data.flag() == Flag::EnPassant {
+                captures.push(move_data)
+            } else {
+                let capturing = self.board.enemy_piece_at(move_data.to());
+                if capturing.is_some() {
+                    captures.push(move_data)
+                }
+            }
+        });
+        for capture in captures {
+            self.board.make_move(&capture);
+            let score = -self.quiescence_search(-beta, -alpha);
+            self.board.unmake_move(&capture);
+
+            if score >= beta {
+                return beta;
+            }
+            if score > alpha {
+                alpha = score;
+            }
+        }
+        alpha
+    }
+
     pub fn negamax(&mut self, depth: u16, mut alpha: i32, beta: i32) -> i32 {
         let zobrist_key = self.board.zobrist_key();
 
@@ -186,9 +225,9 @@ impl<'a> Engine<'a> {
 
         if depth == 0 {
             let evaluation = if self.board.white_to_move {
-                self.evaluate()
+                self.quiescence_search(alpha, beta)
             } else {
-                -self.evaluate()
+                -self.quiescence_search(alpha, beta)
             };
             self.transposition_table[zobrist_key.index(TRANSPOSITION_CAPACITY)] = Some(NodeValue {
                 depth,
