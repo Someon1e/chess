@@ -39,7 +39,7 @@ impl<'a> MoveGenerator<'a> {
     fn gen_pawns(
         &self,
         moves: &mut Vec<Move>,
-        pawns: &BitBoard,
+        friendly_pawns: &BitBoard,
         capture_mask: &BitBoard,
         push_mask: &BitBoard,
         orthogonal_pin_rays: &BitBoard,
@@ -53,9 +53,9 @@ impl<'a> MoveGenerator<'a> {
         let empty_squares = !occupied_squares;
 
         let (single_push, down_offset) = if self.board.white_to_move {
-            ((*pawns << 8) & empty_squares, -8)
+            ((*friendly_pawns << 8) & empty_squares, -8)
         } else {
-            ((*pawns >> 8) & empty_squares, 8)
+            ((*friendly_pawns >> 8) & empty_squares, 8)
         };
         {
             // Move pawn one square up
@@ -109,7 +109,7 @@ impl<'a> MoveGenerator<'a> {
 
         {
             // Captures
-            let mut non_orthogonally_pinned_pawns = *pawns & !(*orthogonal_pin_rays);
+            let mut non_orthogonally_pinned_pawns = *friendly_pawns & !(*orthogonal_pin_rays);
             while !non_orthogonally_pinned_pawns.is_empty() {
                 let from = non_orthogonally_pinned_pawns.pop_square();
                 let is_diagonally_pinned = diagonal_pin_rays.get(&from);
@@ -141,7 +141,7 @@ impl<'a> MoveGenerator<'a> {
                 let capture_position =
                     en_passant_square.down(if self.board.white_to_move { 1 } else { -1 });
                 if capture_mask.get(&capture_position) {
-                    let mut pawns_able_to_enpassant = *pawns & {
+                    let mut pawns_able_to_en_passant = *friendly_pawns & {
                         // Generate attacks for an imaginary enemy pawn at the en passant square
                         // The up-left and up-right of en_passant_square are squares that we can en passant from
                         Self::pawn_attack_bit_board(en_passant_square, !self.board.white_to_move)
@@ -154,8 +154,8 @@ impl<'a> MoveGenerator<'a> {
                     };
                     let enemy_rooks_and_queens_bit_board = *self.board.get_bit_board(enemy_rook)
                         | *self.board.get_bit_board(enemy_queen);
-                    'en_passant_check: while !pawns_able_to_enpassant.is_empty() {
-                        let from = pawns_able_to_enpassant.pop_square();
+                    'en_passant_check: while !pawns_able_to_en_passant.is_empty() {
+                        let from = pawns_able_to_en_passant.pop_square();
                         if orthogonal_pin_rays.get(&from) {
                             continue;
                         }
@@ -290,18 +290,18 @@ impl<'a> MoveGenerator<'a> {
     fn gen_knights(
         &self,
         moves: &mut Vec<Move>,
-        knights: &BitBoard,
+        friendly_knights: &BitBoard,
         capture_mask: &BitBoard,
         push_mask: &BitBoard,
         orthogonal_pin_rays: &BitBoard,
         diagonal_pin_rays: &BitBoard,
-        friendly_pieces: &BitBoard,
+        friendly_piece_bit_board: &BitBoard,
     ) {
-        let mut non_pinned_knights = *knights & !(*diagonal_pin_rays | *orthogonal_pin_rays);
+        let mut non_pinned_knights = *friendly_knights & !(*diagonal_pin_rays | *orthogonal_pin_rays);
         while !non_pinned_knights.is_empty() {
             let from = non_pinned_knights.pop_square();
             let mut knight_moves = Self::knight_attack_bit_board(from)
-                & !(*friendly_pieces)
+                & !(*friendly_piece_bit_board)
                 & (*capture_mask | *push_mask);
             while !knight_moves.is_empty() {
                 let move_to = knight_moves.pop_square();
@@ -409,7 +409,7 @@ impl<'a> MoveGenerator<'a> {
             enemy_piece_bit_board = enemy_piece_bit_board | bit_board;
         }
 
-        let mut king_bit_board = *self.board.get_bit_board(friendly_pieces[5]);
+        let mut friendly_king_bit_board = *self.board.get_bit_board(friendly_pieces[5]);
 
         let mut king_danger_bit_board = BitBoard::empty();
         let mut is_in_check = false;
@@ -419,7 +419,7 @@ impl<'a> MoveGenerator<'a> {
         let mut capture_mask = BitBoard::empty();
         let mut push_mask = BitBoard::empty();
 
-        let king_square = king_bit_board.first_square();
+        let king_square = friendly_king_bit_board.first_square();
 
         for piece in enemy_pieces {
             let mut bit_board = *self.board.get_bit_board(piece);
@@ -448,7 +448,7 @@ impl<'a> MoveGenerator<'a> {
                             from,
                             &mut capture_mask,
                             &mut push_mask,
-                            &mut king_bit_board,
+                            &mut friendly_king_bit_board,
                             &friendly_piece_bit_board,
                             &enemy_piece_bit_board,
                             &DIRECTIONS[4..8],
@@ -458,7 +458,7 @@ impl<'a> MoveGenerator<'a> {
                         from,
                         &mut capture_mask,
                         &mut push_mask,
-                        &mut king_bit_board,
+                        &mut friendly_king_bit_board,
                         &friendly_piece_bit_board,
                         &enemy_piece_bit_board,
                         &DIRECTIONS[0..4],
@@ -469,7 +469,7 @@ impl<'a> MoveGenerator<'a> {
                             from,
                             &mut capture_mask,
                             &mut push_mask,
-                            &mut king_bit_board,
+                            &mut friendly_king_bit_board,
                             &friendly_piece_bit_board,
                             &enemy_piece_bit_board,
                             &DIRECTIONS,
@@ -477,7 +477,7 @@ impl<'a> MoveGenerator<'a> {
                         ),
                     Piece::WhiteKing | Piece::BlackKing => self.king_attack_bit_board(from),
                 };
-                if !(dangerous & king_bit_board).is_empty() {
+                if !(dangerous & friendly_king_bit_board).is_empty() {
                     if is_in_check {
                         is_in_double_check = true;
                     }
@@ -572,12 +572,12 @@ impl<'a> MoveGenerator<'a> {
             &diagonal_pin_rays,
             &friendly_piece_bit_board,
         );
-        let mut bishop_bit_board = *self.board.get_bit_board(friendly_pieces[2]);
-        while !bishop_bit_board.is_empty() {
-            let square = bishop_bit_board.pop_square();
+        let mut friendly_bishop_bit_board = *self.board.get_bit_board(friendly_pieces[2]);
+        while !friendly_bishop_bit_board.is_empty() {
+            let from = friendly_bishop_bit_board.pop_square();
             self.gen_directional(
                 moves,
-                square,
+                from,
                 &capture_mask,
                 &push_mask,
                 &orthogonal_pin_rays,
@@ -588,12 +588,12 @@ impl<'a> MoveGenerator<'a> {
                 8,
             )
         }
-        let mut rook_bit_board = *self.board.get_bit_board(friendly_pieces[3]);
-        while !rook_bit_board.is_empty() {
-            let square = rook_bit_board.pop_square();
+        let mut friendly_rook_bit_board = *self.board.get_bit_board(friendly_pieces[3]);
+        while !friendly_rook_bit_board.is_empty() {
+            let from = friendly_rook_bit_board.pop_square();
             self.gen_directional(
                 moves,
-                square,
+                from,
                 &capture_mask,
                 &push_mask,
                 &orthogonal_pin_rays,
@@ -604,12 +604,12 @@ impl<'a> MoveGenerator<'a> {
                 4,
             )
         }
-        let mut queen_bit_board = *self.board.get_bit_board(friendly_pieces[4]);
-        while !queen_bit_board.is_empty() {
-            let square = queen_bit_board.pop_square();
+        let mut friendly_queen_bit_board = *self.board.get_bit_board(friendly_pieces[4]);
+        while !friendly_queen_bit_board.is_empty() {
+            let from = friendly_queen_bit_board.pop_square();
             self.gen_directional(
                 moves,
-                square,
+                from,
                 &capture_mask,
                 &push_mask,
                 &orthogonal_pin_rays,
