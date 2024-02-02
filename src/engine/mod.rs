@@ -214,7 +214,6 @@ impl<'a> Engine<'a> {
             }
             self.board.make_move(move_data);
             let score = -self.negamax(depth - 1, -i32::MAX, i32::MAX);
-            println!("{} {}", move_data, score);
             self.board.unmake_move(move_data);
             if score > best_score {
                 (best_move, best_score) = (*move_data, score);
