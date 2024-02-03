@@ -178,7 +178,7 @@ fn main() {
                             Flag::RookPromotion => "r",
                             Flag::KnightPromotion => "n",
                             Flag::BishopPromotion => "b",
-                            _ => ""
+                            _ => "",
                         }
                     )
                 }
