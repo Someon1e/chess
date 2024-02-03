@@ -120,7 +120,7 @@ impl<'a> Engine<'a> {
             phase,
             middle_game_score_white - middle_game_score_black,
             end_game_score_white - end_game_score_black,
-        )
+        ) * if self.board.white_to_move {1} else {-1}
     }
 
     fn guess_move_value(&self, move_data: &Move) -> i32 {
@@ -221,11 +221,7 @@ impl<'a> Engine<'a> {
         let mut node_type = NodeType::Alpha;
 
         if depth == 0 {
-            let evaluation = if self.board.white_to_move {
-                self.quiescence_search(alpha, beta)
-            } else {
-                -self.quiescence_search(alpha, beta)
-            };
+            let evaluation = self.quiescence_search(alpha, beta);
             self.transposition_table[zobrist_key.index(TRANSPOSITION_CAPACITY)] = Some(NodeValue {
                 depth,
                 node_type,
