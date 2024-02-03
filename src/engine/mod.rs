@@ -39,13 +39,9 @@ impl<'a> Engine<'a> {
     fn get_phase(&self) -> i32 {
         let mut phase = 0;
         for piece in piece::ALL_PIECES {
-            let mut bit_board = *self.board.get_bit_board(piece);
+            let bit_board = *self.board.get_bit_board(piece);
             let piece_index = piece as usize;
-            while !bit_board.is_empty() {
-                bit_board.pop_square();
-
-                phase += eval_data::PIECE_PHASES[piece_index]
-            }
+            phase += bit_board.count() as i32 * eval_data::PIECE_PHASES[piece_index]
         }
         phase
     }
