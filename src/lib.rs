@@ -17,8 +17,12 @@ mod tests {
     use super::move_generator::MoveGenerator;
 
     const START_POSITION_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    const TEST_FENS: [(u16, usize, &str); 24] = [
-        (6, 119060324, START_POSITION_FEN),
+    const TEST_FENS: [(u16, usize, &str); 25] = [
+        (
+            1,
+            21,
+            "2k4r/pppb3p/5q2/n7/2Pp4/K2PrNP1/PP3nBP/RQb4R w - - 0 1",
+        ),
         (1, 8, "r6r/1b2k1bq/8/8/7B/8/8/R3K2R b KQ - 3 2"),
         (1, 8, "8/8/8/2k5/2pP4/8/B7/4K3 b - d3 0 3"),
         (
@@ -66,6 +70,7 @@ mod tests {
         (6, 2217, "K1k5/8/P7/8/8/8/8/8 w - - 0 1"),
         (7, 567584, "8/k1P5/8/1K6/8/8/8/8 w - - 0 1"),
         (4, 23527, "8/8/2k5/5q2/5n2/8/5K2/8 b - - 0 1"),
+        (6, 119060324, START_POSITION_FEN),
     ];
 
     fn perft_inner(board: &mut Board, depth: u16) -> usize {
@@ -96,6 +101,8 @@ mod tests {
         MoveGenerator::new(board).gen(
             &mut |move_data| {
                 board.make_move(&move_data);
+                //println!("{} {move_data}", board.to_fen());
+
                 assert!(Zobrist::compute(board) == board.zobrist_key());
 
                 let inner = perft_inner(board, depth - 1);

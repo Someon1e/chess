@@ -194,29 +194,35 @@ impl MoveGenerator {
         }
 
         let (single_push, down_offset) = if self.white_to_move {
-            ((self.friendly_pawns << 8) & self.empty_squares, -8)
+            (
+                ((self.friendly_pawns & !self.diagonal_pin_rays) << 8) & self.empty_squares,
+                -8,
+            )
         } else {
-            ((self.friendly_pawns >> 8) & self.empty_squares, 8)
+            (
+                ((self.friendly_pawns & !self.diagonal_pin_rays) >> 8) & self.empty_squares,
+                8,
+            )
         };
 
         {
             // Move pawn one square up
-            let mut push_promotions = single_push
-                & self.push_mask
-                & promotion_rank;
+
+            let mut push_promotions = single_push & self.push_mask & promotion_rank;
 
             let mut single_push_no_promotions = single_push & self.push_mask & !push_promotions;
+
             while !single_push_no_promotions.is_empty() {
                 let move_to = single_push_no_promotions.pop_square();
                 let from = move_to.offset(down_offset);
-                if !self.pin_rays.get(&from) || self.pin_rays.get(&move_to) {
+                if !self.orthogonal_pin_rays.get(&from) || self.orthogonal_pin_rays.get(&move_to) {
                     add_move(Move::new(from, move_to));
                 }
             }
             while !push_promotions.is_empty() {
                 let move_to = push_promotions.pop_square();
                 let from = move_to.offset(down_offset);
-                if !self.pin_rays.get(&from) || self.pin_rays.get(&move_to) {
+                if !self.orthogonal_pin_rays.get(&from) || self.orthogonal_pin_rays.get(&move_to) {
                     Self::gen_promotions(add_move, from, move_to)
                 }
             }
@@ -239,7 +245,7 @@ impl MoveGenerator {
             while !double_push.is_empty() {
                 let move_to = double_push.pop_square();
                 let from = move_to.offset(double_down_offset);
-                if !self.pin_rays.get(&from) || self.pin_rays.get(&move_to) {
+                if !self.orthogonal_pin_rays.get(&from) || self.orthogonal_pin_rays.get(&move_to) {
                     add_move(Move::with_flag(from, move_to, Flag::PawnTwoUp))
                 }
             }
