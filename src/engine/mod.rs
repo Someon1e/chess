@@ -26,7 +26,12 @@ enum NodeType {
     Alpha,
 }
 
-const TRANSPOSITION_CAPACITY: usize = 500000;
+const TRANSPOSITION_CAPACITY: usize = {
+    const MEGABYTES: usize = 128;
+
+    const MEMORY_OF_ONE_ENTRY_IN_BYTES: usize = std::mem::size_of::<NodeValue>();
+    (MEGABYTES * 1000000) / MEMORY_OF_ONE_ENTRY_IN_BYTES
+};
 
 impl<'a> Engine<'a> {
     pub fn new(board: &'a mut Board) -> Self {
