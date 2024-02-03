@@ -2,7 +2,10 @@ mod eval_data;
 
 use crate::{
     board::{piece, zobrist::Zobrist, Board},
-    move_generator::{move_data::Move, MoveGenerator},
+    move_generator::{
+        move_data::{Flag, Move},
+        MoveGenerator,
+    },
 };
 
 pub struct Engine<'a> {
@@ -120,33 +123,53 @@ impl<'a> Engine<'a> {
     }
 
     fn guess_move_value(&self, move_data: &Move) -> i32 {
-        let capturing = self.board.enemy_piece_at(move_data.to());
+        let mut score = 0;
+        match move_data.flag() {
+            Flag::EnPassant => score += 0,
+            Flag::PawnTwoUp => score += 0,
+            Flag::BishopPromotion => score += 200,
+            Flag::KnightPromotion => score += 200,
+            Flag::RookPromotion => score += 400,
+            Flag::QueenPromotion => score += 800,
+            Flag::Castle => score += 0,
+            Flag::None => score += 0,
+        }
         // This won't take into account en passant
-        if let Some(capturing) = capturing {
-            let moving_index = self.board.friendly_piece_at(move_data.from()).unwrap() as usize % 6;
-            let (moving_middle_game_value, moving_end_game_value) =
-                Self::get_piece_value(moving_index, move_data.from().index() as usize);
+        if let Some(capturing) = self.board.enemy_piece_at(move_data.to()) {
+            let (capturing_middle_game_value, capturing_end_game_value) = {
+                let capturing_piece_index = capturing as usize % 6;
+                let mut capturing_square_index = move_data.to().index() as usize;
+                if self.board.white_to_move {
+                    capturing_square_index = eval_data::FLIP[capturing_square_index]
+                }
+                Self::get_piece_value(capturing_piece_index, capturing_square_index)
+            };
 
-            let capturing_index = capturing as usize % 6;
-            let (capturing_middle_game_value, capturing_end_game_value) =
-                Self::get_piece_value(capturing_index, move_data.to().index() as usize);
+            let (moving_middle_game_value, moving_end_game_value) = {
+                let moving_piece_index =
+                    self.board.friendly_piece_at(move_data.from()).unwrap() as usize % 6;
+                let mut moving_from_index = move_data.from().index() as usize;
+                if !self.board.white_to_move {
+                    moving_from_index = eval_data::FLIP[moving_from_index]
+                }
+                Self::get_piece_value(moving_piece_index, moving_from_index)
+            };
 
             let phase = self.get_phase();
-            Self::calculate_score(
+            score += Self::calculate_score(
                 phase,
                 capturing_middle_game_value - moving_middle_game_value,
                 capturing_end_game_value - moving_end_game_value,
-            )
-        } else {
-            0
+            );
         }
+        score
     }
 
     fn sort_moves_ascending(&self, moves: &mut [Move], hash_move: &Move) {
         // Best moves will be at the back, so iterate in reverse later.
         moves.sort_by_cached_key(|move_data| {
             if *move_data == *hash_move {
-                return 100000;
+                return 10000;
             }
             self.guess_move_value(move_data)
         });
@@ -296,6 +319,7 @@ impl<'a> Engine<'a> {
             if should_cancel() {
                 break;
             }
+
             self.board.make_move(move_data);
             let score = -self.negamax(depth - 1, -i32::MAX, i32::MAX);
             self.board.unmake_move(move_data);
