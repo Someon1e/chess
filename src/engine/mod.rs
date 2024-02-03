@@ -274,9 +274,18 @@ impl<'a> Engine<'a> {
         }
 
         let mut best_move = Move::none();
-        for move_data in moves.iter().rev() {
+        for (index, move_data) in moves.iter().rev().enumerate() {
             self.board.make_move(move_data);
-            let score = -self.negamax(depth - 1, -beta, -alpha);
+            let normal_search = index < 3 || depth < 3 || move_generator.is_in_check();
+            let mut score;
+            if normal_search {
+                score = -self.negamax(depth - 1, -beta, -alpha);
+            } else {
+                score = -self.negamax(depth - 2, -beta, -alpha);
+                if score > alpha {
+                    score = -self.negamax(depth - 1, -beta, -alpha);
+                }
+            }
             self.board.unmake_move(move_data);
             if score >= beta {
                 node_type = NodeType::Beta;
@@ -322,13 +331,22 @@ impl<'a> Engine<'a> {
         }
 
         let mut best_score = -i32::MAX;
-        for move_data in moves.iter().rev() {
+        for (index, move_data) in moves.iter().rev().enumerate() {
             if should_cancel() {
                 break;
             }
 
             self.board.make_move(move_data);
-            let score = -self.negamax(depth - 1, -i32::MAX, i32::MAX);
+            let normal_search = index < 3 || depth < 3 || move_generator.is_in_check();
+            let mut score;
+            if normal_search {
+                score = -self.negamax(depth - 1, -i32::MAX, i32::MAX)
+            } else {
+                score = -self.negamax(depth - 2, -i32::MAX, i32::MAX);
+                if score > best_score {
+                    score = -self.negamax(depth - 1, -i32::MAX, i32::MAX);
+                }
+            }
             self.board.unmake_move(move_data);
             if score > best_score {
                 (best_move, best_score) = (*move_data, score);
