@@ -530,11 +530,11 @@ impl MoveGenerator {
                     }
                 } else if let Some(enemy_piece) = board.enemy_piece_at(move_to) {
                     let is_queen =
-                        enemy_piece == Piece::WhiteQueen || enemy_piece == Piece::BlackQueen;
+                        enemy_piece == enemy_pieces[4];
                     let is_rook =
-                        enemy_piece == Piece::WhiteRook || enemy_piece == Piece::BlackRook;
+                        enemy_piece == enemy_pieces[3];
                     let is_bishop =
-                        enemy_piece == Piece::WhiteBishop || enemy_piece == Piece::BlackBishop;
+                        enemy_piece == enemy_pieces[2];
                     if is_queen || (is_rook_movement && is_rook) || (!is_rook_movement && is_bishop)
                     {
                         if is_friendly_piece_on_ray {
