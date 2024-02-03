@@ -36,20 +36,39 @@ fn main() {
                 println!("readyok")
             }
             "position" => {
-                let position = args[1];
-                fen = Some(if position == "startpos" {
-                    START_POSITION_FEN.to_owned()
-                } else {
-                    position.to_owned()
-                });
-                if let Some(arg) = args.get(2) {
-                    if *arg == "moves" {
-                        moves.clear();
-                        for uci_move in &args[3..] {
-                            moves.push((*uci_move).to_owned())
+                let mut index = 1;
+                let mut startpos = true;
+                let mut building_fen = String::new();
+                while let Some(label) = args.get(index) {
+                    index += 1;
+                    match *label {
+                        "moves" => {
+                            moves.clear();
+                            while let Some(uci_move) = args.get(index) {
+                                moves.push((*uci_move).to_owned());
+                                index += 1;
+                            }
+                        }
+                        "fen" => {
+                            startpos = false;
+                        }
+                        "startpos" => {
+                            startpos = true;
+                        }
+                        _ => {
+                            if !startpos {
+                                building_fen.push_str(*label);
+                                building_fen.push_str(" ")
+                            }
                         }
                     }
                 }
+                if startpos {
+                    fen = Some(START_POSITION_FEN.to_owned());
+                } else {
+                    fen = Some(building_fen)
+                }
+                println!("{fen:?}")
             }
             "ucinewgame" => {}
             "go" => {
