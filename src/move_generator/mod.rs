@@ -51,13 +51,6 @@ pub struct MoveGenerator {
 }
 
 impl MoveGenerator {
-    fn is_promotion_rank(&self, rank: i8) -> bool {
-        if self.white_to_move {
-            rank == 7
-        } else {
-            rank == 0
-        }
-    }
     fn gen_promotions(add_move: &mut dyn FnMut(Move), from: Square, to: Square) {
         for promotion in Flag::PROMOTIONS {
             add_move(Move::with_flag(from, to, promotion));
@@ -71,6 +64,12 @@ impl MoveGenerator {
         }
     }
     fn gen_pawns(&self, add_move: &mut dyn FnMut(Move), captures_only: bool) {
+        let promotion_rank = if self.white_to_move {
+            BitBoard::RANK_8
+        } else {
+            BitBoard::RANK_1
+        };
+
         {
             // Captures
 
@@ -100,7 +99,7 @@ impl MoveGenerator {
                 if is_diagonally_pinned && !self.diagonal_pin_rays.get(&capture) {
                     continue;
                 }
-                if self.is_promotion_rank(capture.rank()) {
+                if promotion_rank.get(&capture) {
                     Self::gen_promotions(add_move, from, capture)
                 } else {
                     add_move(Move::new(from, capture));
@@ -129,7 +128,7 @@ impl MoveGenerator {
                 if is_diagonally_pinned && !self.diagonal_pin_rays.get(&capture) {
                     continue;
                 }
-                if self.is_promotion_rank(capture.rank()) {
+                if promotion_rank.get(&capture) {
                     Self::gen_promotions(add_move, from, capture)
                 } else {
                     add_move(Move::new(from, capture));
@@ -204,11 +203,7 @@ impl MoveGenerator {
             // Move pawn one square up
             let mut push_promotions = single_push
                 & self.push_mask
-                & (if self.white_to_move {
-                    BitBoard::RANK_8
-                } else {
-                    BitBoard::RANK_1
-                });
+                & promotion_rank;
 
             let mut single_push_no_promotions = single_push & self.push_mask & !push_promotions;
             while !single_push_no_promotions.is_empty() {
