@@ -44,7 +44,6 @@ pub struct MoveGenerator {
 
     diagonal_pin_rays: BitBoard,
     orthogonal_pin_rays: BitBoard,
-    pin_rays: BitBoard,
 
     capture_mask: BitBoard,
     push_mask: BitBoard,
@@ -313,20 +312,16 @@ impl MoveGenerator {
                     if is_pinned_orthogonally && !(self.orthogonal_pin_rays.get(&move_to)) {
                         break;
                     }
-                } else if is_pinned_diagonally {
-                    if !(self.diagonal_pin_rays.get(&move_to)) {
-                        break;
-                    }
+                } else if is_pinned_diagonally && !(self.diagonal_pin_rays.get(&move_to)) {
+                    break;
                 }
 
                 if self.friendly_piece_bit_board.get(&move_to) {
                     break;
                 }
                 let enemy_on_square = self.enemy_piece_bit_board.get(&move_to);
-                if enemy_on_square || !captures_only {
-                    if (self.capture_mask | self.push_mask).get(&move_to) {
-                        add_move(Move::new(from, move_to));
-                    }
+                if (enemy_on_square || !captures_only) && (self.capture_mask | self.push_mask).get(&move_to) {
+                    add_move(Move::new(from, move_to));
                 }
                 if enemy_on_square {
                     break;
@@ -609,7 +604,6 @@ impl MoveGenerator {
             is_in_double_check,
             diagonal_pin_rays,
             orthogonal_pin_rays,
-            pin_rays: diagonal_pin_rays | orthogonal_pin_rays,
             capture_mask,
             push_mask,
         }

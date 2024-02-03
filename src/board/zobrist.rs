@@ -21,7 +21,7 @@ lazy_static! {
         let mut piece_arrays: [[u64; 64]; 12] = [[0; 64]; 12];
         for piece in piece::ALL_PIECES {
             let mut square_array = piece_arrays[piece as usize];
-            square_array.fill_with(|| random_u64());
+            square_array.fill_with(random_u64);
             piece_arrays[piece as usize] = square_array
         }
         piece_arrays
@@ -29,12 +29,12 @@ lazy_static! {
     static ref SIDE_TO_MOVE: u64 = random_u64();
     static ref EN_PASSANT_SQUARE_FILE: [u64; 8] = {
         let mut en_passant_square_file = [0; 8];
-        en_passant_square_file.fill_with(|| random_u64());
+        en_passant_square_file.fill_with(random_u64);
         en_passant_square_file
     };
     static ref CASTLING_RIGHTS: [u64; 16] = {
         let mut castling_rights = [0; 16];
-        castling_rights.fill_with(|| random_u64());
+        castling_rights.fill_with(random_u64);
         castling_rights
     };
 }

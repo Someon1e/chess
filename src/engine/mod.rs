@@ -37,7 +37,7 @@ impl<'a> Engine<'a> {
     pub fn new(board: &'a mut Board) -> Self {
         Self {
             board,
-            transposition_table: vec![None; TRANSPOSITION_CAPACITY as usize],
+            transposition_table: vec![None; TRANSPOSITION_CAPACITY],
         }
     }
 
@@ -142,7 +142,7 @@ impl<'a> Engine<'a> {
         }
     }
 
-    fn sort_moves_ascending(&self, moves: &mut Vec<Move>, hash_move: &Move) {
+    fn sort_moves_ascending(&self, moves: &mut [Move], hash_move: &Move) {
         // Best moves will be at the back, so iterate in reverse later.
         moves.sort_by_cached_key(|move_data| {
             if *move_data == *hash_move {
@@ -162,7 +162,7 @@ impl<'a> Engine<'a> {
         }
 
         let mut return_value = None;
-        MoveGenerator::new(&self.board).gen(
+        MoveGenerator::new(self.board).gen(
             &mut |capture| {
                 if return_value.is_some() {
                     return;
@@ -187,7 +187,7 @@ impl<'a> Engine<'a> {
 
     pub fn negamax(&mut self, depth: u16, mut alpha: i32, beta: i32) -> i32 {
         let zobrist_key = self.board.zobrist_key();
-        let zobrist_index = zobrist_key.index(TRANSPOSITION_CAPACITY) as usize;
+        let zobrist_index = zobrist_key.index(TRANSPOSITION_CAPACITY);
 
         let mut hash_move = &Move::none();
 
@@ -231,7 +231,7 @@ impl<'a> Engine<'a> {
         };
 
         let mut moves = Vec::with_capacity(30);
-        let move_generator = MoveGenerator::new(&self.board);
+        let move_generator = MoveGenerator::new(self.board);
         move_generator.gen(&mut |move_data| moves.push(move_data), false);
         if moves.is_empty() {
             if move_generator.is_in_check() {
@@ -239,13 +239,13 @@ impl<'a> Engine<'a> {
             }
             return 0;
         }
-        self.sort_moves_ascending(&mut moves, &hash_move);
+        self.sort_moves_ascending(&mut moves, hash_move);
 
         let mut best_move = Move::none();
         for move_data in moves.iter().rev() {
-            self.board.make_move(&move_data);
+            self.board.make_move(move_data);
             let score = -self.negamax(depth - 1, -beta, -alpha);
-            self.board.unmake_move(&move_data);
+            self.board.unmake_move(move_data);
             if score >= beta {
                 node_type = NodeType::Beta;
                 best_move = *move_data;
@@ -281,7 +281,7 @@ impl<'a> Engine<'a> {
         mut best_move: Move,
     ) -> (Move, i32) {
         let mut moves = Vec::with_capacity(30);
-        let move_generator = MoveGenerator::new(&self.board);
+        let move_generator = MoveGenerator::new(self.board);
         move_generator.gen(&mut |move_data| moves.push(move_data), false);
         if moves.is_empty() {
             if move_generator.is_in_check() {

@@ -110,7 +110,7 @@ impl Board {
             let rook_bit_board = self.get_bit_board_mut(rook);
             let rook_from = &move_data.to().offset(rook_from_offset);
             let rook_to = &move_data.to().offset(rook_to_offset);
-            rook_bit_board.toggle(&rook_from, &rook_to);
+            rook_bit_board.toggle(rook_from, rook_to);
             self.game_state
                 .zobrist_key
                 .xor_piece(rook as usize, rook_from.index() as usize);
