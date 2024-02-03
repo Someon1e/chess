@@ -320,7 +320,9 @@ impl MoveGenerator {
                     break;
                 }
                 let enemy_on_square = self.enemy_piece_bit_board.get(&move_to);
-                if (enemy_on_square || !captures_only) && (self.capture_mask | self.push_mask).get(&move_to) {
+                if (enemy_on_square || !captures_only)
+                    && (self.capture_mask | self.push_mask).get(&move_to)
+                {
                     add_move(Move::new(from, move_to));
                 }
                 if enemy_on_square {
@@ -336,14 +338,15 @@ impl MoveGenerator {
     fn gen_knights(&self, add_move: &mut dyn FnMut(Move), captures_only: bool) {
         let mut non_pinned_knights =
             self.friendly_knights & !(self.diagonal_pin_rays | self.orthogonal_pin_rays);
+
+        let mut mask = (self.capture_mask | self.push_mask) & !self.friendly_piece_bit_board;
+        if captures_only {
+            mask &= self.enemy_piece_bit_board
+        }
+
         while !non_pinned_knights.is_empty() {
             let from = non_pinned_knights.pop_square();
-            let mut knight_moves = Self::knight_attack_bit_board(from)
-                & !(self.friendly_piece_bit_board)
-                & (self.capture_mask | self.push_mask);
-            if captures_only {
-                knight_moves &= self.enemy_piece_bit_board
-            }
+            let mut knight_moves = Self::knight_attack_bit_board(from) & mask;
             while !knight_moves.is_empty() {
                 let move_to = knight_moves.pop_square();
                 add_move(Move::new(from, move_to))
