@@ -440,7 +440,7 @@ impl MoveGenerator {
                 let dangerous = match piece {
                     Piece::WhitePawn | Piece::BlackPawn => {
                         let pawn_attacks = Self::pawn_attack_bit_board(from, !white_to_move);
-                        if pawn_attacks.get(&friendly_king_square) {
+                        if !(pawn_attacks & friendly_king).is_empty() {
                             // Pawn is checking the king
                             capture_mask.set(&from)
                         };
@@ -448,7 +448,7 @@ impl MoveGenerator {
                     }
                     Piece::WhiteKnight | Piece::BlackKnight => {
                         let knight_attacks = Self::knight_attack_bit_board(from);
-                        if knight_attacks.get(&friendly_king_square) {
+                        if !(knight_attacks & friendly_king).is_empty() {
                             // Knight is checking the king
                             capture_mask.set(&from)
                         };
