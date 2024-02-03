@@ -71,12 +71,6 @@ impl MoveGenerator {
         }
     }
     fn gen_pawns(&self, add_move: &mut dyn FnMut(Move), captures_only: bool) {
-        let (single_push, down_offset) = if self.white_to_move {
-            ((self.friendly_pawns << 8) & self.empty_squares, -8)
-        } else {
-            ((self.friendly_pawns >> 8) & self.empty_squares, 8)
-        };
-
         {
             // Captures
             let mut non_orthogonally_pinned_pawns =
@@ -162,6 +156,12 @@ impl MoveGenerator {
             return;
         }
 
+        let (single_push, down_offset) = if self.white_to_move {
+            ((self.friendly_pawns << 8) & self.empty_squares, -8)
+        } else {
+            ((self.friendly_pawns >> 8) & self.empty_squares, 8)
+        };
+
         {
             // Move pawn one square up
             let mut push_promotions = single_push
@@ -231,7 +231,7 @@ impl MoveGenerator {
                 if king_bit_board.get(&move_to) {
                     // This piece is checking the king
                     capture_mask.set(&from);
-                    *push_mask = *push_mask | ray;
+                    *push_mask |= ray;
                     ray.set(&move_to);
                 } else {
                     ray.set(&move_to);
@@ -240,7 +240,7 @@ impl MoveGenerator {
                     }
                 }
             }
-            attacked = attacked | ray
+            attacked |= ray
         }
         attacked
     }
@@ -308,7 +308,7 @@ impl MoveGenerator {
                 & !(self.friendly_piece_bit_board)
                 & (self.capture_mask | self.push_mask);
             if captures_only {
-                knight_moves = knight_moves & self.enemy_piece_bit_board
+                knight_moves &= self.enemy_piece_bit_board
             }
             while !knight_moves.is_empty() {
                 let move_to = knight_moves.pop_square();
@@ -325,7 +325,7 @@ impl MoveGenerator {
             & !(self.friendly_piece_bit_board)
             & !(self.king_danger_bit_board);
         if captures_only {
-            king_moves = king_moves & self.enemy_piece_bit_board
+            king_moves &= self.enemy_piece_bit_board
         }
         while !king_moves.is_empty() {
             let move_to = king_moves.pop_square();
@@ -417,7 +417,7 @@ impl MoveGenerator {
         let mut enemy_piece_bit_board = BitBoard::empty();
         for piece in enemy_pieces {
             let bit_board = *board.get_bit_board(piece);
-            enemy_piece_bit_board = enemy_piece_bit_board | bit_board;
+            enemy_piece_bit_board |= bit_board;
         }
 
         let occupied_squares = friendly_piece_bit_board | enemy_piece_bit_board;
@@ -494,7 +494,7 @@ impl MoveGenerator {
                     is_in_check = true;
                     checkers.set(&from)
                 }
-                king_danger_bit_board = king_danger_bit_board | dangerous
+                king_danger_bit_board |= dangerous
             }
         }
 
@@ -540,9 +540,9 @@ impl MoveGenerator {
                         if is_friendly_piece_on_ray {
                             // Friendly piece is blocking check, it is pinned
                             if is_rook_movement {
-                                orthogonal_pin_rays = orthogonal_pin_rays | ray
+                                orthogonal_pin_rays |= ray
                             } else {
-                                diagonal_pin_rays = diagonal_pin_rays | ray
+                                diagonal_pin_rays |= ray
                             }
                         }
                     } else {

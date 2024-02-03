@@ -1,6 +1,6 @@
 use super::square::Square;
 use std::fmt;
-use std::ops::{BitAnd, BitOr, Not, Shl, Shr};
+use std::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, Not, Shl, Shr};
 
 #[derive(Copy, Clone, PartialEq)]
 pub struct BitBoard(u64);
@@ -71,7 +71,7 @@ impl BitBoard {
     }
 }
 
-macro_rules! implement {
+macro_rules! implement_op {
     ($op:ident, $name:ident, $operator:tt) => {
         impl $op<BitBoard> for BitBoard {
             type Output = BitBoard;
@@ -82,8 +82,20 @@ macro_rules! implement {
         }
     };
 }
-implement!(BitOr, bitor, |);
-implement!(BitAnd, bitand, &);
+macro_rules! implement_assign_op {
+    ($op:ident, $name:ident, $operator:tt) => {
+        impl $op<BitBoard> for BitBoard {
+            fn $name(&mut self, rhs: Self) {
+                *self = Self(self.0 $operator rhs.0)
+            }
+        }
+    };
+}
+implement_op!(BitOr, bitor, |);
+implement_assign_op!(BitOrAssign, bitor_assign, |);
+
+implement_op!(BitAnd, bitand, &);
+implement_assign_op!(BitAndAssign, bitand_assign, &);
 
 macro_rules! shift {
     ($op:ident, $name:ident, $operator:tt) => {
