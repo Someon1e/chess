@@ -2,11 +2,12 @@ mod eval_data;
 
 use crate::{
     board::{
-        piece::{self, Piece},
+        piece,
+        zobrist::Zobrist,
         Board,
     },
     move_generator::{
-        move_data::{Flag, Move},
+        move_data::Move,
         MoveGenerator,
     },
 };
@@ -18,6 +19,7 @@ pub struct Engine<'a> {
 
 #[derive(Clone, Copy)]
 struct NodeValue {
+    key: Zobrist,
     depth: u16,
     node_type: NodeType,
     value: i32,
@@ -120,7 +122,7 @@ impl<'a> Engine<'a> {
             phase,
             middle_game_score_white - middle_game_score_black,
             end_game_score_white - end_game_score_black,
-        ) * if self.board.white_to_move {1} else {-1}
+        ) * if self.board.white_to_move { 1 } else { -1 }
     }
 
     fn guess_move_value(&self, move_data: &Move) -> i32 {
@@ -192,37 +194,41 @@ impl<'a> Engine<'a> {
 
     pub fn negamax(&mut self, depth: u16, mut alpha: i32, beta: i32) -> i32 {
         let zobrist_key = self.board.zobrist_key();
+        let zobrist_index = zobrist_key.index(TRANSPOSITION_CAPACITY) as usize;
 
         let mut hash_move = &Move::none();
 
         // TODO: thoroughly test this works
-        if let Some(saved) =
-            &self.transposition_table[(zobrist_key.index(TRANSPOSITION_CAPACITY)) as usize]
-        {
-            if saved.depth >= depth {
-                let node_type = &saved.node_type;
-                match node_type {
-                    NodeType::Exact => return saved.value,
-                    NodeType::Beta => {
-                        if saved.value >= beta {
-                            return saved.value;
+        if let Some(saved) = &self.transposition_table[zobrist_index] {
+            if saved.key != zobrist_key {
+                // println!("Collision!")
+            } else {
+                if saved.depth >= depth {
+                    let node_type = &saved.node_type;
+                    match node_type {
+                        NodeType::Exact => return saved.value,
+                        NodeType::Beta => {
+                            if saved.value >= beta {
+                                return saved.value;
+                            }
                         }
-                    }
-                    NodeType::Alpha => {
-                        if saved.value <= alpha {
-                            return saved.value;
+                        NodeType::Alpha => {
+                            if saved.value <= alpha {
+                                return saved.value;
+                            }
                         }
                     }
                 }
+                hash_move = &saved.best_move
             }
-            hash_move = &saved.best_move
         }
 
         let mut node_type = NodeType::Alpha;
 
         if depth == 0 {
             let evaluation = self.quiescence_search(alpha, beta);
-            self.transposition_table[zobrist_key.index(TRANSPOSITION_CAPACITY)] = Some(NodeValue {
+            self.transposition_table[zobrist_index] = Some(NodeValue {
+                key: zobrist_key,
                 depth,
                 node_type,
                 value: evaluation,
@@ -243,13 +249,13 @@ impl<'a> Engine<'a> {
             if score >= beta {
                 node_type = NodeType::Beta;
                 best_move = *move_data;
-                self.transposition_table[zobrist_key.index(TRANSPOSITION_CAPACITY)] =
-                    Some(NodeValue {
-                        depth,
-                        node_type,
-                        value: score,
-                        best_move,
-                    });
+                self.transposition_table[zobrist_index] = Some(NodeValue {
+                    key: zobrist_key,
+                    depth,
+                    node_type,
+                    value: score,
+                    best_move,
+                });
                 return beta;
             }
             if score > alpha {
@@ -258,7 +264,8 @@ impl<'a> Engine<'a> {
                 best_move = *move_data;
             }
         }
-        self.transposition_table[zobrist_key.index(TRANSPOSITION_CAPACITY)] = Some(NodeValue {
+        self.transposition_table[zobrist_index] = Some(NodeValue {
+            key: zobrist_key,
             depth,
             node_type,
             value: alpha,
