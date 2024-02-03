@@ -118,12 +118,11 @@ impl<'a> Engine<'a> {
         let capturing = self.board.enemy_piece_at(move_data.to());
         // This won't take into account en passant
         if let Some(capturing) = capturing {
-            let capturing_index = capturing as usize % 6;
             let moving_index = self.board.friendly_piece_at(move_data.from()).unwrap() as usize % 6;
-
             let (moving_middle_game_value, moving_end_game_value) =
-                Self::get_piece_value(moving_index, move_data.to().index() as usize);
+                Self::get_piece_value(moving_index, move_data.from().index() as usize);
 
+            let capturing_index = capturing as usize % 6;
             let (capturing_middle_game_value, capturing_end_game_value) =
                 Self::get_piece_value(capturing_index, move_data.to().index() as usize);
 
