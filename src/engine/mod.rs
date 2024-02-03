@@ -1,15 +1,8 @@
 mod eval_data;
 
 use crate::{
-    board::{
-        piece,
-        zobrist::Zobrist,
-        Board,
-    },
-    move_generator::{
-        move_data::Move,
-        MoveGenerator,
-    },
+    board::{piece, zobrist::Zobrist, Board},
+    move_generator::{move_data::Move, MoveGenerator},
 };
 
 pub struct Engine<'a> {
@@ -238,7 +231,14 @@ impl<'a> Engine<'a> {
         };
 
         let mut moves = Vec::with_capacity(30);
-        MoveGenerator::new(&self.board).gen(&mut |move_data| moves.push(move_data), false);
+        let move_generator = MoveGenerator::new(&self.board);
+        move_generator.gen(&mut |move_data| moves.push(move_data), false);
+        if moves.is_empty() {
+            if move_generator.is_in_check() {
+                return -i32::MAX;
+            }
+            return 0;
+        }
         self.sort_moves_ascending(&mut moves, &hash_move);
 
         let mut best_move = Move::none();
@@ -278,13 +278,20 @@ impl<'a> Engine<'a> {
         &mut self,
         depth: u16,
         should_cancel: &mut dyn FnMut() -> bool,
-        best_move: Move,
+        mut best_move: Move,
     ) -> (Move, i32) {
         let mut moves = Vec::with_capacity(30);
-        MoveGenerator::new(&self.board).gen(&mut |move_data| moves.push(move_data), false);
+        let move_generator = MoveGenerator::new(&self.board);
+        move_generator.gen(&mut |move_data| moves.push(move_data), false);
+        if moves.is_empty() {
+            if move_generator.is_in_check() {
+                return (best_move, -i32::MAX);
+            }
+            return (best_move, 0);
+        }
         self.sort_moves_ascending(&mut moves, &best_move);
 
-        let (mut best_move, mut best_score) = (Move::none(), -i32::MAX);
+        let mut best_score = -i32::MAX;
         for move_data in moves.iter().rev() {
             if should_cancel() {
                 break;

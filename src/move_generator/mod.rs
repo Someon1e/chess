@@ -603,4 +603,8 @@ impl MoveGenerator {
             self.gen_directional(add_move, captures_only, from, 0, 8)
         }
     }
+
+    pub fn is_in_check(&self) -> bool {
+        self.is_in_check
+    }
 }
