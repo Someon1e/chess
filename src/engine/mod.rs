@@ -1,7 +1,7 @@
 mod eval_data;
 
 use crate::{
-    board::{piece, zobrist::Zobrist, Board},
+    board::{bit_board::BitBoard, piece, zobrist::Zobrist, Board},
     move_generator::{
         move_data::{Flag, Move},
         MoveGenerator,
@@ -122,7 +122,7 @@ impl<'a> Engine<'a> {
         ) * if self.board.white_to_move { 1 } else { -1 }
     }
 
-    fn guess_move_value(&self, move_data: &Move) -> i32 {
+    fn guess_move_value(&self, enemy_pawn_attacks: &BitBoard, move_data: &Move) -> i32 {
         let mut score = 0;
         match move_data.flag() {
             Flag::EnPassant => score += 0,
@@ -134,6 +134,11 @@ impl<'a> Engine<'a> {
             Flag::Castle => score += 0,
             Flag::None => score += 0,
         }
+
+        if enemy_pawn_attacks.get(&move_data.to()) {
+            score -= 50;
+        }
+
         // This won't take into account en passant
         if let Some(capturing) = self.board.enemy_piece_at(move_data.to()) {
             let (capturing_middle_game_value, capturing_end_game_value) = {
@@ -142,6 +147,7 @@ impl<'a> Engine<'a> {
                 if self.board.white_to_move {
                     capturing_square_index = eval_data::FLIP[capturing_square_index]
                 }
+
                 Self::get_piece_value(capturing_piece_index, capturing_square_index)
             };
 
@@ -165,14 +171,19 @@ impl<'a> Engine<'a> {
         score
     }
 
-    fn sort_moves_ascending(&self, moves: &mut [Move], hash_move: &Move) {
+    fn get_sorted_moves(&self, move_generator: &MoveGenerator, hash_move: &Move) -> Vec<Move> {
+        let mut moves = Vec::with_capacity(30);
+        move_generator.gen(&mut |move_data| moves.push(move_data), false);
+
         // Best moves will be at the back, so iterate in reverse later.
         moves.sort_by_cached_key(|move_data| {
             if *move_data == *hash_move {
                 return 10000;
             }
-            self.guess_move_value(move_data)
+            self.guess_move_value(&move_generator.enemy_pawn_attacks(), move_data)
         });
+
+        moves
     }
 
     fn quiescence_search(&mut self, mut alpha: i32, beta: i32) -> i32 {
@@ -253,16 +264,14 @@ impl<'a> Engine<'a> {
             return evaluation;
         };
 
-        let mut moves = Vec::with_capacity(30);
         let move_generator = MoveGenerator::new(self.board);
-        move_generator.gen(&mut |move_data| moves.push(move_data), false);
+        let moves = self.get_sorted_moves(&move_generator, hash_move);
         if moves.is_empty() {
             if move_generator.is_in_check() {
                 return -i32::MAX;
             }
             return 0;
         }
-        self.sort_moves_ascending(&mut moves, hash_move);
 
         let mut best_move = Move::none();
         for move_data in moves.iter().rev() {
@@ -303,16 +312,14 @@ impl<'a> Engine<'a> {
         should_cancel: &mut dyn FnMut() -> bool,
         mut best_move: Move,
     ) -> (Move, i32) {
-        let mut moves = Vec::with_capacity(30);
         let move_generator = MoveGenerator::new(self.board);
-        move_generator.gen(&mut |move_data| moves.push(move_data), false);
+        let moves = self.get_sorted_moves(&move_generator, &best_move);
         if moves.is_empty() {
             if move_generator.is_in_check() {
                 return (best_move, -i32::MAX);
             }
             return (best_move, 0);
         }
-        self.sort_moves_ascending(&mut moves, &best_move);
 
         let mut best_score = -i32::MAX;
         for move_data in moves.iter().rev() {

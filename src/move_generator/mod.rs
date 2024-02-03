@@ -47,6 +47,8 @@ pub struct MoveGenerator {
 
     capture_mask: BitBoard,
     push_mask: BitBoard,
+
+    enemy_pawn_attacks: BitBoard,
 }
 
 impl MoveGenerator {
@@ -461,6 +463,7 @@ impl MoveGenerator {
         let empty_squares = !occupied_squares;
 
         let mut king_danger_bit_board = BitBoard::empty();
+        let mut enemy_pawn_attacks = BitBoard::empty();
         let mut is_in_check = false;
         let mut is_in_double_check = false;
         let mut checkers = BitBoard::empty();
@@ -481,6 +484,7 @@ impl MoveGenerator {
                             // Pawn is checking the king
                             capture_mask.set(&from)
                         };
+                        enemy_pawn_attacks |= pawn_attacks;
                         pawn_attacks
                     }
                     Piece::WhiteKnight | Piece::BlackKnight => {
@@ -609,6 +613,7 @@ impl MoveGenerator {
             orthogonal_pin_rays,
             capture_mask,
             push_mask,
+            enemy_pawn_attacks,
         }
     }
 
@@ -639,5 +644,8 @@ impl MoveGenerator {
 
     pub fn is_in_check(&self) -> bool {
         self.is_in_check
+    }
+    pub fn enemy_pawn_attacks(&self) -> BitBoard {
+        self.enemy_pawn_attacks
     }
 }
