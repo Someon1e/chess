@@ -73,28 +73,66 @@ impl MoveGenerator {
     fn gen_pawns(&self, add_move: &mut dyn FnMut(Move), captures_only: bool) {
         {
             // Captures
-            let mut non_orthogonally_pinned_pawns =
-                self.friendly_pawns & !(self.orthogonal_pin_rays);
-            while !non_orthogonally_pinned_pawns.is_empty() {
-                let from = non_orthogonally_pinned_pawns.pop_square();
+
+            const NOT_A_FILE: BitBoard = BitBoard::new(!0x101010101010101);
+            const NOT_H_FILE: BitBoard = BitBoard::new(!(0x101010101010101 << 7));
+            let non_orthogonally_pinned_pawns = self.friendly_pawns & !(self.orthogonal_pin_rays);
+
+            let not_on_the_right_edge = if self.white_to_move {
+                NOT_H_FILE
+            } else {
+                NOT_A_FILE
+            };
+            let capture_right_offset = if self.white_to_move { -9 } else { 9 };
+
+            let mut capture_right = if self.white_to_move {
+                (non_orthogonally_pinned_pawns & not_on_the_right_edge) << 9
+            } else {
+                (non_orthogonally_pinned_pawns & not_on_the_right_edge) >> 9
+            } & self.enemy_piece_bit_board
+                & self.capture_mask;
+            while !capture_right.is_empty() {
+                let capture = capture_right.pop_square();
+                let from = capture.offset(capture_right_offset);
+
                 let is_diagonally_pinned = self.diagonal_pin_rays.get(&from);
 
-                let mut attacks = Self::pawn_attack_bit_board(from, self.white_to_move)
-                    & (self.capture_mask | self.push_mask);
+                if is_diagonally_pinned && !self.diagonal_pin_rays.get(&capture) {
+                    continue;
+                }
+                if self.is_promotion_rank(capture.rank()) {
+                    Self::gen_promotions(add_move, from, capture)
+                } else {
+                    add_move(Move::new(from, capture));
+                }
+            }
 
-                while !attacks.is_empty() {
-                    let attack = attacks.pop_square();
+            let capture_left_offset = if self.white_to_move { -7 } else { 7 };
 
-                    if is_diagonally_pinned && !self.diagonal_pin_rays.get(&attack) {
-                        continue;
-                    }
-                    if self.enemy_piece_bit_board.get(&attack) {
-                        if self.is_promotion_rank(attack.rank()) {
-                            Self::gen_promotions(add_move, from, attack)
-                        } else {
-                            add_move(Move::new(from, attack));
-                        }
-                    }
+            let not_on_the_left_edge = if self.white_to_move {
+                NOT_A_FILE
+            } else {
+                NOT_H_FILE
+            };
+
+            let mut capture_left = if self.white_to_move {
+                (non_orthogonally_pinned_pawns & not_on_the_left_edge) << 7
+            } else {
+                (non_orthogonally_pinned_pawns & not_on_the_left_edge) >> 7
+            } & self.enemy_piece_bit_board
+                & self.capture_mask;
+            while !capture_left.is_empty() {
+                let capture = capture_left.pop_square();
+                let from = capture.offset(capture_left_offset);
+                let is_diagonally_pinned = self.diagonal_pin_rays.get(&from);
+
+                if is_diagonally_pinned && !self.diagonal_pin_rays.get(&capture) {
+                    continue;
+                }
+                if self.is_promotion_rank(capture.rank()) {
+                    Self::gen_promotions(add_move, from, capture)
+                } else {
+                    add_move(Move::new(from, capture));
                 }
             }
         }
@@ -529,12 +567,9 @@ impl MoveGenerator {
                         is_friendly_piece_on_ray = true;
                     }
                 } else if let Some(enemy_piece) = board.enemy_piece_at(move_to) {
-                    let is_queen =
-                        enemy_piece == enemy_pieces[4];
-                    let is_rook =
-                        enemy_piece == enemy_pieces[3];
-                    let is_bishop =
-                        enemy_piece == enemy_pieces[2];
+                    let is_queen = enemy_piece == enemy_pieces[4];
+                    let is_rook = enemy_piece == enemy_pieces[3];
+                    let is_bishop = enemy_piece == enemy_pieces[2];
                     if is_queen || (is_rook_movement && is_rook) || (!is_rook_movement && is_bishop)
                     {
                         if is_friendly_piece_on_ray {
