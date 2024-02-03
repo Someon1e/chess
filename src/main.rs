@@ -68,7 +68,6 @@ fn main() {
                 } else {
                     fen = Some(building_fen)
                 }
-                println!("{fen:?}")
             }
             "ucinewgame" => {}
             "go" => {
