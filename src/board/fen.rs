@@ -25,7 +25,7 @@ impl Board {
             } else {
                 let piece = piece::from_fen_char(&character).expect("{square} {character}");
                 let square = &Square::from_coords(rank, file);
-                bit_boards[piece as usize].set(&square);
+                bit_boards[piece as usize].set(square);
                 zobrist_key.xor_piece(piece as usize, square.index() as usize);
                 file += 1;
             }

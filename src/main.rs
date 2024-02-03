@@ -1,15 +1,12 @@
 use std::{
-    io::{stdin, BufRead, Write},
+    io::{stdin, BufRead},
     time::Instant,
 };
 
 use chess::{
     board::{piece::Piece, square::Square, Board},
     engine::Engine,
-    move_generator::{
-        move_data::{Flag, Move},
-        MoveGenerator,
-    },
+    move_generator::move_data::{Flag, Move},
 };
 
 const START_POSITION_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -57,8 +54,8 @@ fn main() {
                         }
                         _ => {
                             if !startpos {
-                                building_fen.push_str(*label);
-                                building_fen.push_str(" ")
+                                building_fen.push_str(label);
+                                building_fen.push(' ')
                             }
                         }
                     }
@@ -73,12 +70,12 @@ fn main() {
             "go" => {
                 let mut white_time = None;
                 let mut black_time = None;
-                let mut white_increment = None;
-                let mut black_increment = None;
-                let mut moves_to_go = None;
-                let mut depth = None;
-                let mut nodes = None;
-                let mut find_mate = None;
+                let mut _white_increment = None;
+                let mut _black_increment = None;
+                let mut _moves_to_go = None;
+                let mut _depth = None;
+                let mut _nodes = None;
+                let mut _find_mate = None;
                 let mut move_time_in_ms = None;
                 let mut index = 1;
                 while let Some(label) = args.get(index) {
@@ -95,29 +92,29 @@ fn main() {
                         }
                         "winc" => {
                             index += 1;
-                            white_increment =
+                            _white_increment =
                                 Some(args.get(index).unwrap().parse::<u128>().unwrap());
                         }
                         "binc" => {
                             index += 1;
-                            black_increment =
+                            _black_increment =
                                 Some(args.get(index).unwrap().parse::<u128>().unwrap());
                         }
                         "movestogo" => {
                             index += 1;
-                            moves_to_go = args.get(index);
+                            _moves_to_go = args.get(index);
                         }
                         "depth" => {
                             index += 1;
-                            depth = args.get(index);
+                            _depth = args.get(index);
                         }
                         "nodes" => {
                             index += 1;
-                            nodes = args.get(index);
+                            _nodes = args.get(index);
                         }
                         "mate" => {
                             index += 1;
-                            find_mate = args.get(index);
+                            _find_mate = args.get(index);
                         }
                         "movetime" => {
                             index += 1;
@@ -126,7 +123,7 @@ fn main() {
                         }
                         "perft" => {
                             index += 1;
-                            depth = args.get(index);
+                            _depth = args.get(index);
                         }
                         "infinite" => {
                             move_time_in_ms = None;
@@ -159,10 +156,10 @@ fn main() {
                         if (from.file() - to.file()).abs() > 1 {
                             flag = Flag::Castle
                         }
-                    } else if piece == Piece::BlackPawn || piece == Piece::WhitePawn {
-                        if board.game_state.en_passant_square == Some(to) {
-                            flag = Flag::EnPassant
-                        }
+                    } else if (piece == Piece::BlackPawn || piece == Piece::WhitePawn)
+                        && board.game_state.en_passant_square == Some(to)
+                    {
+                        flag = Flag::EnPassant
                     }
 
                     board.make_move(&Move::with_flag(from, to, flag))
@@ -183,7 +180,7 @@ fn main() {
                 let engine = &mut Engine::new(&mut board);
                 let search_start = Instant::now();
                 let (best_move, _evaluation) = engine
-                    .iterative_deepening(&mut |depth, (_best_move, _evaluation)| {}, &mut || {
+                    .iterative_deepening(&mut |_depth, (_best_move, _evaluation)| {}, &mut || {
                         search_start.elapsed().as_millis() > think_time
                     });
                 if !best_move.is_none() {
