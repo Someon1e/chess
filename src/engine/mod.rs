@@ -11,6 +11,8 @@ use crate::{
 pub struct Engine<'a> {
     board: &'a mut Board,
     transposition_table: Vec<Option<NodeValue>>,
+    best_move: Move,
+    best_score: i32,
 }
 
 #[derive(Clone, Copy)]
@@ -41,6 +43,8 @@ impl<'a> Engine<'a> {
         Self {
             board,
             transposition_table: vec![None; TRANSPOSITION_CAPACITY],
+            best_move: Move::none(),
+            best_score: -i32::MAX,
         }
     }
 
@@ -171,13 +175,13 @@ impl<'a> Engine<'a> {
         score
     }
 
-    fn get_sorted_moves(&self, move_generator: &MoveGenerator, hash_move: &Move) -> Vec<Move> {
+    fn get_sorted_moves(&self, move_generator: &MoveGenerator, best_move: &Move) -> Vec<Move> {
         let mut moves = Vec::with_capacity(30);
         move_generator.gen(&mut |move_data| moves.push(move_data), false);
 
         // Best moves will be at the back, so iterate in reverse later.
         moves.sort_by_cached_key(|move_data| {
-            if *move_data == *hash_move {
+            if *move_data == *best_move {
                 return 10000;
             }
             self.guess_move_value(&move_generator.enemy_pawn_attacks(), move_data)
@@ -219,7 +223,20 @@ impl<'a> Engine<'a> {
         return_value.unwrap_or(alpha)
     }
 
-    pub fn negamax(&mut self, depth: u16, mut alpha: i32, beta: i32) -> i32 {
+    pub fn negamax(
+        &mut self,
+        ply: u16,
+        depth: u16,
+
+        should_cancel: &mut dyn FnMut() -> bool,
+
+        mut alpha: i32,
+        beta: i32,
+    ) -> i32 {
+        if should_cancel() {
+            return 0;
+        }
+
         let zobrist_key = self.board.zobrist_key();
         let zobrist_index = zobrist_key.index(TRANSPOSITION_CAPACITY);
 
@@ -252,7 +269,7 @@ impl<'a> Engine<'a> {
 
         let mut node_type = NodeType::Alpha;
 
-        if depth == 0 {
+        if ply == depth {
             let evaluation = self.quiescence_search(alpha, beta);
             self.transposition_table[zobrist_index] = Some(NodeValue {
                 key: zobrist_key,
@@ -265,10 +282,21 @@ impl<'a> Engine<'a> {
         };
 
         let move_generator = MoveGenerator::new(self.board);
-        let moves = self.get_sorted_moves(&move_generator, hash_move);
+
+        if ply == 0 {
+            hash_move = &self.best_move;
+        }
+        let moves = self.get_sorted_moves(&move_generator, &hash_move);
+
         if moves.is_empty() {
             if move_generator.is_in_check() {
+                if ply == 0 {
+                    self.best_score = -i32::MAX;
+                }
                 return -i32::MAX;
+            }
+            if ply == 0 {
+                self.best_score = 0
             }
             return 0;
         }
@@ -276,17 +304,23 @@ impl<'a> Engine<'a> {
         let mut best_move = Move::none();
         for (index, move_data) in moves.iter().rev().enumerate() {
             self.board.make_move(move_data);
-            let normal_search = index < 3 || depth < 3 || move_generator.is_in_check();
-            let mut score;
-            if normal_search {
-                score = -self.negamax(depth - 1, -beta, -alpha);
-            } else {
-                score = -self.negamax(depth - 2, -beta, -alpha);
+
+            let mut normal_search = index < 3 || (depth - ply) < 3 || move_generator.is_in_check();
+            let mut score = 0;
+            if !normal_search {
+                score = -self.negamax(ply + 2, depth, should_cancel, -beta, -alpha);
                 if score > alpha {
-                    score = -self.negamax(depth - 1, -beta, -alpha);
+                    normal_search = true;
                 }
             }
+            if normal_search {
+                score = -self.negamax(ply + 1, depth, should_cancel, -beta, -alpha);
+            }
             self.board.unmake_move(move_data);
+            if should_cancel() {
+                return 0;
+            }
+
             if score >= beta {
                 node_type = NodeType::Beta;
                 best_move = *move_data;
@@ -303,6 +337,11 @@ impl<'a> Engine<'a> {
                 node_type = NodeType::Exact;
                 alpha = score;
                 best_move = *move_data;
+
+                if ply == 0 {
+                    self.best_move = best_move;
+                    self.best_score = score;
+                }
             }
         }
         self.transposition_table[zobrist_index] = Some(NodeValue {
@@ -315,66 +354,24 @@ impl<'a> Engine<'a> {
 
         alpha
     }
-    pub fn best_move(
-        &mut self,
-        depth: u16,
-        should_cancel: &mut dyn FnMut() -> bool,
-        mut best_move: Move,
-    ) -> (Move, i32) {
-        let move_generator = MoveGenerator::new(self.board);
-        let moves = self.get_sorted_moves(&move_generator, &best_move);
-        if moves.is_empty() {
-            if move_generator.is_in_check() {
-                return (best_move, -i32::MAX);
-            }
-            return (best_move, 0);
-        }
-
-        let mut best_score = -i32::MAX;
-        for (index, move_data) in moves.iter().rev().enumerate() {
-            if should_cancel() {
-                break;
-            }
-
-            self.board.make_move(move_data);
-            let normal_search = index < 3 || depth < 3 || move_generator.is_in_check();
-            let mut score;
-            if normal_search {
-                score = -self.negamax(depth - 1, -i32::MAX, i32::MAX)
-            } else {
-                score = -self.negamax(depth - 2, -i32::MAX, i32::MAX);
-                if score > best_score {
-                    score = -self.negamax(depth - 1, -i32::MAX, i32::MAX);
-                }
-            }
-            self.board.unmake_move(move_data);
-            if score > best_score {
-                (best_move, best_score) = (*move_data, score);
-            }
-        }
-        (best_move, best_score)
-    }
     pub fn iterative_deepening(
         &mut self,
         depth_completed: &mut dyn FnMut(u16, (Move, i32)),
         should_cancel: &mut dyn FnMut() -> bool,
     ) -> (Move, i32) {
         let mut depth = 0;
-        let (mut best_move, mut best_score) = (Move::none(), -i32::MAX);
         while !should_cancel() {
             depth += 1;
-            let (new_best_move, new_best_score) = self.best_move(depth, should_cancel, best_move);
+            self.negamax(0, depth, should_cancel, -i32::MAX, i32::MAX);
             if should_cancel() {
-                if !new_best_move.is_none() {
-                    best_move = new_best_move;
-                    best_score = new_best_score;
-                }
-            } else {
-                best_move = new_best_move;
-                best_score = new_best_score;
-                depth_completed(depth, (new_best_move, new_best_score));
+                break;
             }
+
+            if self.best_move == Move::none() || self.best_score.abs() == i32::MAX {
+                break;
+            }
+            depth_completed(depth, (self.best_move, self.best_score));
         }
-        (best_move, best_score)
+        (self.best_move, self.best_score)
     }
 }
