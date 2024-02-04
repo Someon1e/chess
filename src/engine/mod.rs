@@ -1,12 +1,15 @@
 mod eval_data;
+mod transposition;
 
 use crate::{
-    board::{bit_board::BitBoard, piece, zobrist::Zobrist, Board},
+    board::{bit_board::BitBoard, piece, Board},
     move_generator::{
         move_data::{Flag, Move},
         MoveGenerator,
     },
 };
+
+use self::transposition::{NodeType, NodeValue, TRANSPOSITION_CAPACITY};
 
 pub struct Engine<'a> {
     board: &'a mut Board,
@@ -14,29 +17,6 @@ pub struct Engine<'a> {
     best_move: Move,
     best_score: i32,
 }
-
-#[derive(Clone, Copy)]
-struct NodeValue {
-    key: Zobrist,
-    depth: u16,
-    node_type: NodeType,
-    value: i32,
-    best_move: Move,
-}
-
-#[derive(Clone, Copy)]
-enum NodeType {
-    Exact,
-    Beta,
-    Alpha,
-}
-
-const TRANSPOSITION_CAPACITY: usize = {
-    const MEGABYTES: usize = 128;
-
-    const MEMORY_OF_ONE_ENTRY_IN_BYTES: usize = std::mem::size_of::<NodeValue>();
-    (MEGABYTES * 1000000) / MEMORY_OF_ONE_ENTRY_IN_BYTES
-};
 
 impl<'a> Engine<'a> {
     pub fn new(board: &'a mut Board) -> Self {
