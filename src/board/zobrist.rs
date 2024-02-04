@@ -1,11 +1,10 @@
+use super::game_state::CastlingRights;
+use super::square::Square;
+use super::{Board, Piece};
 use lazy_static::lazy_static;
 use rand_chacha;
 use rand_chacha::rand_core::{RngCore, SeedableRng};
 use rand_chacha::ChaCha20Rng;
-
-use super::game_state::CastlingRights;
-use super::square::Square;
-use super::{Board, Piece};
 
 use std::cell::RefCell;
 
@@ -16,26 +15,35 @@ fn random_u64() -> u64 {
     RNG.with(|rng| rng.borrow_mut().next_u64())
 }
 
+pub struct ZobristRandoms {
+    pub piece_arrays: [[u64; 64]; 12],
+    pub side_to_move: u64,
+    pub en_passant_square_file: [u64; 8],
+    pub castling_rights: [u64; 16],
+}
+
 lazy_static! {
-    static ref PIECE_ARRAYS: [[u64; 64]; 12] = {
+    pub static ref ZOBRIST_RANDOMS: ZobristRandoms = {
         let mut piece_arrays: [[u64; 64]; 12] = [[0; 64]; 12];
         for piece in Piece::ALL_PIECES {
             let mut square_array = piece_arrays[piece as usize];
             square_array.fill_with(random_u64);
             piece_arrays[piece as usize] = square_array
         }
-        piece_arrays
-    };
-    static ref SIDE_TO_MOVE: u64 = random_u64();
-    static ref EN_PASSANT_SQUARE_FILE: [u64; 8] = {
+        let side_to_move = random_u64();
+
         let mut en_passant_square_file = [0; 8];
         en_passant_square_file.fill_with(random_u64);
-        en_passant_square_file
-    };
-    static ref CASTLING_RIGHTS: [u64; 16] = {
+
         let mut castling_rights = [0; 16];
         castling_rights.fill_with(random_u64);
-        castling_rights
+
+        ZobristRandoms {
+            piece_arrays: piece_arrays,
+            side_to_move,
+            en_passant_square_file,
+            castling_rights,
+        }
     };
 }
 
@@ -44,15 +52,15 @@ pub struct Zobrist(u64);
 
 impl Zobrist {
     pub fn xor_en_passant(&mut self, en_passant_square: &Square) {
-        self.0 ^= EN_PASSANT_SQUARE_FILE[en_passant_square.file() as usize]
+        self.0 ^= ZOBRIST_RANDOMS.en_passant_square_file[en_passant_square.file() as usize]
     }
 
     pub fn xor_castling_rights(&mut self, castling_rights: &CastlingRights) {
-        self.0 ^= CASTLING_RIGHTS[castling_rights.internal_value() as usize];
+        self.0 ^= ZOBRIST_RANDOMS.castling_rights[castling_rights.internal_value() as usize];
     }
 
     pub fn xor_piece(&mut self, piece_index: usize, square_index: usize) {
-        self.0 ^= PIECE_ARRAYS[piece_index][square_index];
+        self.0 ^= ZOBRIST_RANDOMS.piece_arrays[piece_index][square_index];
     }
 
     pub fn empty() -> Self {
@@ -85,7 +93,7 @@ impl Zobrist {
         key
     }
     pub fn flip_side_to_move(&mut self) {
-        self.0 ^= *SIDE_TO_MOVE;
+        self.0 ^= ZOBRIST_RANDOMS.side_to_move;
     }
 
     pub fn index(&self, size: usize) -> usize {
