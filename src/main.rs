@@ -180,7 +180,9 @@ fn main() {
                 let engine = &mut Engine::new(&mut board);
                 let search_start = Instant::now();
                 let (best_move, _evaluation) = engine
-                    .iterative_deepening(&mut |_depth, (_best_move, _evaluation)| {}, &mut || {
+                    .iterative_deepening(&mut |depth, (best_move, evaluation)| {
+                        println!("info depth {depth} score cp {evaluation} time {}", search_start.elapsed().as_millis())
+                    }, &mut || {
                         search_start.elapsed().as_millis() > think_time
                     });
                 if !best_move.is_none() {
