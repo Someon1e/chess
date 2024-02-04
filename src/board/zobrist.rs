@@ -5,7 +5,7 @@ use rand_chacha::ChaCha20Rng;
 
 use super::game_state::CastlingRights;
 use super::square::Square;
-use super::{piece, Board};
+use super::{Board, Piece};
 
 use std::cell::RefCell;
 
@@ -19,7 +19,7 @@ fn random_u64() -> u64 {
 lazy_static! {
     static ref PIECE_ARRAYS: [[u64; 64]; 12] = {
         let mut piece_arrays: [[u64; 64]; 12] = [[0; 64]; 12];
-        for piece in piece::ALL_PIECES {
+        for piece in Piece::ALL_PIECES {
             let mut square_array = piece_arrays[piece as usize];
             square_array.fill_with(random_u64);
             piece_arrays[piece as usize] = square_array

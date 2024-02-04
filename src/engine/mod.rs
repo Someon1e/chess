@@ -3,7 +3,7 @@ mod eval_data;
 mod transposition;
 
 use crate::{
-    board::{bit_board::BitBoard, piece, Board},
+    board::{bit_board::BitBoard, piece::Piece, Board},
     move_generator::{move_data::Flag, MoveGenerator},
 };
 
@@ -31,7 +31,7 @@ impl<'a> Engine<'a> {
 
     fn get_phase(&self) -> i32 {
         let mut phase = 0;
-        for piece in piece::ALL_PIECES {
+        for piece in Piece::ALL_PIECES {
             let bit_board = *self.board.get_bit_board(piece);
             let piece_index = piece as usize;
             phase += bit_board.count() as i32 * eval_data::PIECE_PHASES[piece_index]
@@ -68,7 +68,7 @@ impl<'a> Engine<'a> {
         let mut middle_game_score_white = 0;
         let mut end_game_score_white = 0;
 
-        for piece in piece::WHITE_PIECES {
+        for piece in Piece::WHITE_PIECES {
             let mut bit_board = *self.board.get_bit_board(piece);
             let piece_index = piece as usize;
             while !bit_board.is_empty() {
@@ -85,7 +85,7 @@ impl<'a> Engine<'a> {
         let mut middle_game_score_black = 0;
         let mut end_game_score_black = 0;
 
-        for piece in piece::BLACK_PIECES {
+        for piece in Piece::BLACK_PIECES {
             let mut bit_board = *self.board.get_bit_board(piece);
             let piece_index = piece as usize - 6;
             while !bit_board.is_empty() {

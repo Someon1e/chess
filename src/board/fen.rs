@@ -1,7 +1,7 @@
 use super::{
     bit_board::BitBoard,
     game_state::{CastlingRights, GameState},
-    piece,
+    piece::Piece,
     square::Square,
     zobrist::Zobrist,
     Board,
@@ -23,7 +23,7 @@ impl Board {
             if let Some(digit) = character.to_digit(10) {
                 file += digit as i8;
             } else {
-                let piece = piece::from_fen_char(&character).expect("{square} {character}");
+                let piece = Piece::from_fen_char(&character).expect("{square} {character}");
                 let square = &Square::from_coords(rank, file);
                 bit_boards[piece as usize].set(square);
                 zobrist_key.xor_piece(piece as usize, square.index() as usize);
