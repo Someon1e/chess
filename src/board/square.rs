@@ -110,7 +110,7 @@ mod tests {
 
         let bit_board = also_b2.bitboard();
 
-        let mut same_bit_board = BitBoard::empty();
+        let mut same_bit_board = BitBoard::EMPTY;
         same_bit_board.set(&also_b2);
 
         assert!(bit_board.to_string() == same_bit_board.to_string())

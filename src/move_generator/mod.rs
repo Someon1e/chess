@@ -377,9 +377,9 @@ impl MoveGenerator {
         directions: &[i8],
         squares_from_edge: &[i8],
     ) -> BitBoard {
-        let mut attacked = BitBoard::empty();
+        let mut attacked = BitBoard::EMPTY;
         for (direction, distance_from_edge) in directions.iter().zip(squares_from_edge) {
-            let mut ray = BitBoard::empty();
+            let mut ray = BitBoard::EMPTY;
             for count in 1..=*distance_from_edge {
                 let move_to = from.offset(direction * count);
                 if king_bit_board.get(&move_to) {
@@ -480,8 +480,8 @@ impl MoveGenerator {
         enemy_queens: &BitBoard,
         enemy_piece_bit_board: &BitBoard,
     ) -> (BitBoard, BitBoard) {
-        let mut orthogonal_pin_rays = BitBoard::empty();
-        let mut diagonal_pin_rays = BitBoard::empty();
+        let mut orthogonal_pin_rays = BitBoard::EMPTY;
+        let mut diagonal_pin_rays = BitBoard::EMPTY;
         for (index, (direction, distance_from_edge)) in DIRECTIONS
             .iter()
             .zip(&PRECOMPUTED.squares_from_edge[friendly_king_square.index() as usize])
@@ -489,7 +489,7 @@ impl MoveGenerator {
         {
             let is_rook_movement = index < 4;
 
-            let mut ray = BitBoard::empty();
+            let mut ray = BitBoard::EMPTY;
             let mut is_friendly_piece_on_ray = false;
             for count in 1..=*distance_from_edge {
                 let move_to = friendly_king_square.offset(direction * count);
@@ -577,13 +577,13 @@ impl MoveGenerator {
         let occupied_squares = friendly_piece_bit_board | enemy_piece_bit_board;
         let empty_squares = !occupied_squares;
 
-        let mut king_danger_bit_board = BitBoard::empty();
-        let mut enemy_pawn_attacks = BitBoard::empty();
+        let mut king_danger_bit_board = BitBoard::EMPTY;
+        let mut enemy_pawn_attacks = BitBoard::EMPTY;
         let mut is_in_check = false;
         let mut is_in_double_check = false;
 
-        let mut capture_mask = BitBoard::empty();
-        let mut push_mask = BitBoard::empty();
+        let mut capture_mask = BitBoard::EMPTY;
+        let mut push_mask = BitBoard::EMPTY;
 
         let friendly_king_square = friendly_king.first_square();
 
@@ -683,8 +683,8 @@ impl MoveGenerator {
         }
 
         if !is_in_check {
-            capture_mask = !BitBoard::empty();
-            push_mask = !BitBoard::empty();
+            capture_mask = BitBoard::FULL;
+            push_mask = BitBoard::FULL;
         }
 
         let (orthogonal_pin_rays, diagonal_pin_rays) = Self::calculate_pin_rays(

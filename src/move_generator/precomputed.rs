@@ -15,10 +15,10 @@ pub struct PrecomputedData {
 
 lazy_static! {
     pub static ref PRECOMPUTED: PrecomputedData = {
-        let mut white_pawn_attacks_at_square = [BitBoard::empty(); 64];
-        let mut black_pawn_attacks_at_square = [BitBoard::empty(); 64];
-        let mut knight_moves_at_square = [BitBoard::empty(); 64];
-        let mut king_moves_at_square = [BitBoard::empty(); 64];
+        let mut white_pawn_attacks_at_square = [BitBoard::EMPTY; 64];
+        let mut black_pawn_attacks_at_square = [BitBoard::EMPTY; 64];
+        let mut knight_moves_at_square = [BitBoard::EMPTY; 64];
+        let mut king_moves_at_square = [BitBoard::EMPTY; 64];
         let mut squares_from_edge = [[0; 8]; 64];
 
         for index in 0..64 {

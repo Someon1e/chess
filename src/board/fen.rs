@@ -9,7 +9,7 @@ use super::{
 
 impl Board {
     pub fn from_fen(fen: &str) -> Self {
-        let mut bit_boards = [BitBoard::empty(); 12];
+        let mut bit_boards = [BitBoard::EMPTY; 12];
         let mut zobrist_key = Zobrist::empty();
 
         let (mut rank, mut file) = (7, 0);
