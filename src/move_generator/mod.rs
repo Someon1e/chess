@@ -362,13 +362,17 @@ impl MoveGenerator {
 }
 
 impl MoveGenerator {
-    fn directional_king_danger_bit_board(
+    fn calculate_enemy_slider(
         from: Square,
 
         capture_mask: &mut BitBoard,
         push_mask: &mut BitBoard,
+
         king_bit_board: &BitBoard,
         occupied_squares: &BitBoard,
+
+        is_in_check: &mut bool,
+        is_in_double_check: &mut bool,
 
         directions: &[i8],
         squares_from_edge: &[i8],
@@ -383,6 +387,11 @@ impl MoveGenerator {
                     capture_mask.set(&from);
                     *push_mask |= ray;
                     ray.set(&move_to);
+
+                    if *is_in_check {
+                        *is_in_double_check = true;
+                    }
+                    *is_in_check = true;
                 } else {
                     ray.set(&move_to);
                     if occupied_squares.get(&move_to) {
@@ -499,11 +508,15 @@ impl MoveGenerator {
             | friendly_queens
             | friendly_king;
 
-        let mut enemy_piece_bit_board = BitBoard::empty();
-        for piece in enemy_pieces {
-            let bit_board = *board.get_bit_board(piece);
-            enemy_piece_bit_board |= bit_board;
-        }
+        let enemy_pawns = *board.get_bit_board(enemy_pieces[0]);
+
+        let enemy_knights = *board.get_bit_board(enemy_pieces[1]);
+        let enemy_bishops = *board.get_bit_board(enemy_pieces[2]);
+        let enemy_rooks = *board.get_bit_board(enemy_pieces[3]);
+        let enemy_queens = *board.get_bit_board(enemy_pieces[4]);
+        let enemy_king = *board.get_bit_board(enemy_pieces[5]);
+        let enemy_piece_bit_board =
+            enemy_pawns | enemy_knights | enemy_bishops | enemy_rooks | enemy_queens | enemy_king;
 
         let occupied_squares = friendly_piece_bit_board | enemy_piece_bit_board;
         let empty_squares = !occupied_squares;
@@ -512,76 +525,104 @@ impl MoveGenerator {
         let mut enemy_pawn_attacks = BitBoard::empty();
         let mut is_in_check = false;
         let mut is_in_double_check = false;
-        let mut checkers = BitBoard::empty();
 
         let mut capture_mask = BitBoard::empty();
         let mut push_mask = BitBoard::empty();
 
         let friendly_king_square = friendly_king.first_square();
 
-        for piece in enemy_pieces {
-            let mut bit_board = *board.get_bit_board(piece);
-            while !bit_board.is_empty() {
-                let from = bit_board.pop_square();
-                let dangerous = match piece {
-                    Piece::WhitePawn | Piece::BlackPawn => {
-                        let pawn_attacks = Self::pawn_attack_bit_board(from, !white_to_move);
-                        if !(pawn_attacks & friendly_king).is_empty() {
-                            // Pawn is checking the king
-                            capture_mask.set(&from)
-                        };
-                        enemy_pawn_attacks |= pawn_attacks;
-                        pawn_attacks
-                    }
-                    Piece::WhiteKnight | Piece::BlackKnight => {
-                        let knight_attacks = Self::knight_attack_bit_board(from);
-                        if !(knight_attacks & friendly_king).is_empty() {
-                            // Knight is checking the king
-                            capture_mask.set(&from)
-                        };
-                        knight_attacks
-                    }
-                    Piece::WhiteBishop | Piece::BlackBishop => {
-                        Self::directional_king_danger_bit_board(
-                            from,
-                            &mut capture_mask,
-                            &mut push_mask,
-                            &friendly_king,
-                            &occupied_squares,
-                            &DIRECTIONS[4..8],
-                            &PRECOMPUTED.squares_from_edge[from.index() as usize][4..8],
-                        )
-                    }
-                    Piece::WhiteRook | Piece::BlackRook => Self::directional_king_danger_bit_board(
-                        from,
-                        &mut capture_mask,
-                        &mut push_mask,
-                        &friendly_king,
-                        &occupied_squares,
-                        &DIRECTIONS[0..4],
-                        &PRECOMPUTED.squares_from_edge[from.index() as usize][0..4],
-                    ),
-                    Piece::WhiteQueen | Piece::BlackQueen => {
-                        Self::directional_king_danger_bit_board(
-                            from,
-                            &mut capture_mask,
-                            &mut push_mask,
-                            &friendly_king,
-                            &occupied_squares,
-                            &DIRECTIONS,
-                            &PRECOMPUTED.squares_from_edge[from.index() as usize],
-                        )
-                    }
-                    Piece::WhiteKing | Piece::BlackKing => Self::king_attack_bit_board(from),
-                };
-                if !(dangerous & friendly_king).is_empty() {
+        {
+            let mut enemy_pawns = enemy_pawns;
+            while !enemy_pawns.is_empty() {
+                let from = enemy_pawns.pop_square();
+                let pawn_attacks = Self::pawn_attack_bit_board(from, !white_to_move);
+                if !(pawn_attacks & friendly_king).is_empty() {
+                    // Pawn is checking the king
                     if is_in_check {
                         is_in_double_check = true;
                     }
                     is_in_check = true;
-                    checkers.set(&from)
-                }
+                    capture_mask.set(&from)
+                };
+                enemy_pawn_attacks |= pawn_attacks;
+            }
+            king_danger_bit_board |= enemy_pawn_attacks
+        }
+        {
+            let mut enemy_knights = enemy_knights;
+            while !enemy_knights.is_empty() {
+                let from = enemy_knights.pop_square();
+                let knight_attacks = Self::knight_attack_bit_board(from);
+                if !(knight_attacks & friendly_king).is_empty() {
+                    // Knight is checking the king
+                    if is_in_check {
+                        is_in_double_check = true;
+                    }
+                    is_in_check = true;
+                    capture_mask.set(&from)
+                };
+                king_danger_bit_board |= knight_attacks
+            }
+        }
+        {
+            let mut enemy_bishops = enemy_bishops;
+            while !enemy_bishops.is_empty() {
+                let from = enemy_bishops.pop_square();
+                let dangerous = Self::calculate_enemy_slider(
+                    from,
+                    &mut capture_mask,
+                    &mut push_mask,
+                    &friendly_king,
+                    &occupied_squares,
+                    &mut is_in_check,
+                    &mut is_in_double_check,
+                    &DIRECTIONS[4..8],
+                    &PRECOMPUTED.squares_from_edge[from.index() as usize][4..8],
+                );
                 king_danger_bit_board |= dangerous
+            }
+        }
+        {
+            let mut enemy_rooks = enemy_rooks;
+            while !enemy_rooks.is_empty() {
+                let from = enemy_rooks.pop_square();
+                let dangerous = Self::calculate_enemy_slider(
+                    from,
+                    &mut capture_mask,
+                    &mut push_mask,
+                    &friendly_king,
+                    &occupied_squares,
+                    &mut is_in_check,
+                    &mut is_in_double_check,
+                    &DIRECTIONS[0..4],
+                    &PRECOMPUTED.squares_from_edge[from.index() as usize][0..4],
+                );
+                king_danger_bit_board |= dangerous
+            }
+        }
+        {
+            let mut enemy_queens = enemy_queens;
+            while !enemy_queens.is_empty() {
+                let from = enemy_queens.pop_square();
+                let dangerous = Self::calculate_enemy_slider(
+                    from,
+                    &mut capture_mask,
+                    &mut push_mask,
+                    &friendly_king,
+                    &occupied_squares,
+                    &mut is_in_check,
+                    &mut is_in_double_check,
+                    &DIRECTIONS[0..8],
+                    &PRECOMPUTED.squares_from_edge[from.index() as usize][0..8],
+                );
+                king_danger_bit_board |= dangerous
+            }
+        }
+        {
+            let mut enemy_king = enemy_king;
+            while !enemy_king.is_empty() {
+                let from = enemy_king.pop_square();
+                king_danger_bit_board |= Self::king_attack_bit_board(from)
             }
         }
 
