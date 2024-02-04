@@ -162,7 +162,7 @@ fn main() {
                         flag = Flag::EnPassant
                     }
 
-                    board.make_move(&Move::with_flag(from, to, flag))
+                    board.make_move(&Move { from, to, flag })
                 }
                 moves.clear();
 

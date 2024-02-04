@@ -1,4 +1,6 @@
-use crate::{board::zobrist::Zobrist, move_generator::move_data::Move};
+use crate::board::zobrist::Zobrist;
+
+use super::encoded_move::EncodedMove;
 
 #[derive(Clone, Copy)]
 pub struct NodeValue {
@@ -6,7 +8,7 @@ pub struct NodeValue {
     pub depth: u16,
     pub node_type: NodeType,
     pub value: i32,
-    pub best_move: Move,
+    pub best_move: EncodedMove,
 }
 
 #[derive(Clone, Copy)]
