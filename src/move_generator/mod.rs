@@ -147,59 +147,56 @@ impl MoveGenerator {
             }
         }
 
-        {
+        if let Some(en_passant_square) = self.en_passant_square {
             // En passant
 
-            if let Some(en_passant_square) = self.en_passant_square {
-                let capture_position =
-                    en_passant_square.down(if self.white_to_move { 1 } else { -1 });
-                if self.capture_mask.get(&capture_position) {
-                    let mut pawns_able_to_en_passant = self.friendly_pawns & {
-                        // Generate attacks for an imaginary enemy pawn at the en passant square
-                        // The up-left and up-right of en_passant_square are squares that we can en passant from
-                        Self::pawn_attack_bit_board(en_passant_square, !self.white_to_move)
-                    };
-                    'en_passant_check: while !pawns_able_to_en_passant.is_empty() {
-                        let from = pawns_able_to_en_passant.pop_square();
-                        if self.orthogonal_pin_rays.get(&from) {
-                            continue;
-                        }
+            let capture_position = en_passant_square.down(if self.white_to_move { 1 } else { -1 });
+            if self.capture_mask.get(&capture_position) {
+                let mut pawns_able_to_en_passant = self.friendly_pawns & {
+                    // Generate attacks for an imaginary enemy pawn at the en passant square
+                    // The up-left and up-right of en_passant_square are squares that we can en passant from
+                    Self::pawn_attack_bit_board(en_passant_square, !self.white_to_move)
+                };
+                'en_passant_check: while !pawns_able_to_en_passant.is_empty() {
+                    let from = pawns_able_to_en_passant.pop_square();
+                    if self.orthogonal_pin_rays.get(&from) {
+                        continue;
+                    }
 
-                        if self.diagonal_pin_rays.get(&from)
-                            && !self.diagonal_pin_rays.get(&en_passant_square)
+                    if self.diagonal_pin_rays.get(&from)
+                        && !self.diagonal_pin_rays.get(&en_passant_square)
+                    {
+                        continue;
+                    }
+
+                    if self.friendly_king_square.rank() == from.rank() {
+                        // Check if en passant will reveal a check
+                        // Not covered by pin rays because enemy pawn was blocking
+                        // Check by scanning left and right from our king to find enemy queens/rooks that are not obstructed
+                        for (direction, distance_from_edge) in DIRECTIONS[2..4]
+                            .iter()
+                            .zip(&PRECOMPUTED.squares_from_edge[from.index() as usize][2..4])
                         {
-                            continue;
-                        }
-
-                        if self.friendly_king_square.rank() == from.rank() {
-                            // Check if en passant will reveal a check
-                            // Not covered by pin rays because enemy pawn was blocking
-                            // Check by scanning left and right from our king to find enemy queens/rooks that are not obstructed
-                            for (direction, distance_from_edge) in DIRECTIONS[2..4]
-                                .iter()
-                                .zip(&PRECOMPUTED.squares_from_edge[from.index() as usize][2..4])
-                            {
-                                for count in 1..=*distance_from_edge {
-                                    let scanner = from.offset(direction * count);
-                                    if scanner == from || scanner == capture_position {
-                                        continue;
-                                    }
-                                    if self.enemy_rooks_and_queens_bit_board.get(&scanner) {
-                                        continue 'en_passant_check;
-                                    }
-                                    if self.occupied_squares.get(&scanner) {
-                                        break;
-                                    };
+                            for count in 1..=*distance_from_edge {
+                                let scanner = from.offset(direction * count);
+                                if scanner == from || scanner == capture_position {
+                                    continue;
                                 }
+                                if self.enemy_rooks_and_queens_bit_board.get(&scanner) {
+                                    continue 'en_passant_check;
+                                }
+                                if self.occupied_squares.get(&scanner) {
+                                    break;
+                                };
                             }
                         }
-
-                        add_move(Move {
-                            from,
-                            to: en_passant_square,
-                            flag: Flag::EnPassant,
-                        });
                     }
+
+                    add_move(Move {
+                        from,
+                        to: en_passant_square,
+                        flag: Flag::EnPassant,
+                    });
                 }
             }
         }
