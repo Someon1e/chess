@@ -1,20 +1,21 @@
+mod encoded_move;
 mod eval_data;
 mod transposition;
 
 use crate::{
     board::{bit_board::BitBoard, piece, Board},
-    move_generator::{
-        move_data::{Flag, Move},
-        MoveGenerator,
-    },
+    move_generator::{move_data::Flag, MoveGenerator},
 };
 
-use self::transposition::{NodeType, NodeValue, TRANSPOSITION_CAPACITY};
+use self::{
+    encoded_move::EncodedMove,
+    transposition::{NodeType, NodeValue, TRANSPOSITION_CAPACITY},
+};
 
 pub struct Engine<'a> {
     board: &'a mut Board,
     transposition_table: Vec<Option<NodeValue>>,
-    best_move: Move,
+    best_move: EncodedMove,
     best_score: i32,
 }
 
@@ -23,7 +24,7 @@ impl<'a> Engine<'a> {
         Self {
             board,
             transposition_table: vec![None; TRANSPOSITION_CAPACITY],
-            best_move: Move::none(),
+            best_move: EncodedMove::none(),
             best_score: -i32::MAX,
         }
     }
@@ -106,7 +107,7 @@ impl<'a> Engine<'a> {
         ) * if self.board.white_to_move { 1 } else { -1 }
     }
 
-    fn guess_move_value(&self, enemy_pawn_attacks: &BitBoard, move_data: &Move) -> i32 {
+    fn guess_move_value(&self, enemy_pawn_attacks: &BitBoard, move_data: &EncodedMove) -> i32 {
         let mut score = 0;
         match move_data.flag() {
             Flag::EnPassant => score += 0,
@@ -155,9 +156,16 @@ impl<'a> Engine<'a> {
         score
     }
 
-    fn get_sorted_moves(&self, move_generator: &MoveGenerator, best_move: &Move) -> Vec<Move> {
+    fn get_sorted_moves(
+        &self,
+        move_generator: &MoveGenerator,
+        best_move: &EncodedMove,
+    ) -> Vec<EncodedMove> {
         let mut moves = Vec::with_capacity(30);
-        move_generator.gen(&mut |move_data| moves.push(move_data), false);
+        move_generator.gen(
+            &mut |move_data| moves.push(EncodedMove::new(move_data)),
+            false,
+        );
 
         // Best moves will be at the back, so iterate in reverse later.
         moves.sort_by_cached_key(|move_data| {
@@ -220,7 +228,7 @@ impl<'a> Engine<'a> {
         let zobrist_key = self.board.zobrist_key();
         let zobrist_index = zobrist_key.index(TRANSPOSITION_CAPACITY);
 
-        let mut hash_move = &Move::none();
+        let mut hash_move = &EncodedMove::none();
 
         // TODO: thoroughly test this works
         if let Some(saved) = &self.transposition_table[zobrist_index] {
@@ -256,7 +264,7 @@ impl<'a> Engine<'a> {
                 depth,
                 node_type,
                 value: evaluation,
-                best_move: Move::none(),
+                best_move: EncodedMove::none(),
             });
             return evaluation;
         };
@@ -266,7 +274,7 @@ impl<'a> Engine<'a> {
         if ply == 0 {
             hash_move = &self.best_move;
         }
-        let moves = self.get_sorted_moves(&move_generator, &hash_move);
+        let moves = self.get_sorted_moves(&move_generator, hash_move);
 
         if moves.is_empty() {
             if move_generator.is_in_check() {
@@ -281,9 +289,9 @@ impl<'a> Engine<'a> {
             return 0;
         }
 
-        let mut best_move = Move::none();
+        let mut best_move = EncodedMove::none();
         for (index, move_data) in moves.iter().rev().enumerate() {
-            self.board.make_move(move_data);
+            self.board.make_move(&move_data.decode());
 
             let mut normal_search = index < 3 || (depth - ply) < 3 || move_generator.is_in_check();
             let mut score = 0;
@@ -296,7 +304,7 @@ impl<'a> Engine<'a> {
             if normal_search {
                 score = -self.negamax(ply + 1, depth, should_cancel, -beta, -alpha);
             }
-            self.board.unmake_move(move_data);
+            self.board.unmake_move(&move_data.decode());
             if should_cancel() {
                 return 0;
             }
@@ -336,9 +344,9 @@ impl<'a> Engine<'a> {
     }
     pub fn iterative_deepening(
         &mut self,
-        depth_completed: &mut dyn FnMut(u16, (Move, i32)),
+        depth_completed: &mut dyn FnMut(u16, (EncodedMove, i32)),
         should_cancel: &mut dyn FnMut() -> bool,
-    ) -> (Move, i32) {
+    ) -> (EncodedMove, i32) {
         let mut depth = 0;
         while !should_cancel() {
             depth += 1;
@@ -347,7 +355,7 @@ impl<'a> Engine<'a> {
                 break;
             }
 
-            if self.best_move == Move::none() || self.best_score.abs() == i32::MAX {
+            if self.best_move == EncodedMove::none() || self.best_score.abs() == i32::MAX {
                 break;
             }
             depth_completed(depth, (self.best_move, self.best_score));

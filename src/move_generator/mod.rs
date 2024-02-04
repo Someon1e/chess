@@ -7,9 +7,7 @@ mod maker;
 pub mod move_data;
 mod precomputed;
 
-use move_data::Move;
-
-use self::move_data::Flag;
+use self::move_data::{Flag, Move};
 use self::precomputed::PRECOMPUTED;
 
 pub struct MoveGenerator {
@@ -54,7 +52,11 @@ pub struct MoveGenerator {
 impl MoveGenerator {
     fn gen_promotions(add_move: &mut dyn FnMut(Move), from: Square, to: Square) {
         for promotion in Flag::PROMOTIONS {
-            add_move(Move::with_flag(from, to, promotion));
+            add_move(Move {
+                from,
+                to,
+                flag: promotion,
+            });
         }
     }
     fn pawn_attack_bit_board(from: Square, white: bool) -> BitBoard {
@@ -103,7 +105,11 @@ impl MoveGenerator {
                 if promotion_rank.get(&capture) {
                     Self::gen_promotions(add_move, from, capture)
                 } else {
-                    add_move(Move::new(from, capture));
+                    add_move(Move {
+                        from,
+                        to: capture,
+                        flag: Flag::None,
+                    });
                 }
             }
 
@@ -132,7 +138,11 @@ impl MoveGenerator {
                 if promotion_rank.get(&capture) {
                     Self::gen_promotions(add_move, from, capture)
                 } else {
-                    add_move(Move::new(from, capture));
+                    add_move(Move {
+                        from,
+                        to: capture,
+                        flag: Flag::None,
+                    });
                 }
             }
         }
@@ -184,7 +194,11 @@ impl MoveGenerator {
                             }
                         }
 
-                        add_move(Move::with_flag(from, en_passant_square, Flag::EnPassant));
+                        add_move(Move {
+                            from,
+                            to: en_passant_square,
+                            flag: Flag::EnPassant,
+                        });
                     }
                 }
             }
@@ -217,7 +231,11 @@ impl MoveGenerator {
                 let move_to = single_push_no_promotions.pop_square();
                 let from = move_to.offset(down_offset);
                 if !self.orthogonal_pin_rays.get(&from) || self.orthogonal_pin_rays.get(&move_to) {
-                    add_move(Move::new(from, move_to));
+                    add_move(Move {
+                        from: from,
+                        to: move_to,
+                        flag: Flag::None,
+                    });
                 }
             }
             while !push_promotions.is_empty() {
@@ -247,7 +265,11 @@ impl MoveGenerator {
                 let move_to = double_push.pop_square();
                 let from = move_to.offset(double_down_offset);
                 if !self.orthogonal_pin_rays.get(&from) || self.orthogonal_pin_rays.get(&move_to) {
-                    add_move(Move::with_flag(from, move_to, Flag::PawnTwoUp))
+                    add_move(Move {
+                        from,
+                        to: move_to,
+                        flag: Flag::PawnTwoUp,
+                    })
                 }
             }
         }
@@ -325,7 +347,11 @@ impl MoveGenerator {
                 if (enemy_on_square || !captures_only)
                     && (self.capture_mask | self.push_mask).get(&move_to)
                 {
-                    add_move(Move::new(from, move_to));
+                    add_move(Move {
+                        from,
+                        to: move_to,
+                        flag: Flag::None,
+                    });
                 }
                 if enemy_on_square {
                     break;
@@ -351,7 +377,11 @@ impl MoveGenerator {
             let mut knight_moves = Self::knight_attack_bit_board(from) & mask;
             while !knight_moves.is_empty() {
                 let move_to = knight_moves.pop_square();
-                add_move(Move::new(from, move_to))
+                add_move(Move {
+                    from,
+                    to: move_to,
+                    flag: Flag::None,
+                })
             }
         }
     }
@@ -368,7 +398,11 @@ impl MoveGenerator {
         }
         while !king_moves.is_empty() {
             let move_to = king_moves.pop_square();
-            add_move(Move::new(self.friendly_king_square, move_to));
+            add_move(Move {
+                from: self.friendly_king_square,
+                to: move_to,
+                flag: Flag::None,
+            });
         }
 
         if self.is_in_check || captures_only {
@@ -385,11 +419,11 @@ impl MoveGenerator {
             };
 
             if (castle_mask & cannot_castle_into).is_empty() {
-                add_move(Move::with_flag(
-                    self.friendly_king_square,
-                    move_to,
-                    Flag::Castle,
-                ))
+                add_move(Move {
+                    from: self.friendly_king_square,
+                    to: move_to,
+                    flag: Flag::Castle,
+                })
             }
         }
         if self.queen_side {
@@ -407,11 +441,11 @@ impl MoveGenerator {
                     BitBoard::new(0b00001100 << 56)
                 };
                 if (castle_mask & cannot_castle_into).is_empty() {
-                    add_move(Move::with_flag(
-                        self.friendly_king_square,
-                        move_to,
-                        Flag::Castle,
-                    ))
+                    add_move(Move {
+                        from: self.friendly_king_square,
+                        to: move_to,
+                        flag: Flag::Castle,
+                    })
                 }
             }
         }
