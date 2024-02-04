@@ -131,23 +131,4 @@ mod tests {
             println!();
         }
     }
-
-    #[test]
-    fn get_best_move() {
-        let mut stdin = stdin().lock();
-        loop {
-            let mut fen = String::new();
-            stdin.read_line(&mut fen).unwrap();
-            let board = &mut Board::from_fen(&fen);
-            let engine = &mut Engine::new(board);
-            let search_start = Instant::now();
-            let (best_move, evaluation) = engine.iterative_deepening(
-                &mut |depth, (best_move, evaluation)| {
-                    println!("Best move at depth {depth} is {} {}", best_move, evaluation);
-                },
-                &mut || search_start.elapsed().as_millis() > 3 * 1000,
-            );
-            println!("Result: {best_move} {evaluation}")
-        }
-    }
 }
