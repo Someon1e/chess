@@ -255,14 +255,12 @@ impl<'a> Engine<'a> {
             }
         }
 
-        let mut node_type = NodeType::Alpha;
-
         if ply == depth {
             let evaluation = self.quiescence_search(alpha, beta);
             self.transposition_table[zobrist_index] = Some(NodeValue {
                 key: zobrist_key,
                 depth,
-                node_type,
+                node_type: NodeType::Exact,
                 value: evaluation,
                 best_move: EncodedMove::none(),
             });
@@ -289,6 +287,7 @@ impl<'a> Engine<'a> {
             return 0;
         }
 
+        let mut node_type = NodeType::Alpha;
         let mut best_move = EncodedMove::none();
         for (index, move_data) in moves.iter().rev().enumerate() {
             self.board.make_move(&move_data.decode());
