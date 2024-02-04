@@ -24,7 +24,7 @@ impl<'a> Engine<'a> {
         Self {
             board,
             transposition_table: vec![None; TRANSPOSITION_CAPACITY],
-            best_move: EncodedMove::none(),
+            best_move: EncodedMove::NONE,
             best_score: -i32::MAX,
         }
     }
@@ -228,7 +228,7 @@ impl<'a> Engine<'a> {
         let zobrist_key = self.board.zobrist_key();
         let zobrist_index = zobrist_key.index(TRANSPOSITION_CAPACITY);
 
-        let mut hash_move = &EncodedMove::none();
+        let mut hash_move = &EncodedMove::NONE;
 
         // TODO: thoroughly test this works
         if let Some(saved) = &self.transposition_table[zobrist_index] {
@@ -262,7 +262,7 @@ impl<'a> Engine<'a> {
                 depth,
                 node_type: NodeType::Exact,
                 value: evaluation,
-                best_move: EncodedMove::none(),
+                best_move: EncodedMove::NONE,
             });
             return evaluation;
         };
@@ -288,7 +288,7 @@ impl<'a> Engine<'a> {
         }
 
         let mut node_type = NodeType::Alpha;
-        let mut best_move = EncodedMove::none();
+        let mut best_move = EncodedMove::NONE;
         for (index, move_data) in moves.iter().rev().enumerate() {
             self.board.make_move(&move_data.decode());
 
@@ -354,7 +354,7 @@ impl<'a> Engine<'a> {
                 break;
             }
 
-            if self.best_move == EncodedMove::none() || self.best_score.abs() == i32::MAX {
+            if self.best_move == EncodedMove::NONE || self.best_score.abs() == i32::MAX {
                 break;
             }
             depth_completed(depth, (self.best_move, self.best_score));
