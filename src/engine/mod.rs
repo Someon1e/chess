@@ -300,6 +300,7 @@ impl<'a> Engine<'a> {
                     normal_search = true;
                 }
             }
+
             if normal_search {
                 score = -self.negamax(ply + 1, depth, should_cancel, -beta, -alpha);
             }

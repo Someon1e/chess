@@ -39,7 +39,7 @@ lazy_static! {
         castling_rights.fill_with(random_u64);
 
         ZobristRandoms {
-            piece_arrays: piece_arrays,
+            piece_arrays,
             side_to_move,
             en_passant_square_file,
             castling_rights,
