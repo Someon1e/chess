@@ -8,7 +8,7 @@ pub mod square;
 pub mod zobrist;
 
 use bit_board::BitBoard;
-use piece::{Piece, ALL_PIECES, BLACK_PIECES, WHITE_PIECES};
+use piece::Piece;
 use square::Square;
 
 use self::{game_state::GameState, zobrist::Zobrist};
@@ -30,7 +30,7 @@ impl Display for Board {
 
 impl Board {
     pub fn piece_at(&self, square: Square) -> Option<Piece> {
-        for piece in ALL_PIECES {
+        for piece in Piece::ALL_PIECES {
             let bit_board = self.get_bit_board(piece);
             if bit_board.get(&square) {
                 return Some(piece);
@@ -39,7 +39,7 @@ impl Board {
         None
     }
     pub fn white_piece_at(&self, square: Square) -> Option<Piece> {
-        for piece in WHITE_PIECES {
+        for piece in Piece::WHITE_PIECES {
             let bit_board = self.get_bit_board(piece);
             if bit_board.get(&square) {
                 return Some(piece);
@@ -48,7 +48,7 @@ impl Board {
         None
     }
     pub fn black_piece_at(&self, square: Square) -> Option<Piece> {
-        for piece in BLACK_PIECES {
+        for piece in Piece::BLACK_PIECES {
             let bit_board = self.get_bit_board(piece);
             if bit_board.get(&square) {
                 return Some(piece);

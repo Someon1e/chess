@@ -14,38 +14,38 @@ pub enum Piece {
     BlackKing,
 }
 
-pub const ALL_PIECES: [Piece; 12] = [
-    Piece::WhitePawn,
-    Piece::WhiteKnight,
-    Piece::WhiteBishop,
-    Piece::WhiteRook,
-    Piece::WhiteQueen,
-    Piece::WhiteKing,
-    Piece::BlackPawn,
-    Piece::BlackKnight,
-    Piece::BlackBishop,
-    Piece::BlackRook,
-    Piece::BlackQueen,
-    Piece::BlackKing,
-];
-pub const WHITE_PIECES: [Piece; 6] = [
-    Piece::WhitePawn,
-    Piece::WhiteKnight,
-    Piece::WhiteBishop,
-    Piece::WhiteRook,
-    Piece::WhiteQueen,
-    Piece::WhiteKing,
-];
-pub const BLACK_PIECES: [Piece; 6] = [
-    Piece::BlackPawn,
-    Piece::BlackKnight,
-    Piece::BlackBishop,
-    Piece::BlackRook,
-    Piece::BlackQueen,
-    Piece::BlackKing,
-];
-
 impl Piece {
+    pub const ALL_PIECES: [Piece; 12] = [
+        Piece::WhitePawn,
+        Piece::WhiteKnight,
+        Piece::WhiteBishop,
+        Piece::WhiteRook,
+        Piece::WhiteQueen,
+        Piece::WhiteKing,
+        Piece::BlackPawn,
+        Piece::BlackKnight,
+        Piece::BlackBishop,
+        Piece::BlackRook,
+        Piece::BlackQueen,
+        Piece::BlackKing,
+    ];
+    pub const WHITE_PIECES: [Piece; 6] = [
+        Piece::WhitePawn,
+        Piece::WhiteKnight,
+        Piece::WhiteBishop,
+        Piece::WhiteRook,
+        Piece::WhiteQueen,
+        Piece::WhiteKing,
+    ];
+    pub const BLACK_PIECES: [Piece; 6] = [
+        Piece::BlackPawn,
+        Piece::BlackKnight,
+        Piece::BlackBishop,
+        Piece::BlackRook,
+        Piece::BlackQueen,
+        Piece::BlackKing,
+    ];
+
     pub fn to_fen_char(self) -> char {
         match self {
             Piece::WhitePawn => 'P',
@@ -63,24 +63,23 @@ impl Piece {
             Piece::BlackKing => 'k',
         }
     }
-}
+    pub fn from_fen_char(character: &char) -> Result<Piece, &str> {
+        match character {
+            'P' => Ok(Piece::WhitePawn),
+            'N' => Ok(Piece::WhiteKnight),
+            'B' => Ok(Piece::WhiteBishop),
+            'R' => Ok(Piece::WhiteRook),
+            'Q' => Ok(Piece::WhiteQueen),
+            'K' => Ok(Piece::WhiteKing),
 
-pub fn from_fen_char(character: &char) -> Result<Piece, &str> {
-    match character {
-        'P' => Ok(Piece::WhitePawn),
-        'N' => Ok(Piece::WhiteKnight),
-        'B' => Ok(Piece::WhiteBishop),
-        'R' => Ok(Piece::WhiteRook),
-        'Q' => Ok(Piece::WhiteQueen),
-        'K' => Ok(Piece::WhiteKing),
+            'p' => Ok(Piece::BlackPawn),
+            'n' => Ok(Piece::BlackKnight),
+            'b' => Ok(Piece::BlackBishop),
+            'r' => Ok(Piece::BlackRook),
+            'q' => Ok(Piece::BlackQueen),
+            'k' => Ok(Piece::BlackKing),
 
-        'p' => Ok(Piece::BlackPawn),
-        'n' => Ok(Piece::BlackKnight),
-        'b' => Ok(Piece::BlackBishop),
-        'r' => Ok(Piece::BlackRook),
-        'q' => Ok(Piece::BlackQueen),
-        'k' => Ok(Piece::BlackKing),
-
-        _ => Err("Invalid piece"),
+            _ => Err("Invalid piece"),
+        }
     }
 }

@@ -1,5 +1,5 @@
 use crate::board::bit_board::BitBoard;
-use crate::board::piece;
+use crate::board::piece::Piece;
 use crate::board::square::{Square, DIRECTIONS};
 use crate::board::Board;
 
@@ -232,7 +232,7 @@ impl MoveGenerator {
                 let from = move_to.offset(down_offset);
                 if !self.orthogonal_pin_rays.get(&from) || self.orthogonal_pin_rays.get(&move_to) {
                     add_move(Move {
-                        from: from,
+                        from,
                         to: move_to,
                         flag: Flag::None,
                     });
@@ -471,7 +471,7 @@ impl MoveGenerator {
 }
 
 impl MoveGenerator {
-    pub fn calculate_pin_rays(
+    fn calculate_pin_rays(
         friendly_piece_bit_board: &BitBoard,
         friendly_king_square: &Square,
 
@@ -533,9 +533,9 @@ impl MoveGenerator {
         let en_passant_square = board.game_state.en_passant_square;
 
         let (friendly_pieces, enemy_pieces) = if white_to_move {
-            (piece::WHITE_PIECES, piece::BLACK_PIECES)
+            (Piece::WHITE_PIECES, Piece::BLACK_PIECES)
         } else {
-            (piece::BLACK_PIECES, piece::WHITE_PIECES)
+            (Piece::BLACK_PIECES, Piece::WHITE_PIECES)
         };
 
         let castling_rights = board.game_state.castling_rights;
