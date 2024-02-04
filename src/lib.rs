@@ -4,13 +4,11 @@ pub mod move_generator;
 
 #[cfg(test)]
 mod tests {
-    use std::io::{stdin, BufRead};
     use std::time::Instant;
 
     use crate::board::zobrist::Zobrist;
 
     use super::board::Board;
-    use super::engine::Engine;
     use super::move_generator::MoveGenerator;
 
     pub const START_POSITION_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";

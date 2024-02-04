@@ -189,10 +189,11 @@ fn main() {
                 let search_start = Instant::now();
                 let (best_move, _evaluation) = engine.iterative_deepening(
                     &mut |depth, (best_move, evaluation)| {
-                        println!(
+                        /*println!(
                             "info depth {depth} score cp {evaluation} time {}",
                             search_start.elapsed().as_millis()
-                        )
+                        )*/
+                        // TODO: fix crash when depth goes very high
                     },
                     &mut || search_start.elapsed().as_millis() > think_time,
                 );
