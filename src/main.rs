@@ -1,5 +1,4 @@
 use std::{
-    char::MAX,
     io::{stdin, BufRead},
     time::Instant,
 };
@@ -74,8 +73,8 @@ fn main() {
             "go" => {
                 let mut white_time = None;
                 let mut black_time = None;
-                let mut _white_increment = None;
-                let mut _black_increment = None;
+                let mut white_increment = None;
+                let mut black_increment = None;
                 let mut _moves_to_go = None;
                 let mut _depth = None;
                 let mut _nodes = None;
@@ -96,12 +95,12 @@ fn main() {
                         }
                         "winc" => {
                             index += 1;
-                            _white_increment =
+                            white_increment =
                                 Some(args.get(index).unwrap().parse::<u128>().unwrap());
                         }
                         "binc" => {
                             index += 1;
-                            _black_increment =
+                            black_increment =
                                 Some(args.get(index).unwrap().parse::<u128>().unwrap());
                         }
                         "movestogo" => {
@@ -177,8 +176,13 @@ fn main() {
                         black_time
                     })
                     .unwrap();
-                    (clock_time * 4 / 100).min(MAX_TIME) // Use 4% of clock time
-                                                         // TODO: take into account increment
+                    let increment = (if board.white_to_move {
+                        white_increment
+                    } else {
+                        black_increment
+                    })
+                    .unwrap_or(0);
+                    (clock_time / 20 + increment / 2).min(MAX_TIME)
                 });
 
                 let engine = &mut Engine::new(&mut board);
