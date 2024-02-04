@@ -1,4 +1,5 @@
 use std::{
+    char::MAX,
     io::{stdin, BufRead},
     time::Instant,
 };
@@ -10,6 +11,9 @@ use chess::{
 };
 
 const START_POSITION_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
+// Max time for thinking
+const MAX_TIME: u128 = 5 * 1000;
 
 fn main() {
     let mut fen = None;
@@ -126,7 +130,7 @@ fn main() {
                             _depth = args.get(index);
                         }
                         "infinite" => {
-                            move_time_in_ms = None;
+                            move_time_in_ms = Some(MAX_TIME);
                         }
                         _ => unimplemented!(),
                     }
@@ -173,18 +177,21 @@ fn main() {
                         black_time
                     })
                     .unwrap();
-                    (clock_time * 4 / 100).min(5 * 1000) // Use 4% of clock time, but don't use more than 5 seconds.
+                    (clock_time * 4 / 100).min(MAX_TIME) // Use 4% of clock time
                                                          // TODO: take into account increment
                 });
 
                 let engine = &mut Engine::new(&mut board);
                 let search_start = Instant::now();
-                let (best_move, _evaluation) = engine
-                    .iterative_deepening(&mut |depth, (best_move, evaluation)| {
-                        println!("info depth {depth} score cp {evaluation} time {}", search_start.elapsed().as_millis())
-                    }, &mut || {
-                        search_start.elapsed().as_millis() > think_time
-                    });
+                let (best_move, _evaluation) = engine.iterative_deepening(
+                    &mut |depth, (best_move, evaluation)| {
+                        println!(
+                            "info depth {depth} score cp {evaluation} time {}",
+                            search_start.elapsed().as_millis()
+                        )
+                    },
+                    &mut || search_start.elapsed().as_millis() > think_time,
+                );
                 if !best_move.is_none() {
                     println!(
                         "bestmove {}{}{}",
