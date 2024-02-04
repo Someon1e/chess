@@ -1,5 +1,5 @@
 use crate::board::bit_board::BitBoard;
-use crate::board::piece::{self, Piece};
+use crate::board::piece;
 use crate::board::square::{Square, DIRECTIONS};
 use crate::board::Board;
 
@@ -471,6 +471,62 @@ impl MoveGenerator {
 }
 
 impl MoveGenerator {
+    pub fn calculate_pin_rays(
+        friendly_piece_bit_board: &BitBoard,
+        friendly_king_square: &Square,
+
+        enemy_bishops: &BitBoard,
+        enemy_rooks: &BitBoard,
+        enemy_queens: &BitBoard,
+        enemy_piece_bit_board: &BitBoard,
+    ) -> (BitBoard, BitBoard) {
+        let mut orthogonal_pin_rays = BitBoard::empty();
+        let mut diagonal_pin_rays = BitBoard::empty();
+        for (index, (direction, distance_from_edge)) in DIRECTIONS
+            .iter()
+            .zip(&PRECOMPUTED.squares_from_edge[friendly_king_square.index() as usize])
+            .enumerate()
+        {
+            let is_rook_movement = index < 4;
+
+            let mut ray = BitBoard::empty();
+            let mut is_friendly_piece_on_ray = false;
+            for count in 1..=*distance_from_edge {
+                let move_to = friendly_king_square.offset(direction * count);
+                ray.set(&move_to);
+
+                if friendly_piece_bit_board.get(&move_to) {
+                    // Friendly piece blocks ray
+
+                    if is_friendly_piece_on_ray {
+                        // This is the second time a friendly piece has blocked the ray
+                        // Not pinned.
+                        break;
+                    } else {
+                        is_friendly_piece_on_ray = true;
+                    }
+                } else if enemy_piece_bit_board.get(&move_to) {
+                    let is_queen = enemy_queens.get(&move_to);
+                    let is_rook = enemy_rooks.get(&move_to);
+                    let is_bishop = enemy_bishops.get(&move_to);
+                    if is_queen || (is_rook_movement && is_rook) || (!is_rook_movement && is_bishop)
+                    {
+                        if is_friendly_piece_on_ray {
+                            // Friendly piece is blocking check, it is pinned
+                            if is_rook_movement {
+                                orthogonal_pin_rays |= ray
+                            } else {
+                                diagonal_pin_rays |= ray
+                            }
+                        }
+                    } else {
+                        break;
+                    }
+                }
+            }
+        }
+        (orthogonal_pin_rays, diagonal_pin_rays)
+    }
     pub fn new(board: &Board) -> Self {
         let white_to_move = board.white_to_move;
 
@@ -631,51 +687,15 @@ impl MoveGenerator {
             push_mask = !BitBoard::empty();
         }
 
-        let mut orthogonal_pin_rays = BitBoard::empty();
-        let mut diagonal_pin_rays = BitBoard::empty();
-        for (index, (direction, distance_from_edge)) in DIRECTIONS
-            .iter()
-            .zip(&PRECOMPUTED.squares_from_edge[friendly_king_square.index() as usize])
-            .enumerate()
-        {
-            let is_rook_movement = index < 4;
+        let (orthogonal_pin_rays, diagonal_pin_rays) = Self::calculate_pin_rays(
+            &friendly_piece_bit_board,
+            &friendly_king_square,
+            &enemy_bishops,
+            &enemy_rooks,
+            &enemy_queens,
+            &enemy_piece_bit_board,
+        );
 
-            let mut ray = BitBoard::empty();
-            let mut is_friendly_piece_on_ray = false;
-            for count in 1..=*distance_from_edge {
-                let move_to = friendly_king_square.offset(direction * count);
-                ray.set(&move_to);
-
-                if friendly_piece_bit_board.get(&move_to) {
-                    // Friendly piece blocks ray
-
-                    if is_friendly_piece_on_ray {
-                        // This is the second time a friendly piece has blocked the ray
-                        // Not pinned.
-                        break;
-                    } else {
-                        is_friendly_piece_on_ray = true;
-                    }
-                } else if let Some(enemy_piece) = board.enemy_piece_at(move_to) {
-                    let is_queen = enemy_piece == enemy_pieces[4];
-                    let is_rook = enemy_piece == enemy_pieces[3];
-                    let is_bishop = enemy_piece == enemy_pieces[2];
-                    if is_queen || (is_rook_movement && is_rook) || (!is_rook_movement && is_bishop)
-                    {
-                        if is_friendly_piece_on_ray {
-                            // Friendly piece is blocking check, it is pinned
-                            if is_rook_movement {
-                                orthogonal_pin_rays |= ray
-                            } else {
-                                diagonal_pin_rays |= ray
-                            }
-                        }
-                    } else {
-                        break;
-                    }
-                }
-            }
-        }
         Self {
             white_to_move,
             king_side,
