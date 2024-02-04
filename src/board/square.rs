@@ -91,3 +91,28 @@ impl Square {
         BitBoard::from_square(self)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::board::{bit_board::BitBoard, square::Square};
+
+    #[test]
+    fn test_coordinates() {
+        let a1 = Square::from_coords(0, 0);
+        assert!(a1.to_notation() == "a1");
+        let b1 = a1.right(1);
+        assert!(b1.to_notation() == "b1");
+        let b2 = b1.up(1);
+        assert!(b2.to_notation() == "b2");
+        let also_b2 = Square::from_index(b2.index());
+        assert!(also_b2.to_notation() == "b2");
+        assert!(also_b2.index() == 9);
+
+        let bit_board = also_b2.bitboard();
+
+        let mut same_bit_board = BitBoard::empty();
+        same_bit_board.set(&also_b2);
+
+        assert!(bit_board.to_string() == same_bit_board.to_string())
+    }
+}
