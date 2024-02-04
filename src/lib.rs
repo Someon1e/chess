@@ -7,17 +7,14 @@ mod tests {
     use std::io::{stdin, BufRead};
     use std::time::Instant;
 
-    use crate::board::bit_board::BitBoard;
-
-    use crate::board::square::Square;
     use crate::board::zobrist::Zobrist;
 
     use super::board::Board;
     use super::engine::Engine;
     use super::move_generator::MoveGenerator;
 
-    const START_POSITION_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    const TEST_FENS: [(u16, usize, &str); 25] = [
+    pub const START_POSITION_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    pub const TEST_FENS: [(u16, usize, &str); 25] = [
         (
             1,
             21,
@@ -151,34 +148,6 @@ mod tests {
                 &mut || search_start.elapsed().as_millis() > 3 * 1000,
             );
             println!("Result: {best_move} {evaluation}")
-        }
-    }
-
-    #[test]
-    fn test_coordinates() {
-        let a1 = Square::from_coords(0, 0);
-        assert!(a1.to_notation() == "a1");
-        let b1 = a1.right(1);
-        assert!(b1.to_notation() == "b1");
-        let b2 = b1.up(1);
-        assert!(b2.to_notation() == "b2");
-        let also_b2 = Square::from_index(b2.index());
-        assert!(also_b2.to_notation() == "b2");
-        assert!(also_b2.index() == 9);
-
-        let bit_board = also_b2.bitboard();
-
-        let mut same_bit_board = BitBoard::empty();
-        same_bit_board.set(&also_b2);
-
-        assert!(bit_board.to_string() == same_bit_board.to_string())
-    }
-
-    #[test]
-    fn test_fen_encoding() {
-        for (_, _, fen) in TEST_FENS {
-            let board = Board::from_fen(fen);
-            assert_eq!(fen, board.to_fen());
         }
     }
 }
