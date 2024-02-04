@@ -235,7 +235,7 @@ impl<'a> Engine<'a> {
             if saved.key != zobrist_key {
                 // println!("Collision!")
             } else {
-                if saved.depth >= depth {
+                if saved.ply_remaining >= depth - ply {
                     let node_type = &saved.node_type;
                     match node_type {
                         NodeType::Exact => return saved.value,
@@ -259,7 +259,7 @@ impl<'a> Engine<'a> {
             let evaluation = self.quiescence_search(alpha, beta);
             self.transposition_table[zobrist_index] = Some(NodeValue {
                 key: zobrist_key,
-                depth,
+                ply_remaining: depth - ply,
                 node_type: NodeType::Exact,
                 value: evaluation,
                 best_move: EncodedMove::NONE,
@@ -314,7 +314,7 @@ impl<'a> Engine<'a> {
                 best_move = *move_data;
                 self.transposition_table[zobrist_index] = Some(NodeValue {
                     key: zobrist_key,
-                    depth,
+                    ply_remaining: depth - ply,
                     node_type,
                     value: score,
                     best_move,
@@ -334,7 +334,7 @@ impl<'a> Engine<'a> {
         }
         self.transposition_table[zobrist_index] = Some(NodeValue {
             key: zobrist_key,
-            depth,
+            ply_remaining: depth - ply,
             node_type,
             value: alpha,
             best_move,

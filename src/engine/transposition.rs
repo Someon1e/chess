@@ -5,7 +5,7 @@ use super::encoded_move::EncodedMove;
 #[derive(Clone, Copy)]
 pub struct NodeValue {
     pub key: Zobrist,
-    pub depth: u16,
+    pub ply_remaining: u16,
     pub node_type: NodeType,
     pub value: i32,
     pub best_move: EncodedMove,
