@@ -34,11 +34,11 @@ impl BitBoard {
     pub const RANK_7: BitBoard = Self::new(0b11111111 << 48);
     pub const RANK_8: BitBoard = Self::new(0b11111111 << 56);
 
+    pub const EMPTY: Self = Self(0);
+    pub const FULL: Self = Self(!0);
+
     pub const fn new(bits: u64) -> Self {
         BitBoard(bits)
-    }
-    pub fn empty() -> Self {
-        BitBoard(0)
     }
     pub fn is_empty(&self) -> bool {
         self.0 == 0
