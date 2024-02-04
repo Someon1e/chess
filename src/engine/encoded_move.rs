@@ -20,9 +20,7 @@ impl EncodedMove {
         Self(data)
     }
 
-    pub fn none() -> Self {
-        Self(0)
-    }
+    pub const NONE: Self = Self(0);
 
     pub fn is_none(&self) -> bool {
         self.0 == 0
