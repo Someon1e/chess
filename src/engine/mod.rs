@@ -363,3 +363,20 @@ impl<'a> Engine<'a> {
         (self.best_move, self.best_score)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{board::Board, engine::Engine};
+
+    #[test]
+    fn quiescence_search_works() {
+        let mut board =
+            Board::from_fen("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
+        let mut quiet =
+            Board::from_fen("rnb1kbnr/ppp1pppp/8/3q4/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
+        assert_eq!(
+            Engine::new(&mut board).quiescence_search(-i32::MAX, i32::MAX),
+            Engine::new(&mut quiet).evaluate()
+        )
+    }
+}
