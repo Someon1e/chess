@@ -274,38 +274,38 @@ impl MoveGenerator {
             }
         }
     }
-    fn directional_king_danger_bit_board(
-        from: Square,
+}
 
-        capture_mask: &mut BitBoard,
-        push_mask: &mut BitBoard,
-        king_bit_board: &BitBoard,
-        occupied_squares: &BitBoard,
-
-        directions: &[i8],
-        squares_from_edge: &[i8],
-    ) -> BitBoard {
-        let mut attacked = BitBoard::empty();
-        for (direction, distance_from_edge) in directions.iter().zip(squares_from_edge) {
-            let mut ray = BitBoard::empty();
-            for count in 1..=*distance_from_edge {
-                let move_to = from.offset(direction * count);
-                if king_bit_board.get(&move_to) {
-                    // This piece is checking the king
-                    capture_mask.set(&from);
-                    *push_mask |= ray;
-                    ray.set(&move_to);
-                } else {
-                    ray.set(&move_to);
-                    if occupied_squares.get(&move_to) {
-                        break;
-                    }
-                }
-            }
-            attacked |= ray
-        }
-        attacked
+impl MoveGenerator {
+    fn knight_attack_bit_board(square: Square) -> BitBoard {
+        PRECOMPUTED.knight_moves_at_square[square.index() as usize]
     }
+
+    fn gen_knights(&self, add_move: &mut dyn FnMut(Move), captures_only: bool) {
+        let mut non_pinned_knights =
+            self.friendly_knights & !(self.diagonal_pin_rays | self.orthogonal_pin_rays);
+
+        let mut mask = (self.capture_mask | self.push_mask) & !self.friendly_piece_bit_board;
+        if captures_only {
+            mask &= self.enemy_piece_bit_board
+        }
+
+        while !non_pinned_knights.is_empty() {
+            let from = non_pinned_knights.pop_square();
+            let mut knight_moves = Self::knight_attack_bit_board(from) & mask;
+            while !knight_moves.is_empty() {
+                let move_to = knight_moves.pop_square();
+                add_move(Move {
+                    from,
+                    to: move_to,
+                    flag: Flag::None,
+                })
+            }
+        }
+    }
+}
+
+impl MoveGenerator {
     fn gen_directional(
         &self,
         add_move: &mut dyn FnMut(Move),
@@ -359,31 +359,40 @@ impl MoveGenerator {
             }
         }
     }
-    fn knight_attack_bit_board(square: Square) -> BitBoard {
-        PRECOMPUTED.knight_moves_at_square[square.index() as usize]
-    }
+}
 
-    fn gen_knights(&self, add_move: &mut dyn FnMut(Move), captures_only: bool) {
-        let mut non_pinned_knights =
-            self.friendly_knights & !(self.diagonal_pin_rays | self.orthogonal_pin_rays);
+impl MoveGenerator {
+    fn directional_king_danger_bit_board(
+        from: Square,
 
-        let mut mask = (self.capture_mask | self.push_mask) & !self.friendly_piece_bit_board;
-        if captures_only {
-            mask &= self.enemy_piece_bit_board
-        }
+        capture_mask: &mut BitBoard,
+        push_mask: &mut BitBoard,
+        king_bit_board: &BitBoard,
+        occupied_squares: &BitBoard,
 
-        while !non_pinned_knights.is_empty() {
-            let from = non_pinned_knights.pop_square();
-            let mut knight_moves = Self::knight_attack_bit_board(from) & mask;
-            while !knight_moves.is_empty() {
-                let move_to = knight_moves.pop_square();
-                add_move(Move {
-                    from,
-                    to: move_to,
-                    flag: Flag::None,
-                })
+        directions: &[i8],
+        squares_from_edge: &[i8],
+    ) -> BitBoard {
+        let mut attacked = BitBoard::empty();
+        for (direction, distance_from_edge) in directions.iter().zip(squares_from_edge) {
+            let mut ray = BitBoard::empty();
+            for count in 1..=*distance_from_edge {
+                let move_to = from.offset(direction * count);
+                if king_bit_board.get(&move_to) {
+                    // This piece is checking the king
+                    capture_mask.set(&from);
+                    *push_mask |= ray;
+                    ray.set(&move_to);
+                } else {
+                    ray.set(&move_to);
+                    if occupied_squares.get(&move_to) {
+                        break;
+                    }
+                }
             }
+            attacked |= ray
         }
+        attacked
     }
 
     fn king_attack_bit_board(square: Square) -> BitBoard {
@@ -450,6 +459,9 @@ impl MoveGenerator {
             }
         }
     }
+}
+
+impl MoveGenerator {
     pub fn new(board: &Board) -> Self {
         let white_to_move = board.white_to_move;
 
