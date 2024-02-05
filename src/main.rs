@@ -145,7 +145,11 @@ fn main() {
 
                     let mut flag = Flag::None;
                     if piece == Piece::WhitePawn || piece == Piece::BlackPawn {
-                        if let Some(promotion) = uci_move.chars().nth(4) {
+                        if (from.rank() - to.rank()).abs() == 2 {
+                            flag = Flag::PawnTwoUp
+                        } if engine.board().game_state.en_passant_square == Some(to) {
+                            flag = Flag::EnPassant
+                        } else if let Some(promotion) = uci_move.chars().nth(4) {
                             flag = match promotion {
                                 'q' => Flag::QueenPromotion,
                                 'r' => Flag::RookPromotion,
@@ -160,15 +164,12 @@ fn main() {
                         if (from.file() - to.file()).abs() > 1 {
                             flag = Flag::Castle
                         }
-                    } else if (piece == Piece::BlackPawn || piece == Piece::WhitePawn)
-                        && engine.board().game_state.en_passant_square == Some(to)
-                    {
-                        flag = Flag::EnPassant
                     }
 
                     engine.make_move(&Move { from, to, flag })
                 }
                 moves.clear();
+                println!("{}", engine.board().to_fen());
 
                 let think_time = move_time_in_ms.unwrap_or_else(|| {
                     let clock_time = (if engine.board().white_to_move {
