@@ -23,7 +23,7 @@ impl EncodedMove {
     pub const NONE: Self = Self(0);
 
     pub fn is_none(&self) -> bool {
-        self.0 == 0
+        *self == Self::NONE
     }
 
     pub fn from(&self) -> Square {

@@ -382,7 +382,7 @@ impl<'a> Engine<'a> {
                 break;
             }
 
-            if self.best_move == EncodedMove::NONE || self.best_score.abs() == CHECKMATE_SCORE.abs() {
+            if self.best_move.is_none() || self.best_score.abs() == CHECKMATE_SCORE.abs() {
                 break;
             }
             depth_completed(depth, (self.best_move, self.best_score));
