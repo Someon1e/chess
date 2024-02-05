@@ -227,9 +227,8 @@ impl<'a> Engine<'a> {
     }
     pub fn unmake_move(&mut self, move_data: &Move) {
         self.board.unmake_move(move_data);
-        assert_eq!(
-            self.repetition_table.remove(&self.board.zobrist_key()),
-            true
+        assert!(
+            self.repetition_table.remove(&self.board.zobrist_key())
         );
     }
     pub fn negamax(
