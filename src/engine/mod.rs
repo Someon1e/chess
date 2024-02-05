@@ -2,9 +2,14 @@ mod encoded_move;
 mod eval_data;
 mod transposition;
 
+use fnv::FnvHashSet;
+
 use crate::{
-    board::{bit_board::BitBoard, piece::Piece, Board},
-    move_generator::{move_data::Flag, MoveGenerator},
+    board::{bit_board::BitBoard, piece::Piece, zobrist::Zobrist, Board},
+    move_generator::{
+        move_data::{Flag, Move},
+        MoveGenerator,
+    },
 };
 
 use self::{
@@ -15,6 +20,7 @@ use self::{
 pub struct Engine<'a> {
     board: &'a mut Board,
     transposition_table: Vec<Option<NodeValue>>,
+    repetition_table: FnvHashSet<Zobrist>,
     best_move: EncodedMove,
     best_score: i32,
 }
@@ -24,9 +30,14 @@ impl<'a> Engine<'a> {
         Self {
             board,
             transposition_table: vec![None; TRANSPOSITION_CAPACITY],
+            repetition_table: FnvHashSet::default(),
             best_move: EncodedMove::NONE,
             best_score: -i32::MAX,
         }
+    }
+
+    pub fn board(&self) -> &Board {
+        self.board
     }
 
     fn get_phase(&self) -> i32 {
@@ -210,7 +221,17 @@ impl<'a> Engine<'a> {
         );
         return_value.unwrap_or(alpha)
     }
-
+    pub fn make_move(&mut self, move_data: &Move) {
+        self.repetition_table.insert(self.board.zobrist_key());
+        self.board.make_move(move_data);
+    }
+    pub fn unmake_move(&mut self, move_data: &Move) {
+        self.board.unmake_move(move_data);
+        assert_eq!(
+            self.repetition_table.remove(&self.board.zobrist_key()),
+            true
+        );
+    }
     pub fn negamax(
         &mut self,
         ply: u16,
@@ -226,6 +247,11 @@ impl<'a> Engine<'a> {
         }
 
         let zobrist_key = self.board.zobrist_key();
+
+        if self.repetition_table.contains(&zobrist_key) {
+            return 0;
+        }
+
         let zobrist_index = zobrist_key.index(TRANSPOSITION_CAPACITY);
 
         let mut hash_move = &EncodedMove::NONE;
@@ -290,7 +316,7 @@ impl<'a> Engine<'a> {
         let mut node_type = NodeType::Alpha;
         let mut best_move = EncodedMove::NONE;
         for (index, move_data) in moves.iter().rev().enumerate() {
-            self.board.make_move(&move_data.decode());
+            self.make_move(&move_data.decode());
 
             let mut normal_search = index < 3 || (depth - ply) < 3 || move_generator.is_in_check();
             let mut score = 0;
@@ -304,7 +330,7 @@ impl<'a> Engine<'a> {
             if normal_search {
                 score = -self.negamax(ply + 1, depth, should_cancel, -beta, -alpha);
             }
-            self.board.unmake_move(&move_data.decode());
+            self.unmake_move(&move_data.decode());
             if should_cancel() {
                 return 0;
             }

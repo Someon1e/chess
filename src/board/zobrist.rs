@@ -47,7 +47,7 @@ lazy_static! {
     };
 }
 
-#[derive(PartialEq, Debug, Clone, Copy)]
+#[derive(PartialEq, Debug, Clone, Copy, Eq, Hash)]
 pub struct Zobrist(u64);
 
 impl Zobrist {
