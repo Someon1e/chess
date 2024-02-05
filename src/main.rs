@@ -17,7 +17,6 @@ const MAX_TIME: u128 = 5 * 1000;
 fn main() {
     let mut fen = None;
     let mut moves: Vec<String> = Vec::new();
-    let mut board;
 
     let mut stdin = stdin().lock();
 
@@ -135,12 +134,14 @@ fn main() {
                     }
                     index += 1;
                 }
-                board = Board::from_fen(&fen.unwrap());
+                let board = &mut Board::from_fen(&fen.unwrap());
+                let mut engine = Engine::new(board);
                 fen = None;
+
                 for uci_move in &moves {
                     let (from, to) = (&uci_move[0..2], &uci_move[2..4]);
                     let (from, to) = (Square::from_notation(from), Square::from_notation(to));
-                    let piece = board.piece_at(from).unwrap();
+                    let piece = engine.board().piece_at(from).unwrap();
 
                     let mut flag = Flag::None;
                     if piece == Piece::WhitePawn || piece == Piece::BlackPawn {
@@ -160,23 +161,23 @@ fn main() {
                             flag = Flag::Castle
                         }
                     } else if (piece == Piece::BlackPawn || piece == Piece::WhitePawn)
-                        && board.game_state.en_passant_square == Some(to)
+                        && engine.board().game_state.en_passant_square == Some(to)
                     {
                         flag = Flag::EnPassant
                     }
 
-                    board.make_move(&Move { from, to, flag })
+                    engine.make_move(&Move { from, to, flag })
                 }
                 moves.clear();
 
                 let think_time = move_time_in_ms.unwrap_or_else(|| {
-                    let clock_time = (if board.white_to_move {
+                    let clock_time = (if engine.board().white_to_move {
                         white_time
                     } else {
                         black_time
                     })
                     .unwrap();
-                    let increment = (if board.white_to_move {
+                    let increment = (if engine.board().white_to_move {
                         white_increment
                     } else {
                         black_increment
@@ -185,14 +186,13 @@ fn main() {
                     (clock_time / 20 + increment / 2).min(MAX_TIME)
                 });
 
-                let engine = &mut Engine::new(&mut board);
                 let search_start = Instant::now();
                 let (best_move, _evaluation) = engine.iterative_deepening(
                     &mut |depth, (best_move, evaluation)| {
-                        /*println!(
+                        println!(
                             "info depth {depth} score cp {evaluation} time {}",
                             search_start.elapsed().as_millis()
-                        )*/
+                        )
                         // TODO: fix crash when depth goes very high
                     },
                     &mut || search_start.elapsed().as_millis() > think_time,
