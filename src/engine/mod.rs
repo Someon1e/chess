@@ -25,6 +25,8 @@ pub struct Engine<'a> {
     best_score: i32,
 }
 
+const CHECKMATE_SCORE: i32 = -i32::MAX + 1;
+
 impl<'a> Engine<'a> {
     pub fn new(board: &'a mut Board) -> Self {
         Self {
@@ -302,9 +304,9 @@ impl<'a> Engine<'a> {
         if moves.is_empty() {
             if move_generator.is_in_check() {
                 if ply == 0 {
-                    self.best_score = -i32::MAX;
+                    self.best_score = CHECKMATE_SCORE;
                 }
-                return -i32::MAX;
+                return CHECKMATE_SCORE
             }
             if ply == 0 {
                 self.best_score = 0
@@ -380,7 +382,7 @@ impl<'a> Engine<'a> {
                 break;
             }
 
-            if self.best_move == EncodedMove::NONE || self.best_score.abs() == i32::MAX {
+            if self.best_move == EncodedMove::NONE || self.best_score.abs() == CHECKMATE_SCORE.abs() {
                 break;
             }
             depth_completed(depth, (self.best_move, self.best_score));
