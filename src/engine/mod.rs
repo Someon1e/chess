@@ -248,7 +248,7 @@ impl<'a> Engine<'a> {
 
         let zobrist_key = self.board.zobrist_key();
 
-        if self.repetition_table.contains(&zobrist_key) {
+        if ply != 0 && self.repetition_table.contains(&zobrist_key) {
             return 0;
         }
 

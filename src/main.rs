@@ -197,20 +197,18 @@ fn main() {
                     },
                     &mut || search_start.elapsed().as_millis() > think_time,
                 );
-                if !best_move.is_none() {
-                    println!(
-                        "bestmove {}{}{}",
-                        best_move.from().to_notation(),
-                        best_move.to().to_notation(),
-                        match best_move.flag() {
-                            Flag::QueenPromotion => "q",
-                            Flag::RookPromotion => "r",
-                            Flag::KnightPromotion => "n",
-                            Flag::BishopPromotion => "b",
-                            _ => "",
-                        }
-                    )
-                }
+                println!(
+                    "bestmove {}{}{}",
+                    best_move.from().to_notation(),
+                    best_move.to().to_notation(),
+                    match best_move.flag() {
+                        Flag::QueenPromotion => "q",
+                        Flag::RookPromotion => "r",
+                        Flag::KnightPromotion => "n",
+                        Flag::BishopPromotion => "b",
+                        _ => "",
+                    }
+                )
             }
             "stop" => {}
             "quit" => return,
