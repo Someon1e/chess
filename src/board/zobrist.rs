@@ -26,9 +26,8 @@ lazy_static! {
     pub static ref ZOBRIST_RANDOMS: ZobristRandoms = {
         let mut piece_arrays: [[u64; 64]; 12] = [[0; 64]; 12];
         for piece in Piece::ALL_PIECES {
-            let mut square_array = piece_arrays[piece as usize];
+            let square_array = &mut piece_arrays[piece as usize];
             square_array.fill_with(random_u64);
-            piece_arrays[piece as usize] = square_array
         }
         let side_to_move = random_u64();
 
