@@ -147,7 +147,7 @@ fn main() {
                     if piece == Piece::WhitePawn || piece == Piece::BlackPawn {
                         if (from.rank() - to.rank()).abs() == 2 {
                             flag = Flag::PawnTwoUp
-                        } if engine.board().game_state.en_passant_square == Some(to) {
+                        } else if engine.board().game_state.en_passant_square == Some(to) {
                             flag = Flag::EnPassant
                         } else if let Some(promotion) = uci_move.chars().nth(4) {
                             flag = match promotion {
@@ -160,10 +160,10 @@ fn main() {
                                 }
                             }
                         }
-                    } else if piece == Piece::BlackKing || piece == Piece::WhiteKing {
-                        if (from.file() - to.file()).abs() > 1 {
-                            flag = Flag::Castle
-                        }
+                    } else if (piece == Piece::BlackKing || piece == Piece::WhiteKing)
+                        && (from.file() - to.file()).abs() > 1
+                    {
+                        flag = Flag::Castle
                     }
 
                     engine.make_move(&Move { from, to, flag })
