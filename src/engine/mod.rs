@@ -173,22 +173,24 @@ impl<'a> Engine<'a> {
         &self,
         move_generator: &MoveGenerator,
         best_move: &EncodedMove,
-    ) -> Vec<EncodedMove> {
-        let mut moves = Vec::with_capacity(30);
+    ) -> ([EncodedMove; 218], usize) {
+        let mut moves = [EncodedMove::NONE; 218];
+        let mut index = 0;
         move_generator.gen(
-            &mut |move_data| moves.push(EncodedMove::new(move_data)),
+            &mut |move_data| {moves[index] = EncodedMove::new(move_data); index += 1},
             false,
         );
 
+        let actual_moves = &mut moves[0..index];
         // Best moves will be at the back, so iterate in reverse later.
-        moves.sort_by_cached_key(|move_data| {
+        actual_moves.sort_by_cached_key(|move_data| {
             if *move_data == *best_move {
                 return 10000;
             }
             self.guess_move_value(&move_generator.enemy_pawn_attacks(), move_data)
         });
 
-        moves
+        (moves, index)
     }
 
     fn quiescence_search(&mut self, mut alpha: i32, beta: i32) -> i32 {
@@ -299,9 +301,9 @@ impl<'a> Engine<'a> {
         if ply == 0 {
             hash_move = &self.best_move;
         }
-        let moves = self.get_sorted_moves(&move_generator, hash_move);
+        let (moves, move_count) = self.get_sorted_moves(&move_generator, hash_move);
 
-        if moves.is_empty() {
+        if move_count == 0 {
             if move_generator.is_in_check() {
                 if ply == 0 {
                     self.best_score = CHECKMATE_SCORE;
@@ -316,7 +318,9 @@ impl<'a> Engine<'a> {
 
         let mut node_type = NodeType::Alpha;
         let mut best_move = EncodedMove::NONE;
-        for (index, move_data) in moves.iter().rev().enumerate() {
+        for index in (0..move_count).rev() {
+            let move_data = moves[index];
+
             self.make_move(&move_data.decode());
 
             let mut normal_search = index < 3 || (depth - ply) < 3 || move_generator.is_in_check();
@@ -338,7 +342,7 @@ impl<'a> Engine<'a> {
 
             if score >= beta {
                 node_type = NodeType::Beta;
-                best_move = *move_data;
+                best_move = move_data;
                 self.transposition_table[zobrist_index] = Some(NodeValue {
                     key: zobrist_key,
                     ply_remaining: depth - ply,
@@ -351,7 +355,7 @@ impl<'a> Engine<'a> {
             if score > alpha {
                 node_type = NodeType::Exact;
                 alpha = score;
-                best_move = *move_data;
+                best_move = move_data;
 
                 if ply == 0 {
                     self.best_move = best_move;
