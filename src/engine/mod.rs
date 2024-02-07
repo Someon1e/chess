@@ -177,7 +177,10 @@ impl<'a> Engine<'a> {
         let mut moves = [EncodedMove::NONE; 218];
         let mut index = 0;
         move_generator.gen(
-            &mut |move_data| {moves[index] = EncodedMove::new(move_data); index += 1},
+            &mut |move_data| {
+                moves[index] = EncodedMove::new(move_data);
+                index += 1
+            },
             false,
         );
 
@@ -231,9 +234,7 @@ impl<'a> Engine<'a> {
     }
     pub fn unmake_move(&mut self, move_data: &Move) {
         self.board.unmake_move(move_data);
-        assert!(
-            self.repetition_table.remove(&self.board.zobrist_key())
-        );
+        assert!(self.repetition_table.remove(&self.board.zobrist_key()));
     }
     pub fn negamax(
         &mut self,
@@ -308,7 +309,7 @@ impl<'a> Engine<'a> {
                 if ply == 0 {
                     self.best_score = CHECKMATE_SCORE;
                 }
-                return CHECKMATE_SCORE
+                return CHECKMATE_SCORE;
             }
             if ply == 0 {
                 self.best_score = 0
@@ -397,7 +398,14 @@ impl<'a> Engine<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{board::Board, engine::Engine, move_generator::MoveGenerator};
+    use crate::{
+        board::{square::Square, Board},
+        engine::Engine,
+        move_generator::{
+            move_data::{Flag, Move},
+            MoveGenerator,
+        },
+    };
 
     use super::encoded_move::EncodedMove;
 
@@ -415,13 +423,29 @@ mod tests {
 
     #[test]
     fn move_ordering_works() {
-        let mut board =
-            Board::from_fen("8/P6p/6r1/1q1n4/2P3R1/8/2K2k2/8 w - - 0 1");
+        let mut board = Board::from_fen("8/P6p/6r1/1q1n4/2P3R1/8/2K2k2/8 w - - 0 1");
         let move_generator = MoveGenerator::new(&board);
-        let (moves, move_count) = Engine::new(&mut board).get_sorted_moves(&move_generator, &EncodedMove::NONE);
+        let (moves, move_count) =
+            Engine::new(&mut board).get_sorted_moves(&move_generator, &EncodedMove::NONE);
         for index in (0..move_count).rev() {
             let move_data = moves[index];
             println!("{move_data}");
         }
+        assert!(
+            moves[move_count - 1].decode()
+                == Move {
+                    from: Square::from_notation("c4"),
+                    to: Square::from_notation("b5"),
+                    flag: Flag::None
+                }
+        );
+        assert!(
+            moves[move_count - 2].decode()
+                == Move {
+                    from: Square::from_notation("a7"),
+                    to: Square::from_notation("a8"),
+                    flag: Flag::QueenPromotion
+                }
+        )
     }
 }
