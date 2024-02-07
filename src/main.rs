@@ -6,7 +6,7 @@ use std::{
 use chess::{
     board::{piece::Piece, square::Square, Board},
     engine::Engine,
-    move_generator::move_data::{Flag, Move},
+    move_generator::move_data::{Flag, Move}, uci,
 };
 
 const START_POSITION_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -199,16 +199,8 @@ fn main() {
                     &mut || search_start.elapsed().as_millis() > think_time,
                 );
                 println!(
-                    "bestmove {}{}{}",
-                    best_move.from().to_notation(),
-                    best_move.to().to_notation(),
-                    match best_move.flag() {
-                        Flag::QueenPromotion => "q",
-                        Flag::RookPromotion => "r",
-                        Flag::KnightPromotion => "n",
-                        Flag::BishopPromotion => "b",
-                        _ => "",
-                    }
+                    "bestmove {}",
+                    uci::encode_move(best_move.decode())
                 )
             }
             "stop" => {}

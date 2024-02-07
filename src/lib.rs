@@ -1,6 +1,7 @@
 pub mod board;
 pub mod engine;
 pub mod move_generator;
+pub mod uci;
 
 #[cfg(test)]
 mod tests {
