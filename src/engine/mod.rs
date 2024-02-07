@@ -397,7 +397,9 @@ impl<'a> Engine<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{board::Board, engine::Engine};
+    use crate::{board::Board, engine::Engine, move_generator::MoveGenerator};
+
+    use super::encoded_move::EncodedMove;
 
     #[test]
     fn quiescence_search_works() {
@@ -409,5 +411,17 @@ mod tests {
             Engine::new(&mut board).quiescence_search(-i32::MAX, i32::MAX),
             Engine::new(&mut quiet).evaluate()
         )
+    }
+
+    #[test]
+    fn move_ordering_works() {
+        let mut board =
+            Board::from_fen("8/P6p/6r1/1q1n4/2P3R1/8/2K2k2/8 w - - 0 1");
+        let move_generator = MoveGenerator::new(&board);
+        let (moves, move_count) = Engine::new(&mut board).get_sorted_moves(&move_generator, &EncodedMove::NONE);
+        for index in (0..move_count).rev() {
+            let move_data = moves[index];
+            println!("{move_data}");
+        }
     }
 }
