@@ -69,10 +69,7 @@ impl<'a> Engine<'a> {
     }
 
     fn calculate_score(phase: i32, middle_game_score: i32, end_game_score: i32) -> i32 {
-        let mut middle_game_phase = phase;
-        if middle_game_phase > 24 {
-            middle_game_phase = 24
-        };
+        let middle_game_phase = phase.min(24);
         let end_game_phase = 24 - middle_game_phase;
         (middle_game_score * middle_game_phase + end_game_score * end_game_phase) / 24
     }
