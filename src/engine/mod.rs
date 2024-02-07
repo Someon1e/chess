@@ -418,6 +418,16 @@ mod tests {
     }
 
     #[test]
+    fn test_evaluation() {
+        let mut starting_rank_pawn = Board::from_fen("8/8/8/8/8/8/4P3/8 w - - 0 1");
+        let mut one_step_from_promoting_pawn = Board::from_fen("8/4P3/8/8/8/8/8/8 w - - 0 1");
+        assert!(
+            Engine::new(&mut one_step_from_promoting_pawn).evaluate()
+                > Engine::new(&mut starting_rank_pawn).evaluate()
+        )
+    }
+
+    #[test]
     fn move_ordering_works() {
         let mut board = Board::from_fen("8/P6p/6r1/1q1n4/2P3R1/8/2K2k2/8 w - - 0 1");
         let move_generator = MoveGenerator::new(&board);
