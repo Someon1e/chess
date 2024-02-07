@@ -125,9 +125,9 @@ impl<'a> Engine<'a> {
         match move_data.flag() {
             Flag::EnPassant => score += 0,
             Flag::PawnTwoUp => score += 0,
-            Flag::BishopPromotion => score += 200,
-            Flag::KnightPromotion => score += 200,
-            Flag::RookPromotion => score += 400,
+            Flag::BishopPromotion => score += 300,
+            Flag::KnightPromotion => score += 400,
+            Flag::RookPromotion => score += 300,
             Flag::QueenPromotion => score += 800,
             Flag::Castle => score += 0,
             Flag::None => score += 0,
