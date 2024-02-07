@@ -6,7 +6,8 @@ use std::{
 use chess::{
     board::{piece::Piece, square::Square, Board},
     engine::Engine,
-    move_generator::move_data::{Flag, Move}, uci,
+    move_generator::move_data::{Flag, Move},
+    uci,
 };
 
 const START_POSITION_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -145,7 +146,7 @@ fn main() {
 
                     let mut flag = Flag::None;
                     if piece == Piece::WhitePawn || piece == Piece::BlackPawn {
-                        if (from.rank() - to.rank()).abs() == 2 {
+                        if from.rank().abs_diff(to.rank()) == 2 {
                             flag = Flag::PawnTwoUp
                         } else if engine.board().game_state.en_passant_square == Some(to) {
                             flag = Flag::EnPassant
@@ -161,7 +162,7 @@ fn main() {
                             }
                         }
                     } else if (piece == Piece::BlackKing || piece == Piece::WhiteKing)
-                        && (from.file() - to.file()).abs() > 1
+                        && from.file().abs_diff(to.file()) > 1
                     {
                         flag = Flag::Castle
                     }
@@ -198,10 +199,7 @@ fn main() {
                     },
                     &mut || search_start.elapsed().as_millis() > think_time,
                 );
-                println!(
-                    "bestmove {}",
-                    uci::encode_move(best_move.decode())
-                )
+                println!("bestmove {}", uci::encode_move(best_move.decode()))
             }
             "stop" => {}
             "quit" => return,
