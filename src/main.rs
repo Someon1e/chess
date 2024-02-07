@@ -192,7 +192,7 @@ fn main() {
                 let (best_move, _evaluation) = engine.iterative_deepening(
                     &mut |depth, (best_move, evaluation)| {
                         println!(
-                            "info depth {depth} score cp {evaluation} time {}",
+                            "info depth {depth} score cp {evaluation} time {} pv {best_move}",
                             search_start.elapsed().as_millis()
                         )
                         // TODO: fix crash when depth goes very high
