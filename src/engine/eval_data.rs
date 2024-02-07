@@ -178,6 +178,6 @@ pub const END_GAME_PIECE_SQUARE_TABLES: [[i32; 64]; 6] = [
     END_GAME_KING,
 ];
 
-pub fn flip(square_index: usize) -> usize {
+pub fn flip_white_to_black(square_index: usize) -> usize {
     square_index ^ 56
 }

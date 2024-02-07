@@ -85,7 +85,7 @@ impl<'a> Engine<'a> {
                 let square_index = bit_board.pop_square().index() as usize;
 
                 let (middle_game_value, end_game_value) =
-                    Self::get_piece_value(piece_index, square_index);
+                    Self::get_piece_value(piece_index, eval_data::flip_white_to_black(square_index));
 
                 middle_game_score_white += middle_game_value;
                 end_game_score_white += end_game_value;
@@ -102,7 +102,7 @@ impl<'a> Engine<'a> {
                 let square_index = bit_board.pop_square().index() as usize;
 
                 let (middle_game_value, end_game_value) =
-                    Self::get_piece_value(piece_index, eval_data::flip(square_index));
+                    Self::get_piece_value(piece_index, square_index);
 
                 middle_game_score_black += middle_game_value;
                 end_game_score_black += end_game_value;
@@ -139,8 +139,8 @@ impl<'a> Engine<'a> {
             let (capturing_middle_game_value, capturing_end_game_value) = {
                 let capturing_piece_index = capturing as usize % 6;
                 let mut capturing_square_index = move_data.to().index() as usize;
-                if self.board.white_to_move {
-                    capturing_square_index = eval_data::flip(capturing_square_index)
+                if !self.board.white_to_move {
+                    capturing_square_index = eval_data::flip_white_to_black(capturing_square_index)
                 }
 
                 Self::get_piece_value(capturing_piece_index, capturing_square_index)
@@ -150,8 +150,8 @@ impl<'a> Engine<'a> {
                 let moving_piece_index =
                     self.board.friendly_piece_at(move_data.from()).unwrap() as usize % 6;
                 let mut moving_from_index = move_data.from().index() as usize;
-                if !self.board.white_to_move {
-                    moving_from_index = eval_data::flip(moving_from_index)
+                if self.board.white_to_move {
+                    moving_from_index = eval_data::flip_white_to_black(moving_from_index)
                 }
                 Self::get_piece_value(moving_piece_index, moving_from_index)
             };
