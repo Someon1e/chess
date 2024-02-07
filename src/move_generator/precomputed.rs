@@ -61,9 +61,10 @@ lazy_static! {
             for knight_jump_offset in [15, 17, -17, -15, 10, -6, 6, -10] {
                 let move_to = square.offset(knight_jump_offset);
                 if move_to.within_bounds()
-                    && (square.file() - move_to.file())
-                        .abs()
-                        .max((square.rank() - move_to.rank()).abs())
+                    && square
+                        .file()
+                        .abs_diff(move_to.file())
+                        .max(square.rank().abs_diff(move_to.rank()))
                         == 2
                 {
                     knight_moves.set(&move_to)
@@ -74,10 +75,7 @@ lazy_static! {
             for direction in DIRECTIONS {
                 let move_to = square.offset(direction);
                 if move_to.within_bounds()
-                    && (file - move_to.file())
-                        .abs()
-                        .max((rank - move_to.rank()).abs())
-                        == 1
+                    && (file.abs_diff(move_to.file())).max(rank.abs_diff(move_to.rank())) == 1
                 {
                     king_moves.set(&move_to);
                 }
