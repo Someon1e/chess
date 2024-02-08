@@ -1,4 +1,5 @@
 mod encoded_move;
+mod eval;
 mod eval_data;
 mod move_ordering;
 mod transposition;
@@ -6,12 +7,13 @@ mod transposition;
 use fnv::FnvHashSet;
 
 use crate::{
-    board::{piece::Piece, zobrist::Zobrist, Board},
+    board::{zobrist::Zobrist, Board},
     move_generator::{move_data::Move, MoveGenerator},
 };
 
 use self::{
     encoded_move::EncodedMove,
+    eval::Eval,
     move_ordering::MoveOrderer,
     transposition::{NodeType, NodeValue, TRANSPOSITION_CAPACITY},
 };
@@ -41,85 +43,8 @@ impl<'a> Engine<'a> {
         self.board
     }
 
-    fn get_phase(&self) -> i32 {
-        let mut phase = 0;
-        for piece in Piece::ALL_PIECES {
-            let bit_board = *self.board.get_bit_board(piece);
-            let piece_index = piece as usize;
-            phase += bit_board.count() as i32 * eval_data::PIECE_PHASES[piece_index]
-        }
-        phase
-    }
-
-    fn get_piece_value(piece_index: usize, square_index: usize) -> (i32, i32) {
-        let middle_game_piece_score = eval_data::MIDDLE_GAME_PIECE_VALUES[piece_index];
-        let end_game_piece_score = eval_data::END_GAME_PIECE_VALUES[piece_index];
-
-        let middle_game_piece_square_score =
-            eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLES[piece_index][square_index];
-
-        let end_game_piece_square_score =
-            eval_data::END_GAME_PIECE_SQUARE_TABLES[piece_index][square_index];
-
-        (
-            middle_game_piece_score + middle_game_piece_square_score,
-            end_game_piece_score + end_game_piece_square_score,
-        )
-    }
-
-    fn calculate_score(phase: i32, middle_game_score: i32, end_game_score: i32) -> i32 {
-        let middle_game_phase = phase.min(24);
-        let end_game_phase = 24 - middle_game_phase;
-        (middle_game_score * middle_game_phase + end_game_score * end_game_phase) / 24
-    }
-
-    fn evaluate(&self) -> i32 {
-        let mut middle_game_score_white = 0;
-        let mut end_game_score_white = 0;
-
-        for piece in Piece::WHITE_PIECES {
-            let mut bit_board = *self.board.get_bit_board(piece);
-            let piece_index = piece as usize;
-            while !bit_board.is_empty() {
-                let square_index = bit_board.pop_square().index() as usize;
-
-                let (middle_game_value, end_game_value) = Self::get_piece_value(
-                    piece_index,
-                    eval_data::flip_white_to_black(square_index),
-                );
-
-                middle_game_score_white += middle_game_value;
-                end_game_score_white += end_game_value;
-            }
-        }
-
-        let mut middle_game_score_black = 0;
-        let mut end_game_score_black = 0;
-
-        for piece in Piece::BLACK_PIECES {
-            let mut bit_board = *self.board.get_bit_board(piece);
-            let piece_index = piece as usize - 6;
-            while !bit_board.is_empty() {
-                let square_index = bit_board.pop_square().index() as usize;
-
-                let (middle_game_value, end_game_value) =
-                    Self::get_piece_value(piece_index, square_index);
-
-                middle_game_score_black += middle_game_value;
-                end_game_score_black += end_game_value;
-            }
-        }
-
-        let phase = self.get_phase();
-        Self::calculate_score(
-            phase,
-            middle_game_score_white - middle_game_score_black,
-            end_game_score_white - end_game_score_black,
-        ) * if self.board.white_to_move { 1 } else { -1 }
-    }
-
     fn quiescence_search(&mut self, mut alpha: i32, beta: i32) -> i32 {
-        let stand_pat = self.evaluate();
+        let stand_pat = Eval::evaluate(&self);
         if stand_pat >= beta {
             return beta;
         }
@@ -319,7 +244,10 @@ impl<'a> Engine<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{board::Board, engine::Engine};
+    use crate::{
+        board::Board,
+        engine::{eval::Eval, Engine},
+    };
 
     #[test]
     fn quiescence_search_works() {
@@ -329,7 +257,7 @@ mod tests {
             Board::from_fen("rnb1kbnr/ppp1pppp/8/3q4/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
         assert_eq!(
             Engine::new(&mut board).quiescence_search(-i32::MAX, i32::MAX),
-            Engine::new(&mut quiet).evaluate()
+            Eval::evaluate(&Engine::new(&mut quiet))
         )
     }
 
@@ -338,8 +266,8 @@ mod tests {
         let mut starting_rank_pawn = Board::from_fen("8/8/8/8/8/8/4P3/8 w - - 0 1");
         let mut one_step_from_promoting_pawn = Board::from_fen("8/4P3/8/8/8/8/8/8 w - - 0 1");
         assert!(
-            Engine::new(&mut one_step_from_promoting_pawn).evaluate()
-                > Engine::new(&mut starting_rank_pawn).evaluate()
+            Eval::evaluate(&Engine::new(&mut one_step_from_promoting_pawn))
+                > Eval::evaluate(&Engine::new(&mut starting_rank_pawn))
         )
     }
 }
