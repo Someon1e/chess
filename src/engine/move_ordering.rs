@@ -3,7 +3,7 @@ use crate::{
     move_generator::{move_data::Flag, MoveGenerator},
 };
 
-use super::{encoded_move::EncodedMove, eval_data, Engine};
+use super::{encoded_move::EncodedMove, eval::Eval, eval_data, Engine};
 
 pub struct MoveOrderer {}
 impl MoveOrderer {
@@ -37,7 +37,7 @@ impl MoveOrderer {
                     capturing_square_index = eval_data::flip_white_to_black(capturing_square_index)
                 }
 
-                Engine::get_piece_value(capturing_piece_index, capturing_square_index)
+                Eval::get_piece_value(capturing_piece_index, capturing_square_index)
             };
 
             let (moving_middle_game_value, moving_end_game_value) = {
@@ -47,11 +47,11 @@ impl MoveOrderer {
                 if engine.board.white_to_move {
                     moving_from_index = eval_data::flip_white_to_black(moving_from_index)
                 }
-                Engine::get_piece_value(moving_piece_index, moving_from_index)
+                Eval::get_piece_value(moving_piece_index, moving_from_index)
             };
 
-            let phase = engine.get_phase();
-            score += Engine::calculate_score(
+            let phase = Eval::get_phase(engine);
+            score += Eval::calculate_score(
                 phase,
                 capturing_middle_game_value - moving_middle_game_value,
                 capturing_end_game_value - moving_end_game_value,
