@@ -1,6 +1,6 @@
 use crate::board::bit_board::BitBoard;
 use crate::board::piece::Piece;
-use crate::board::square::{Square, DIRECTIONS};
+use crate::board::square::{Direction, Square, DIRECTIONS};
 use crate::board::Board;
 
 mod maker;
@@ -370,8 +370,8 @@ impl MoveGenerator {
         is_in_check: &mut bool,
         is_in_double_check: &mut bool,
 
-        directions: &[i8],
-        squares_from_edge: &[i8],
+        directions: &[Direction],
+        squares_from_edge: &[Direction],
     ) -> BitBoard {
         let mut attacked = BitBoard::EMPTY;
         for (direction, distance_from_edge) in directions.iter().zip(squares_from_edge) {
