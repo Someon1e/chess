@@ -60,18 +60,14 @@ fn gen_slider_moves(
 }
 
 fn make_legal_move_map(
+    square_blockers: [BitBoard; 64],
     direction_start_index: usize,
     direction_end_index: usize,
 ) -> Vec<FnvHashMap<BitBoard, BitBoard>> {
     let mut legal_moves_map: Vec<FnvHashMap<BitBoard, BitBoard>> = vec![FnvHashMap::default(); 64];
     for square_index in 0..64 {
         let from = Square::from_index(square_index);
-        let blockers = all_blockers(
-            from,
-            &DIRECTIONS[direction_start_index..direction_end_index],
-            &PRECOMPUTED.squares_from_edge[square_index as usize]
-                [direction_start_index..direction_end_index],
-        );
+        let blockers = square_blockers[from.index() as usize];
         for blocker_combination in iterate_combinations(blockers) {
             legal_moves_map[square_index as usize].insert(
                 blocker_combination,
@@ -105,9 +101,11 @@ fn get_blockers_for_each_square(
 
 lazy_static! {
     pub static ref ROOK_BLOCKERS: [BitBoard; 64] = get_blockers_for_each_square(0, 4);
-    pub static ref ROOK_MOVE_MAP: Vec<FnvHashMap<BitBoard, BitBoard>> = make_legal_move_map(0, 4);
+    pub static ref ROOK_MOVE_MAP: Vec<FnvHashMap<BitBoard, BitBoard>> =
+        make_legal_move_map(*ROOK_BLOCKERS, 0, 4);
     pub static ref BISHOP_BLOCKERS: [BitBoard; 64] = get_blockers_for_each_square(4, 8);
-    pub static ref BISHOP_MOVE_MAP: Vec<FnvHashMap<BitBoard, BitBoard>> = make_legal_move_map(4, 8);
+    pub static ref BISHOP_MOVE_MAP: Vec<FnvHashMap<BitBoard, BitBoard>> =
+        make_legal_move_map(*BISHOP_BLOCKERS, 4, 8);
 }
 
 #[cfg(test)]
