@@ -6,9 +6,11 @@ use crate::board::Board;
 mod maker;
 pub mod move_data;
 mod precomputed;
+mod slider_lookup;
 
 use self::move_data::{Flag, Move};
 use self::precomputed::PRECOMPUTED;
+use self::slider_lookup::{BISHOP_BLOCKERS, BISHOP_MOVE_MAP, ROOK_BLOCKERS, ROOK_MOVE_MAP};
 
 pub struct MoveGenerator {
     white_to_move: bool,
@@ -303,57 +305,54 @@ impl MoveGenerator {
 }
 
 impl MoveGenerator {
-    fn gen_directional(
-        &self,
-        add_move: &mut dyn FnMut(Move),
-        captures_only: bool,
-        from: Square,
-        direction_start_index: usize,
-        direction_end_index: usize,
-    ) {
-        let is_pinned_orthogonally = self.orthogonal_pin_rays.get(&from);
-        let is_pinned_diagonally = self.diagonal_pin_rays.get(&from);
+    fn gen_bishop(&self, from: Square, add_move: &mut dyn FnMut(Move), captures_only: bool) {
+        if self.orthogonal_pin_rays.get(&from) {
+            return;
+        }
 
-        let squares_from_edge = &PRECOMPUTED.squares_from_edge[from.index() as usize];
-        for index in direction_start_index..direction_end_index {
-            let is_rook_movement = (index + direction_start_index) < 4;
-            if is_rook_movement {
-                if is_pinned_diagonally {
-                    continue;
-                }
-            } else if is_pinned_orthogonally {
-                continue;
-            }
-            let direction = DIRECTIONS[index];
+        let blockers = self.occupied_squares & BISHOP_BLOCKERS[from.index() as usize];
+        let possible_moves = BISHOP_MOVE_MAP[from.index() as usize][&(blockers)];
+        let mut legal_moves =
+            possible_moves & !self.friendly_piece_bit_board & (self.capture_mask | self.push_mask);
+        if captures_only {
+            legal_moves &= self.enemy_piece_bit_board;
+        }
+        if self.diagonal_pin_rays.get(&from) {
+            legal_moves &= self.diagonal_pin_rays;
+        }
 
-            for count in 1..=squares_from_edge[index] {
-                let move_to = from.offset(direction * count);
+        while !legal_moves.is_empty() {
+            let move_to = legal_moves.pop_square();
+            add_move(Move {
+                from,
+                to: move_to,
+                flag: Flag::None,
+            })
+        }
+    }
+    fn gen_rook(&self, from: Square, add_move: &mut dyn FnMut(Move), captures_only: bool) {
+        if self.diagonal_pin_rays.get(&from) {
+            return;
+        }
 
-                if is_rook_movement {
-                    if is_pinned_orthogonally && !(self.orthogonal_pin_rays.get(&move_to)) {
-                        break;
-                    }
-                } else if is_pinned_diagonally && !(self.diagonal_pin_rays.get(&move_to)) {
-                    break;
-                }
+        let blockers = self.occupied_squares & ROOK_BLOCKERS[from.index() as usize];
+        let possible_moves = ROOK_MOVE_MAP[from.index() as usize][&(blockers)];
+        let mut legal_moves =
+            possible_moves & !self.friendly_piece_bit_board & (self.capture_mask | self.push_mask);
+        if captures_only {
+            legal_moves &= self.enemy_piece_bit_board;
+        }
+        if self.orthogonal_pin_rays.get(&from) {
+            legal_moves &= self.orthogonal_pin_rays;
+        }
 
-                if self.friendly_piece_bit_board.get(&move_to) {
-                    break;
-                }
-                let enemy_on_square = self.enemy_piece_bit_board.get(&move_to);
-                if (enemy_on_square || !captures_only)
-                    && (self.capture_mask | self.push_mask).get(&move_to)
-                {
-                    add_move(Move {
-                        from,
-                        to: move_to,
-                        flag: Flag::None,
-                    });
-                }
-                if enemy_on_square {
-                    break;
-                }
-            }
+        while !legal_moves.is_empty() {
+            let move_to = legal_moves.pop_square();
+            add_move(Move {
+                from,
+                to: move_to,
+                flag: Flag::None,
+            })
         }
     }
 }
@@ -732,17 +731,18 @@ impl MoveGenerator {
         let mut friendly_bishops = self.friendly_bishops;
         while !friendly_bishops.is_empty() {
             let from = friendly_bishops.pop_square();
-            self.gen_directional(add_move, captures_only, from, 4, 8)
+            self.gen_bishop(from, add_move, captures_only)
         }
         let mut friendly_rooks = self.friendly_rooks;
         while !friendly_rooks.is_empty() {
             let from = friendly_rooks.pop_square();
-            self.gen_directional(add_move, captures_only, from, 0, 4)
+            self.gen_rook(from, add_move, captures_only)
         }
         let mut friendly_queens = self.friendly_queens;
         while !friendly_queens.is_empty() {
             let from = friendly_queens.pop_square();
-            self.gen_directional(add_move, captures_only, from, 0, 8)
+            self.gen_bishop(from, add_move, captures_only);
+            self.gen_rook(from, add_move, captures_only);
         }
     }
 

@@ -170,16 +170,19 @@ const fn merge(piece_values: [i32; 6], piece_square_table: [[i32; 64]; 6]) -> [[
         let square_values = piece_square_table[piece_index];
         let mut square_index = 0;
         while square_index < 64 {
-            merged[piece_index][square_index] = piece_values[piece_index] + square_values[square_index];
+            merged[piece_index][square_index] =
+                piece_values[piece_index] + square_values[square_index];
             square_index += 1;
         }
         piece_index += 1;
-    };
+    }
     merged
 }
 
-pub const MIDDLE_GAME_PIECE_VALUES_WITH_SQUARE: [[i32; 64]; 6] = merge(MIDDLE_GAME_PIECE_VALUES, MIDDLE_GAME_PIECE_SQUARE_TABLES);
-pub const END_GAME_PIECE_VALUES_WITH_SQUARE: [[i32; 64]; 6] = merge(END_GAME_PIECE_VALUES, END_GAME_PIECE_SQUARE_TABLES);
+pub const MIDDLE_GAME_PIECE_VALUES_WITH_SQUARE: [[i32; 64]; 6] =
+    merge(MIDDLE_GAME_PIECE_VALUES, MIDDLE_GAME_PIECE_SQUARE_TABLES);
+pub const END_GAME_PIECE_VALUES_WITH_SQUARE: [[i32; 64]; 6] =
+    merge(END_GAME_PIECE_VALUES, END_GAME_PIECE_SQUARE_TABLES);
 
 pub fn flip_white_to_black(square_index: usize) -> usize {
     square_index ^ 56
