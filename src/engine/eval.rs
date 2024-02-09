@@ -15,18 +15,12 @@ impl Eval {
     }
 
     pub fn get_piece_value(piece_index: usize, square_index: usize) -> (i32, i32) {
-        let middle_game_piece_score = eval_data::MIDDLE_GAME_PIECE_VALUES[piece_index];
-        let end_game_piece_score = eval_data::END_GAME_PIECE_VALUES[piece_index];
-
-        let middle_game_piece_square_score =
-            eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLES[piece_index][square_index];
-
-        let end_game_piece_square_score =
-            eval_data::END_GAME_PIECE_SQUARE_TABLES[piece_index][square_index];
+        let middle_game_piece_score = eval_data::MIDDLE_GAME_PIECE_VALUES_WITH_SQUARE[piece_index][square_index];
+        let end_game_piece_score = eval_data::END_GAME_PIECE_VALUES_WITH_SQUARE[piece_index][square_index];
 
         (
-            middle_game_piece_score + middle_game_piece_square_score,
-            end_game_piece_score + end_game_piece_square_score,
+            middle_game_piece_score,
+            end_game_piece_score
         )
     }
 
