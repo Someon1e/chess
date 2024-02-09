@@ -1,16 +1,16 @@
 pub mod board;
 pub mod engine;
 pub mod move_generator;
+pub mod perft;
 pub mod uci;
 
 #[cfg(test)]
 mod tests {
     use std::time::Instant;
 
-    use crate::board::zobrist::Zobrist;
+    use crate::perft::perft_root;
 
     use super::board::Board;
-    use super::move_generator::MoveGenerator;
 
     pub const START_POSITION_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     pub const TEST_FENS: [(u16, usize, &str); 25] = [
@@ -69,45 +69,12 @@ mod tests {
         (6, 119060324, START_POSITION_FEN),
     ];
 
-    fn perft_inner(board: &mut Board, depth: u16) -> usize {
-        if depth == 0 {
-            return 1;
-        };
-
-        let mut move_count = 0;
-        MoveGenerator::new(board).gen(
-            &mut |move_data| {
-                board.make_move(&move_data);
-
-                move_count += perft_inner(board, depth - 1);
-                board.unmake_move(&move_data);
-            },
-            false,
-        );
-
-        move_count
-    }
-    fn perft_run(fen: &str, depth: u16, expected_move_count: usize) {
+    fn debug_perft(fen: &str, depth: u16, expected_move_count: usize) {
         let start = Instant::now();
 
         let board = &mut Board::from_fen(fen);
 
-        let mut move_count = 0;
-
-        MoveGenerator::new(board).gen(
-            &mut |move_data| {
-                board.make_move(&move_data);
-                //println!("{} {move_data}", board.to_fen());
-
-                assert!(Zobrist::compute(board) == board.zobrist_key());
-
-                let inner = perft_inner(board, depth - 1);
-                move_count += inner;
-                println!("{move_data} {inner}");
-                board.unmake_move(&move_data);
-            },
-            false,
-        );
+        let move_count = perft_root(board, true, false, depth);
 
         let seconds_elapsed = start.elapsed().as_secs_f32();
         println!(
@@ -126,7 +93,7 @@ mod tests {
     fn test_perft() {
         for (depth, expected_move_count, fen) in TEST_FENS {
             println!("{fen}");
-            perft_run(fen, depth, expected_move_count);
+            debug_perft(fen, depth, expected_move_count);
             println!();
         }
     }

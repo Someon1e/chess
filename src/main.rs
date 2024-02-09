@@ -7,6 +7,7 @@ use chess::{
     board::{piece::Piece, square::Square, Board},
     engine::Engine,
     move_generator::move_data::{Flag, Move},
+    perft::perft_root,
     uci,
 };
 
@@ -76,7 +77,8 @@ fn main() {
                 let mut white_increment = None;
                 let mut black_increment = None;
                 let mut _moves_to_go = None;
-                let mut _depth = None;
+                let mut perft = false;
+                let mut depth = None;
                 let mut _nodes = None;
                 let mut _find_mate = None;
                 let mut move_time_in_ms = None;
@@ -109,7 +111,7 @@ fn main() {
                         }
                         "depth" => {
                             index += 1;
-                            _depth = args.get(index);
+                            depth = Some(args.get(index).unwrap().parse::<u16>().unwrap());
                         }
                         "nodes" => {
                             index += 1;
@@ -126,7 +128,8 @@ fn main() {
                         }
                         "perft" => {
                             index += 1;
-                            _depth = args.get(index);
+                            perft = true;
+                            depth = Some(args.get(index).unwrap().parse::<u16>().unwrap());
                         }
                         "infinite" => {
                             move_time_in_ms = Some(MAX_TIME);
@@ -136,8 +139,14 @@ fn main() {
                     index += 1;
                 }
                 let board = &mut Board::from_fen(&fen.unwrap());
-                let mut engine = Engine::new(board);
                 fen = None;
+
+                if perft {
+                    println!("Nodes searched: {}", perft_root(board, false, true, depth.unwrap()));
+                    continue;
+                }
+
+                let mut engine = Engine::new(board);
 
                 for uci_move in &moves {
                     let (from, to) = (&uci_move[0..2], &uci_move[2..4]);
