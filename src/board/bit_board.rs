@@ -2,7 +2,7 @@ use super::square::Square;
 use std::fmt;
 use std::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, Not, Shl, Shr};
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct BitBoard(u64);
 
 impl fmt::Display for BitBoard {
@@ -68,6 +68,9 @@ impl BitBoard {
     }
     pub fn count(&self) -> u32 {
         self.0.count_ones()
+    }
+    pub fn wrapping_sub(&self, rhs: Self) -> BitBoard {
+        Self(self.0.wrapping_sub(rhs.0))
     }
 }
 
