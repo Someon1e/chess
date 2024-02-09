@@ -1,5 +1,5 @@
-pub const MIDDLE_GAME_PIECE_VALUES: [i32; 6] = [82, 337, 365, 477, 1025, 0];
-pub const END_GAME_PIECE_VALUES: [i32; 6] = [94, 281, 297, 512, 936, 0];
+const MIDDLE_GAME_PIECE_VALUES: [i32; 6] = [82, 337, 365, 477, 1025, 0];
+const END_GAME_PIECE_VALUES: [i32; 6] = [94, 281, 297, 512, 936, 0];
 
 #[rustfmt::skip]
 const MIDDLE_GAME_PAWN: [i32; 64] = [
@@ -145,6 +145,46 @@ const END_GAME_KING: [i32; 64] = [
     -53, -34, -21, -11, -28, -14, -24, -43
 ];
 
+const MIDDLE_GAME_PIECE_SQUARE_TABLES: [[i32; 64]; 6] = [
+    MIDDLE_GAME_PAWN,
+    MIDDLE_GAME_KNIGHT,
+    MIDDLE_GAME_BISHOP,
+    MIDDLE_GAME_ROOK,
+    MIDDLE_GAME_QUEEN,
+    MIDDLE_GAME_KING,
+];
+
+const END_GAME_PIECE_SQUARE_TABLES: [[i32; 64]; 6] = [
+    END_GAME_PAWN,
+    END_GAME_KNIGHT,
+    END_GAME_BISHOP,
+    END_GAME_ROOK,
+    END_GAME_QUEEN,
+    END_GAME_KING,
+];
+
+const fn merge(piece_values: [i32; 6], piece_square_table: [[i32; 64]; 6]) -> [[i32; 64]; 6] {
+    let mut merged = [[0; 64]; 6];
+    let mut piece_index = 0;
+    while piece_index < 6 {
+        let square_values = piece_square_table[piece_index];
+        let mut square_index = 0;
+        while square_index < 64 {
+            merged[piece_index][square_index] = piece_values[piece_index] + square_values[square_index];
+            square_index += 1;
+        }
+        piece_index += 1;
+    };
+    merged
+}
+
+pub const MIDDLE_GAME_PIECE_VALUES_WITH_SQUARE: [[i32; 64]; 6] = merge(MIDDLE_GAME_PIECE_VALUES, MIDDLE_GAME_PIECE_SQUARE_TABLES);
+pub const END_GAME_PIECE_VALUES_WITH_SQUARE: [[i32; 64]; 6] = merge(END_GAME_PIECE_VALUES, END_GAME_PIECE_SQUARE_TABLES);
+
+pub fn flip_white_to_black(square_index: usize) -> usize {
+    square_index ^ 56
+}
+
 pub const PIECE_PHASES: [i32; 12] = [
     0, // Pawn
     1, // Knight
@@ -159,25 +199,3 @@ pub const PIECE_PHASES: [i32; 12] = [
     4, // Queen
     0, // King
 ];
-
-pub const MIDDLE_GAME_PIECE_SQUARE_TABLES: [[i32; 64]; 6] = [
-    MIDDLE_GAME_PAWN,
-    MIDDLE_GAME_KNIGHT,
-    MIDDLE_GAME_BISHOP,
-    MIDDLE_GAME_ROOK,
-    MIDDLE_GAME_QUEEN,
-    MIDDLE_GAME_KING,
-];
-
-pub const END_GAME_PIECE_SQUARE_TABLES: [[i32; 64]; 6] = [
-    END_GAME_PAWN,
-    END_GAME_KNIGHT,
-    END_GAME_BISHOP,
-    END_GAME_ROOK,
-    END_GAME_QUEEN,
-    END_GAME_KING,
-];
-
-pub fn flip_white_to_black(square_index: usize) -> usize {
-    square_index ^ 56
-}
