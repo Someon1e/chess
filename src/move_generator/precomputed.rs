@@ -10,8 +10,37 @@ pub struct PrecomputedData {
     pub black_pawn_attacks_at_square: [BitBoard; 64],
     pub knight_moves_at_square: [BitBoard; 64],
     pub king_moves_at_square: [BitBoard; 64],
-    pub squares_from_edge: [[i8; 8]; 64],
 }
+
+const fn min(a: i8, b: i8) -> i8 {
+    if a > b {b} else {a}
+}
+
+pub const SQUARES_FROM_EDGE: [[i8; 8]; 64] = {
+    let mut squares_from_edge = [[0; 8]; 64];
+
+    let mut index = 0;
+    loop {
+        let square = Square::from_index(index as i8);
+        let rank = square.rank();
+        let file = square.file();
+
+        squares_from_edge[index] = [
+            7 - rank,
+            rank,
+            file,
+            7 - file,
+            min(7 - rank, file),
+            min(rank, 7 - file),
+            min(7 - rank, 7 - file),
+            min(rank, file),
+        ];
+        index += 1;
+        if index == 64 {break}
+    }
+
+    squares_from_edge
+};
 
 lazy_static! {
     pub static ref PRECOMPUTED: PrecomputedData = {
@@ -19,23 +48,11 @@ lazy_static! {
         let mut black_pawn_attacks_at_square = [BitBoard::EMPTY; 64];
         let mut knight_moves_at_square = [BitBoard::EMPTY; 64];
         let mut king_moves_at_square = [BitBoard::EMPTY; 64];
-        let mut squares_from_edge = [[0; 8]; 64];
 
         for index in 0..64 {
             let square = Square::from_index(index as i8);
             let rank = square.rank();
             let file = square.file();
-
-            squares_from_edge[index] = [
-                7 - rank,
-                rank,
-                file,
-                7 - file,
-                (7 - rank).min(file),
-                rank.min(7 - file),
-                (7 - rank).min(7 - file),
-                rank.min(file),
-            ];
 
             let white_pawn_attacks = &mut white_pawn_attacks_at_square[index];
             let black_pawn_attacks = &mut black_pawn_attacks_at_square[index];
@@ -86,8 +103,7 @@ lazy_static! {
             white_pawn_attacks_at_square,
             black_pawn_attacks_at_square,
             knight_moves_at_square,
-            king_moves_at_square,
-            squares_from_edge,
+            king_moves_at_square
         }
     };
 }

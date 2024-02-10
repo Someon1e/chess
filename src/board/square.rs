@@ -28,7 +28,7 @@ pub const DIRECTIONS: [Direction; 8] = [
 ];
 
 impl Square {
-    pub fn from_index(index: i8) -> Self {
+    pub const fn from_index(index: i8) -> Self {
         Self(index)
     }
     pub const fn from_coords(rank: i8, file: i8) -> Self {
@@ -57,7 +57,7 @@ impl Square {
         Self(self.index() + offset)
     }
 
-    pub fn index(&self) -> i8 {
+    pub const fn index(&self) -> i8 {
         self.0
     }
 
@@ -65,10 +65,10 @@ impl Square {
         Self(self.index() ^ 56)
     }
 
-    pub fn file(&self) -> i8 {
+    pub const fn file(&self) -> i8 {
         self.index() & 0b111
     }
-    pub fn rank(&self) -> i8 {
+    pub const fn rank(&self) -> i8 {
         self.index() >> 3
     }
 

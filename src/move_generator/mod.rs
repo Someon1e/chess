@@ -9,7 +9,7 @@ mod precomputed;
 mod slider_lookup;
 
 use self::move_data::{Flag, Move};
-use self::precomputed::PRECOMPUTED;
+use self::precomputed::{PRECOMPUTED, SQUARES_FROM_EDGE};
 use self::slider_lookup::{BISHOP_BLOCKERS, BISHOP_MOVE_MAP, ROOK_BLOCKERS, ROOK_MOVE_MAP};
 
 pub struct MoveGenerator {
@@ -177,7 +177,7 @@ impl MoveGenerator {
                         // Check by scanning left and right from our king to find enemy queens/rooks that are not obstructed
                         for (direction, distance_from_edge) in DIRECTIONS[2..4]
                             .iter()
-                            .zip(&PRECOMPUTED.squares_from_edge[from.index() as usize][2..4])
+                            .zip(&SQUARES_FROM_EDGE[from.index() as usize][2..4])
                         {
                             for count in 1..=*distance_from_edge {
                                 let scanner = from.offset(direction * count);
@@ -480,7 +480,7 @@ impl MoveGenerator {
         let mut diagonal_pin_rays = BitBoard::EMPTY;
         for (index, (direction, distance_from_edge)) in DIRECTIONS
             .iter()
-            .zip(&PRECOMPUTED.squares_from_edge[friendly_king_square.index() as usize])
+            .zip(&SQUARES_FROM_EDGE[friendly_king_square.index() as usize])
             .enumerate()
         {
             let is_rook_movement = index < 4;
@@ -629,7 +629,7 @@ impl MoveGenerator {
                     &mut is_in_check,
                     &mut is_in_double_check,
                     &DIRECTIONS[4..8],
-                    &PRECOMPUTED.squares_from_edge[from.index() as usize][4..8],
+                    &SQUARES_FROM_EDGE[from.index() as usize][4..8],
                 );
                 king_danger_bit_board |= dangerous
             }
@@ -647,7 +647,7 @@ impl MoveGenerator {
                     &mut is_in_check,
                     &mut is_in_double_check,
                     &DIRECTIONS[0..4],
-                    &PRECOMPUTED.squares_from_edge[from.index() as usize][0..4],
+                    &SQUARES_FROM_EDGE[from.index() as usize][0..4],
                 );
                 king_danger_bit_board |= dangerous
             }
@@ -665,7 +665,7 @@ impl MoveGenerator {
                     &mut is_in_check,
                     &mut is_in_double_check,
                     &DIRECTIONS[0..8],
-                    &PRECOMPUTED.squares_from_edge[from.index() as usize][0..8],
+                    &SQUARES_FROM_EDGE[from.index() as usize][0..8],
                 );
                 king_danger_bit_board |= dangerous
             }
