@@ -24,15 +24,18 @@ impl MoveOrderer {
             Flag::None => score += 0,
         }
 
-        if enemy_pawn_attacks.get(&move_data.to()) {
+        let moving_from = move_data.from();
+        let moving_to = move_data.to();
+
+        if enemy_pawn_attacks.get(&moving_to) {
             score -= 50;
         }
 
         // This won't take into account en passant
-        if let Some(capturing) = engine.board.enemy_piece_at(move_data.to()) {
+        if let Some(capturing) = engine.board.enemy_piece_at(moving_to) {
             let (capturing_middle_game_value, capturing_end_game_value) = {
                 let capturing_piece_index = capturing as usize % 6;
-                let mut capturing_square = move_data.to();
+                let mut capturing_square = moving_to;
                 if !engine.board.white_to_move {
                     capturing_square = capturing_square.flip()
                 }
@@ -42,8 +45,8 @@ impl MoveOrderer {
 
             let (moving_middle_game_value, moving_end_game_value) = {
                 let moving_piece_index =
-                    engine.board.friendly_piece_at(move_data.from()).unwrap() as usize % 6;
-                let mut moving_from = move_data.from();
+                    engine.board.friendly_piece_at(moving_from).unwrap() as usize % 6;
+                let mut moving_from = moving_from;
                 if engine.board.white_to_move {
                     moving_from = moving_from.flip()
                 }
