@@ -44,10 +44,8 @@ impl Eval {
             while !bit_board.is_empty() {
                 let square = bit_board.pop_square();
 
-                let (middle_game_value, end_game_value) = Self::get_white_piece_value(
-                    piece,
-                    square,
-                );
+                let (middle_game_value, end_game_value) =
+                    Self::get_white_piece_value(piece, square);
 
                 middle_game_score_white += middle_game_value;
                 end_game_score_white += end_game_value;

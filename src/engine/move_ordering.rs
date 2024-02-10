@@ -149,7 +149,8 @@ mod tests {
         let mut index = move_count;
         let mut next_move = || {
             index -= 1;
-            let move_data = MoveOrderer::put_highest_guessed_move_on_top(&mut moves, &mut move_guesses, index);
+            let move_data =
+                MoveOrderer::put_highest_guessed_move_on_top(&mut moves, &mut move_guesses, index);
             println!("{move_data}");
             (move_data, index != 0)
         };
