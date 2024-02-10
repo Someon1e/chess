@@ -9,7 +9,9 @@ mod precomputed;
 mod slider_lookup;
 
 use self::move_data::{Flag, Move};
-use self::precomputed::{KING_MOVES_AT_SQUARE, PRECOMPUTED, SQUARES_FROM_EDGE};
+use self::precomputed::{
+    KING_MOVES_AT_SQUARE, KNIGHT_MOVES_AT_SQUARE, PAWN_ATTACKS, SQUARES_FROM_EDGE,
+};
 use self::slider_lookup::{BISHOP_BLOCKERS, BISHOP_MOVE_MAP, ROOK_BLOCKERS, ROOK_MOVE_MAP};
 
 pub struct MoveGenerator {
@@ -63,9 +65,9 @@ impl MoveGenerator {
     }
     fn pawn_attack_bit_board(from: Square, white: bool) -> BitBoard {
         if white {
-            PRECOMPUTED.white_pawn_attacks_at_square[from.index() as usize]
+            PAWN_ATTACKS.white_pawn_attacks_at_square[from.index() as usize]
         } else {
-            PRECOMPUTED.black_pawn_attacks_at_square[from.index() as usize]
+            PAWN_ATTACKS.black_pawn_attacks_at_square[from.index() as usize]
         }
     }
     fn gen_pawns(&self, add_move: &mut dyn FnMut(Move), captures_only: bool) {
@@ -277,7 +279,7 @@ impl MoveGenerator {
 
 impl MoveGenerator {
     fn knight_attack_bit_board(square: Square) -> BitBoard {
-        PRECOMPUTED.knight_moves_at_square[square.index() as usize]
+        KNIGHT_MOVES_AT_SQUARE[square.index() as usize]
     }
 
     fn gen_knights(&self, add_move: &mut dyn FnMut(Move), captures_only: bool) {
