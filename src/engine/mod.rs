@@ -149,7 +149,8 @@ impl<'a> Engine<'a> {
         if ply == 0 {
             hash_move = &self.best_move;
         }
-        let (moves, move_count) = MoveOrderer::get_sorted_moves(self, &move_generator, hash_move);
+        let (mut moves, mut move_guesses, move_count) =
+            MoveOrderer::get_sorted_moves(self, &move_generator, hash_move);
 
         if move_count == 0 {
             if move_generator.is_in_check() {
@@ -166,8 +167,10 @@ impl<'a> Engine<'a> {
 
         let mut node_type = NodeType::Alpha;
         let mut best_move = EncodedMove::NONE;
-        for index in (0..move_count).rev() {
-            let move_data = moves[index];
+        let mut index = move_count - 1;
+        loop {
+            let move_data =
+                MoveOrderer::put_highest_guessed_move_on_top(&mut moves, &mut move_guesses, index);
 
             self.make_move(&move_data.decode());
 
@@ -209,6 +212,10 @@ impl<'a> Engine<'a> {
                     self.best_score = score;
                 }
             }
+            if index == 0 {
+                break;
+            }
+            index = index - 1;
         }
         self.transposition_table[zobrist_index] = Some(NodeValue {
             zobrist_key,
