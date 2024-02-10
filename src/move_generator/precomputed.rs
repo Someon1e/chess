@@ -5,14 +5,17 @@ use crate::board::{
     square::{Square, DIRECTIONS},
 };
 
-pub struct PrecomputedData {
+pub struct PrecomputedPawnAttacks {
     pub white_pawn_attacks_at_square: [BitBoard; 64],
     pub black_pawn_attacks_at_square: [BitBoard; 64],
-    pub knight_moves_at_square: [BitBoard; 64],
 }
 
 const fn min(a: i8, b: i8) -> i8 {
-    if a > b {b} else {a}
+    if a > b {
+        b
+    } else {
+        a
+    }
 }
 
 pub const SQUARES_FROM_EDGE: [[i8; 8]; 64] = {
@@ -35,7 +38,9 @@ pub const SQUARES_FROM_EDGE: [[i8; 8]; 64] = {
             min(rank, file),
         ];
         index += 1;
-        if index == 64 {break}
+        if index == 64 {
+            break;
+        }
     }
 
     squares_from_edge
@@ -61,10 +66,30 @@ lazy_static! {
         }
         king_moves_at_square
     };
-    pub static ref PRECOMPUTED: PrecomputedData = {
+    pub static ref KNIGHT_MOVES_AT_SQUARE: [BitBoard; 64] = {
+        let mut knight_moves_at_square = [BitBoard::EMPTY; 64];
+
+        for index in 0..64 {
+            let square = Square::from_index(index as i8);
+            let knight_moves = &mut knight_moves_at_square[index];
+            for knight_jump_offset in [15, 17, -17, -15, 10, -6, 6, -10] {
+                let move_to = square.offset(knight_jump_offset);
+                if move_to.within_bounds()
+                    && square
+                        .file()
+                        .abs_diff(move_to.file())
+                        .max(square.rank().abs_diff(move_to.rank()))
+                        == 2
+                {
+                    knight_moves.set(&move_to)
+                }
+            }
+        }
+        knight_moves_at_square
+    };
+    pub static ref PAWN_ATTACKS: PrecomputedPawnAttacks = {
         let mut white_pawn_attacks_at_square = [BitBoard::EMPTY; 64];
         let mut black_pawn_attacks_at_square = [BitBoard::EMPTY; 64];
-        let mut knight_moves_at_square = [BitBoard::EMPTY; 64];
 
         for index in 0..64 {
             let square = Square::from_index(index as i8);
@@ -90,26 +115,11 @@ lazy_static! {
                     black_pawn_attacks.set(&square.down(1).right(1));
                 }
             }
-
-            let knight_moves = &mut knight_moves_at_square[index];
-            for knight_jump_offset in [15, 17, -17, -15, 10, -6, 6, -10] {
-                let move_to = square.offset(knight_jump_offset);
-                if move_to.within_bounds()
-                    && square
-                        .file()
-                        .abs_diff(move_to.file())
-                        .max(square.rank().abs_diff(move_to.rank()))
-                        == 2
-                {
-                    knight_moves.set(&move_to)
-                }
-            }
         }
 
-        PrecomputedData {
+        PrecomputedPawnAttacks {
             white_pawn_attacks_at_square,
             black_pawn_attacks_at_square,
-            knight_moves_at_square,
         }
     };
 }

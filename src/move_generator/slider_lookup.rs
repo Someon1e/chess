@@ -6,7 +6,7 @@ use crate::board::{
     square::{Direction, Square, DIRECTIONS},
 };
 
-use super::precomputed::{PRECOMPUTED, SQUARES_FROM_EDGE};
+use super::precomputed::SQUARES_FROM_EDGE;
 
 fn iterate_combinations(squares: BitBoard) -> impl std::iter::Iterator<Item = BitBoard> {
     let mut next = Some(BitBoard::EMPTY);
@@ -92,8 +92,7 @@ fn get_blockers_for_each_square(
         blockers[square_index as usize] = all_blockers(
             Square::from_index(square_index),
             &DIRECTIONS[direction_start_index..direction_end_index],
-            &SQUARES_FROM_EDGE[square_index as usize]
-                [direction_start_index..direction_end_index],
+            &SQUARES_FROM_EDGE[square_index as usize][direction_start_index..direction_end_index],
         )
     }
     blockers
@@ -116,7 +115,7 @@ mod tests {
             square::{Square, DIRECTIONS},
         },
         move_generator::{
-            precomputed::{PRECOMPUTED, SQUARES_FROM_EDGE},
+            precomputed::SQUARES_FROM_EDGE,
             slider_lookup::{BISHOP_BLOCKERS, BISHOP_MOVE_MAP, ROOK_BLOCKERS, ROOK_MOVE_MAP},
         },
     };
@@ -126,11 +125,7 @@ mod tests {
     #[test]
     fn blocker_combinations() {
         let d4 = Square::from_notation("d4");
-        let blockers = all_blockers(
-            d4,
-            &DIRECTIONS,
-            &SQUARES_FROM_EDGE[d4.index() as usize],
-        );
+        let blockers = all_blockers(d4, &DIRECTIONS, &SQUARES_FROM_EDGE[d4.index() as usize]);
         let expected_number_of_combinations = 1 << blockers.count();
         println!("{blockers}");
         let mut number_of_combinations = 0;
