@@ -184,10 +184,6 @@ pub const MIDDLE_GAME_PIECE_VALUES_WITH_SQUARE: [[i32; 64]; 6] =
 pub const END_GAME_PIECE_VALUES_WITH_SQUARE: [[i32; 64]; 6] =
     merge(END_GAME_PIECE_VALUES, END_GAME_PIECE_SQUARE_TABLES);
 
-pub fn flip_white_to_black(square_index: usize) -> usize {
-    square_index ^ 56
-}
-
 pub const PIECE_PHASES: [i32; 12] = [
     0, // Pawn
     1, // Knight

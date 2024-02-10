@@ -3,7 +3,7 @@ use crate::{
     move_generator::{move_data::Flag, MoveGenerator},
 };
 
-use super::{encoded_move::EncodedMove, eval::Eval, eval_data, Engine};
+use super::{encoded_move::EncodedMove, eval::Eval, Engine};
 
 pub struct MoveOrderer {}
 impl MoveOrderer {
@@ -32,22 +32,22 @@ impl MoveOrderer {
         if let Some(capturing) = engine.board.enemy_piece_at(move_data.to()) {
             let (capturing_middle_game_value, capturing_end_game_value) = {
                 let capturing_piece_index = capturing as usize % 6;
-                let mut capturing_square_index = move_data.to().index() as usize;
+                let mut capturing_square = move_data.to();
                 if !engine.board.white_to_move {
-                    capturing_square_index = eval_data::flip_white_to_black(capturing_square_index)
+                    capturing_square = capturing_square.flip_white_to_black()
                 }
 
-                Eval::get_piece_value(capturing_piece_index, capturing_square_index)
+                Eval::get_piece_value(capturing_piece_index, capturing_square.index() as usize)
             };
 
             let (moving_middle_game_value, moving_end_game_value) = {
                 let moving_piece_index =
                     engine.board.friendly_piece_at(move_data.from()).unwrap() as usize % 6;
-                let mut moving_from_index = move_data.from().index() as usize;
+                let mut moving_from = move_data.from();
                 if engine.board.white_to_move {
-                    moving_from_index = eval_data::flip_white_to_black(moving_from_index)
+                    moving_from = moving_from.flip_white_to_black()
                 }
-                Eval::get_piece_value(moving_piece_index, moving_from_index)
+                Eval::get_piece_value(moving_piece_index, moving_from.index() as usize)
             };
 
             let phase = Eval::get_phase(engine);
