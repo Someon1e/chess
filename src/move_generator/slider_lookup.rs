@@ -1,4 +1,4 @@
-use fnv::FnvHashMap;
+use ahash::AHashMap;
 use lazy_static::lazy_static;
 
 use crate::board::{
@@ -63,8 +63,8 @@ fn make_legal_move_map(
     square_blockers: [BitBoard; 64],
     direction_start_index: usize,
     direction_end_index: usize,
-) -> Vec<FnvHashMap<BitBoard, BitBoard>> {
-    let mut legal_moves_map: Vec<FnvHashMap<BitBoard, BitBoard>> = vec![FnvHashMap::default(); 64];
+) -> Vec<AHashMap<BitBoard, BitBoard>> {
+    let mut legal_moves_map: Vec<AHashMap<BitBoard, BitBoard>> = vec![AHashMap::default(); 64];
     for square_index in 0..64 {
         let from = Square::from_index(square_index);
         let blockers = square_blockers[from.index() as usize];
@@ -101,10 +101,10 @@ fn get_blockers_for_each_square(
 
 lazy_static! {
     pub static ref ROOK_BLOCKERS: [BitBoard; 64] = get_blockers_for_each_square(0, 4);
-    pub static ref ROOK_MOVE_MAP: Vec<FnvHashMap<BitBoard, BitBoard>> =
+    pub static ref ROOK_MOVE_MAP: Vec<AHashMap<BitBoard, BitBoard>> =
         make_legal_move_map(*ROOK_BLOCKERS, 0, 4);
     pub static ref BISHOP_BLOCKERS: [BitBoard; 64] = get_blockers_for_each_square(4, 8);
-    pub static ref BISHOP_MOVE_MAP: Vec<FnvHashMap<BitBoard, BitBoard>> =
+    pub static ref BISHOP_MOVE_MAP: Vec<AHashMap<BitBoard, BitBoard>> =
         make_legal_move_map(*BISHOP_BLOCKERS, 4, 8);
 }
 
