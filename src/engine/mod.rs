@@ -4,7 +4,7 @@ mod eval_data;
 mod move_ordering;
 mod transposition;
 
-use fnv::FnvHashSet;
+use ahash::AHashSet;
 
 use crate::{
     board::{zobrist::Zobrist, Board},
@@ -21,7 +21,7 @@ use self::{
 pub struct Engine<'a> {
     board: &'a mut Board,
     transposition_table: Vec<Option<NodeValue>>,
-    repetition_table: FnvHashSet<Zobrist>,
+    repetition_table: AHashSet<Zobrist>,
     best_move: EncodedMove,
     best_score: i32,
 }
@@ -33,7 +33,7 @@ impl<'a> Engine<'a> {
         Self {
             board,
             transposition_table: vec![None; TRANSPOSITION_CAPACITY],
-            repetition_table: FnvHashSet::default(),
+            repetition_table: AHashSet::default(),
             best_move: EncodedMove::NONE,
             best_score: -i32::MAX,
         }
