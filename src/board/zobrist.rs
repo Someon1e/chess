@@ -1,12 +1,12 @@
 use super::game_state::CastlingRights;
 use super::square::Square;
 use super::{Board, Piece};
-use lazy_static::lazy_static;
 use rand_chacha;
 use rand_chacha::rand_core::{RngCore, SeedableRng};
 use rand_chacha::ChaCha20Rng;
 
 use std::cell::RefCell;
+use std::sync::OnceLock;
 
 thread_local! {
     static RNG: RefCell<ChaCha20Rng> = RefCell::new(ChaCha20Rng::seed_from_u64(69));
@@ -22,8 +22,8 @@ pub struct ZobristRandoms {
     pub castling_rights: [u64; 16],
 }
 
-lazy_static! {
-    pub static ref ZOBRIST_RANDOMS: ZobristRandoms = {
+impl ZobristRandoms {
+    fn new() -> Self {
         let mut piece_arrays: [[u64; 64]; 12] = [[0; 64]; 12];
         for piece in Piece::ALL_PIECES {
             let square_array = &mut piece_arrays[piece as usize];
@@ -43,7 +43,11 @@ lazy_static! {
             en_passant_square_file,
             castling_rights,
         }
-    };
+    }
+    pub fn read() -> &'static Self {
+        static COMPUTATION: OnceLock<ZobristRandoms> = OnceLock::new();
+        COMPUTATION.get_or_init(|| Self::new())
+    }
 }
 
 #[derive(PartialEq, Debug, Clone, Copy, Eq, Hash)]
@@ -51,15 +55,15 @@ pub struct Zobrist(u64);
 
 impl Zobrist {
     pub fn xor_en_passant(&mut self, en_passant_square: &Square) {
-        self.0 ^= ZOBRIST_RANDOMS.en_passant_square_file[en_passant_square.file() as usize]
+        self.0 ^= ZobristRandoms::read().en_passant_square_file[en_passant_square.file() as usize]
     }
 
     pub fn xor_castling_rights(&mut self, castling_rights: &CastlingRights) {
-        self.0 ^= ZOBRIST_RANDOMS.castling_rights[castling_rights.internal_value() as usize];
+        self.0 ^= ZobristRandoms::read().castling_rights[castling_rights.internal_value() as usize];
     }
 
     pub fn xor_piece(&mut self, piece_index: usize, square_index: usize) {
-        self.0 ^= ZOBRIST_RANDOMS.piece_arrays[piece_index][square_index];
+        self.0 ^= ZobristRandoms::read().piece_arrays[piece_index][square_index];
     }
 
     pub fn empty() -> Self {
@@ -92,7 +96,7 @@ impl Zobrist {
         key
     }
     pub fn flip_side_to_move(&mut self) {
-        self.0 ^= ZOBRIST_RANDOMS.side_to_move;
+        self.0 ^= ZobristRandoms::read().side_to_move;
     }
 
     pub fn index(&self, size: usize) -> usize {
