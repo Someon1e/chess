@@ -5,15 +5,7 @@ use rand_chacha;
 use rand_chacha::rand_core::{RngCore, SeedableRng};
 use rand_chacha::ChaCha20Rng;
 
-use std::cell::RefCell;
 use std::sync::OnceLock;
-
-thread_local! {
-    static RNG: RefCell<ChaCha20Rng> = RefCell::new(ChaCha20Rng::seed_from_u64(69));
-}
-fn random_u64() -> u64 {
-    RNG.with(|rng| rng.borrow_mut().next_u64())
-}
 
 pub struct ZobristRandoms {
     pub piece_arrays: [[u64; 64]; 12],
@@ -24,18 +16,20 @@ pub struct ZobristRandoms {
 
 impl ZobristRandoms {
     fn new() -> Self {
+        let mut rng = ChaCha20Rng::seed_from_u64(69);
+
         let mut piece_arrays: [[u64; 64]; 12] = [[0; 64]; 12];
         for piece in Piece::ALL_PIECES {
             let square_array = &mut piece_arrays[piece as usize];
-            square_array.fill_with(random_u64);
+            square_array.fill_with(|| rng.next_u64());
         }
-        let side_to_move = random_u64();
+        let side_to_move = rng.next_u64();
 
         let mut en_passant_square_file = [0; 8];
-        en_passant_square_file.fill_with(random_u64);
+        en_passant_square_file.fill_with(|| rng.next_u64());
 
         let mut castling_rights = [0; 16];
-        castling_rights.fill_with(random_u64);
+        castling_rights.fill_with(|| rng.next_u64());
 
         ZobristRandoms {
             piece_arrays,
