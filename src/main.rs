@@ -142,7 +142,10 @@ fn main() {
                 fen = None;
 
                 if perft {
-                    println!("Nodes searched: {}", perft_root(board, false, true, depth.unwrap()));
+                    println!(
+                        "Nodes searched: {}",
+                        perft_root(board, false, true, depth.unwrap())
+                    );
                     continue;
                 }
 

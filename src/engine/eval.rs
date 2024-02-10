@@ -37,11 +37,11 @@ impl Eval {
             let mut bit_board = *engine.board.get_bit_board(piece);
             let piece_index = piece as usize;
             while !bit_board.is_empty() {
-                let square_index = bit_board.pop_square().index() as usize;
+                let square = bit_board.pop_square();
 
                 let (middle_game_value, end_game_value) = Self::get_piece_value(
                     piece_index,
-                    eval_data::flip_white_to_black(square_index),
+                    square.flip_white_to_black().index() as usize,
                 );
 
                 middle_game_score_white += middle_game_value;
@@ -56,10 +56,10 @@ impl Eval {
             let mut bit_board = *engine.board.get_bit_board(piece);
             let piece_index = piece as usize - 6;
             while !bit_board.is_empty() {
-                let square_index = bit_board.pop_square().index() as usize;
+                let square = bit_board.pop_square();
 
                 let (middle_game_value, end_game_value) =
-                    Self::get_piece_value(piece_index, square_index);
+                    Self::get_piece_value(piece_index, square.index() as usize);
 
                 middle_game_score_black += middle_game_value;
                 end_game_score_black += end_game_value;
