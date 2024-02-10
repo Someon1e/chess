@@ -31,6 +31,17 @@ impl MoveOrderer {
             score -= 50;
         }
 
+        let moving_piece = engine.board.friendly_piece_at(moving_from).unwrap();
+        let (moving_from_middle_game_value, moving_from_end_game_value) = {
+            if engine.board.white_to_move {
+                Eval::get_white_piece_value(moving_piece, moving_from)
+            } else {
+                Eval::get_black_piece_value(moving_piece, moving_from)
+            }
+        };
+
+        let phase = Eval::get_phase(engine);
+
         // This won't take into account en passant
         if let Some(capturing) = engine.board.enemy_piece_at(moving_to) {
             let (capturing_middle_game_value, capturing_end_game_value) = {
@@ -41,21 +52,23 @@ impl MoveOrderer {
                 }
             };
 
-            let (moving_middle_game_value, moving_end_game_value) = {
-                let moving_piece =
-                    engine.board.friendly_piece_at(moving_from).unwrap();
-                if engine.board.white_to_move {
-                    Eval::get_white_piece_value(moving_piece, moving_from)
-                } else {
-                    Eval::get_black_piece_value(moving_piece, moving_from)
-                }
-            };
-
-            let phase = Eval::get_phase(engine);
             score += Eval::calculate_score(
                 phase,
-                capturing_middle_game_value - moving_middle_game_value,
-                capturing_end_game_value - moving_end_game_value,
+                capturing_middle_game_value - moving_from_middle_game_value,
+                capturing_end_game_value - moving_from_end_game_value,
+            );
+        } else {
+            let (moving_to_middle_game_value, moving_to_end_game_value) = {
+                if engine.board.white_to_move {
+                    Eval::get_white_piece_value(moving_piece, moving_to)
+                } else {
+                    Eval::get_black_piece_value(moving_piece, moving_to)
+                }
+            };
+            score += Eval::calculate_score(
+                phase,
+                moving_to_middle_game_value - moving_from_middle_game_value,
+                moving_to_end_game_value - moving_from_end_game_value,
             );
         }
         score
