@@ -26,8 +26,8 @@ fn main() {
         let mut input = String::new();
         stdin.read_line(&mut input).unwrap();
 
-        let args: Vec<&str> = input.split_whitespace().collect();
-        match args[0] {
+        let mut args = input.split_whitespace();
+        match args.next().unwrap() {
             "uci" => {
                 println!("id name chess");
                 println!("id author someone");
@@ -37,17 +37,14 @@ fn main() {
                 println!("readyok")
             }
             "position" => {
-                let mut index = 1;
                 let mut startpos = true;
                 let mut building_fen = String::new();
-                while let Some(label) = args.get(index) {
-                    index += 1;
-                    match *label {
+                while let Some(label) = args.next() {
+                    match label {
                         "moves" => {
                             moves.clear();
-                            while let Some(uci_move) = args.get(index) {
+                            while let Some(uci_move) = args.next() {
                                 moves.push((*uci_move).to_owned());
-                                index += 1;
                             }
                         }
                         "fen" => {
@@ -82,61 +79,49 @@ fn main() {
                 let mut _nodes = None;
                 let mut _find_mate = None;
                 let mut move_time_in_ms = None;
-                let mut index = 1;
-                while let Some(label) = args.get(index) {
-                    match *label {
+                while let Some(label) = args.next() {
+                    match label {
                         "searchmoves" => {}
                         "ponder" => {}
                         "wtime" => {
-                            index += 1;
-                            white_time = Some(args.get(index).unwrap().parse::<u128>().unwrap());
+                            white_time = Some(args.next().unwrap().parse::<u128>().unwrap());
                         }
                         "btime" => {
-                            index += 1;
-                            black_time = Some(args.get(index).unwrap().parse::<u128>().unwrap());
+                            black_time = Some(args.next().unwrap().parse::<u128>().unwrap());
                         }
                         "winc" => {
-                            index += 1;
                             white_increment =
-                                Some(args.get(index).unwrap().parse::<u128>().unwrap());
+                                Some(args.next().unwrap().parse::<u128>().unwrap());
                         }
                         "binc" => {
-                            index += 1;
                             black_increment =
-                                Some(args.get(index).unwrap().parse::<u128>().unwrap());
+                                Some(args.next().unwrap().parse::<u128>().unwrap());
                         }
                         "movestogo" => {
-                            index += 1;
-                            _moves_to_go = args.get(index);
+                            _moves_to_go = args.next();
                         }
                         "depth" => {
-                            index += 1;
-                            depth = Some(args.get(index).unwrap().parse::<u16>().unwrap());
+                            depth = Some(args.next().unwrap().parse::<u16>().unwrap());
                         }
                         "nodes" => {
-                            index += 1;
-                            _nodes = args.get(index);
+                            _nodes = args.next();
                         }
                         "mate" => {
-                            index += 1;
-                            _find_mate = args.get(index);
+                            _find_mate = args.next();
                         }
                         "movetime" => {
-                            index += 1;
                             move_time_in_ms =
-                                Some(args.get(index).unwrap().parse::<u128>().unwrap());
+                                Some(args.next().unwrap().parse::<u128>().unwrap());
                         }
                         "perft" => {
-                            index += 1;
                             perft = true;
-                            depth = Some(args.get(index).unwrap().parse::<u16>().unwrap());
+                            depth = Some(args.next().unwrap().parse::<u16>().unwrap());
                         }
                         "infinite" => {
                             move_time_in_ms = Some(MAX_TIME);
                         }
                         _ => unimplemented!(),
                     }
-                    index += 1;
                 }
                 let board = &mut Board::from_fen(&fen.unwrap());
                 fen = None;
