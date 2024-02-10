@@ -7,5 +7,4 @@ edition = "2021"
 
 [dependencies]
 rand_chacha = "0.3.1"
-lazy_static = "1.4.0"
 ahash = "0.8.7"

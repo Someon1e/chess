@@ -12,7 +12,7 @@ use self::move_data::{Flag, Move};
 use self::precomputed::{
     king_moves_at_square, knight_moves_at_square, pawn_attacks, SQUARES_FROM_EDGE,
 };
-use self::slider_lookup::{BISHOP_BLOCKERS, BISHOP_MOVE_MAP, ROOK_BLOCKERS, ROOK_MOVE_MAP};
+use self::slider_lookup::{bishop_blockers, bishop_move_map, rook_blockers, rook_move_map};
 
 pub struct MoveGenerator {
     white_to_move: bool,
@@ -312,8 +312,8 @@ impl MoveGenerator {
             return;
         }
 
-        let blockers = self.occupied_squares & BISHOP_BLOCKERS[from.index() as usize];
-        let possible_moves = BISHOP_MOVE_MAP[from.index() as usize][&(blockers)];
+        let blockers = self.occupied_squares & bishop_blockers()[from.index() as usize];
+        let possible_moves = bishop_move_map()[from.index() as usize][&(blockers)];
         let mut legal_moves =
             possible_moves & !self.friendly_piece_bit_board & (self.capture_mask | self.push_mask);
         if captures_only {
@@ -337,8 +337,8 @@ impl MoveGenerator {
             return;
         }
 
-        let blockers = self.occupied_squares & ROOK_BLOCKERS[from.index() as usize];
-        let possible_moves = ROOK_MOVE_MAP[from.index() as usize][&(blockers)];
+        let blockers = self.occupied_squares & rook_blockers()[from.index() as usize];
+        let possible_moves = rook_move_map()[from.index() as usize][&(blockers)];
         let mut legal_moves =
             possible_moves & !self.friendly_piece_bit_board & (self.capture_mask | self.push_mask);
         if captures_only {
