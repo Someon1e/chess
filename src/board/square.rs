@@ -62,7 +62,7 @@ impl Square {
     }
 
     pub fn flip_white_to_black(&self) -> Self {
-        Self(self.0 ^ 56)
+        Self(self.index() ^ 56)
     }
 
     pub fn file(&self) -> i8 {
