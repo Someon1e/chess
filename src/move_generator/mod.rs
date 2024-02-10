@@ -9,7 +9,7 @@ mod precomputed;
 mod slider_lookup;
 
 use self::move_data::{Flag, Move};
-use self::precomputed::{PRECOMPUTED, SQUARES_FROM_EDGE};
+use self::precomputed::{KING_MOVES_AT_SQUARE, PRECOMPUTED, SQUARES_FROM_EDGE};
 use self::slider_lookup::{BISHOP_BLOCKERS, BISHOP_MOVE_MAP, ROOK_BLOCKERS, ROOK_MOVE_MAP};
 
 pub struct MoveGenerator {
@@ -401,7 +401,7 @@ impl MoveGenerator {
     }
 
     fn king_attack_bit_board(square: Square) -> BitBoard {
-        PRECOMPUTED.king_moves_at_square[square.index() as usize]
+        KING_MOVES_AT_SQUARE[square.index() as usize]
     }
     fn gen_king(&self, add_move: &mut dyn FnMut(Move), captures_only: bool) {
         let mut king_moves = Self::king_attack_bit_board(self.friendly_king_square)

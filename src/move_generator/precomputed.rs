@@ -9,7 +9,6 @@ pub struct PrecomputedData {
     pub white_pawn_attacks_at_square: [BitBoard; 64],
     pub black_pawn_attacks_at_square: [BitBoard; 64],
     pub knight_moves_at_square: [BitBoard; 64],
-    pub king_moves_at_square: [BitBoard; 64],
 }
 
 const fn min(a: i8, b: i8) -> i8 {
@@ -43,11 +42,29 @@ pub const SQUARES_FROM_EDGE: [[i8; 8]; 64] = {
 };
 
 lazy_static! {
+    pub static ref KING_MOVES_AT_SQUARE: [BitBoard; 64] = {
+        let mut king_moves_at_square = [BitBoard::EMPTY; 64];
+        for index in 0..64 {
+            let square = Square::from_index(index as i8);
+            let rank = square.rank();
+            let file = square.file();
+
+            let king_moves = &mut king_moves_at_square[index];
+            for direction in DIRECTIONS {
+                let move_to = square.offset(direction);
+                if move_to.within_bounds()
+                    && (file.abs_diff(move_to.file())).max(rank.abs_diff(move_to.rank())) == 1
+                {
+                    king_moves.set(&move_to);
+                }
+            }
+        }
+        king_moves_at_square
+    };
     pub static ref PRECOMPUTED: PrecomputedData = {
         let mut white_pawn_attacks_at_square = [BitBoard::EMPTY; 64];
         let mut black_pawn_attacks_at_square = [BitBoard::EMPTY; 64];
         let mut knight_moves_at_square = [BitBoard::EMPTY; 64];
-        let mut king_moves_at_square = [BitBoard::EMPTY; 64];
 
         for index in 0..64 {
             let square = Square::from_index(index as i8);
@@ -87,23 +104,12 @@ lazy_static! {
                     knight_moves.set(&move_to)
                 }
             }
-
-            let king_moves = &mut king_moves_at_square[index];
-            for direction in DIRECTIONS {
-                let move_to = square.offset(direction);
-                if move_to.within_bounds()
-                    && (file.abs_diff(move_to.file())).max(rank.abs_diff(move_to.rank())) == 1
-                {
-                    king_moves.set(&move_to);
-                }
-            }
         }
 
         PrecomputedData {
             white_pawn_attacks_at_square,
             black_pawn_attacks_at_square,
             knight_moves_at_square,
-            king_moves_at_square
         }
     };
 }
