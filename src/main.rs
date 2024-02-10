@@ -1,5 +1,6 @@
 use std::{
     io::{stdin, BufRead},
+    str::SplitWhitespace,
     time::Instant,
 };
 
@@ -15,6 +16,79 @@ const START_POSITION_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w 
 
 // Max time for thinking
 const MAX_TIME: u128 = 5 * 1000;
+
+#[derive(Default)]
+struct GoParameters {
+    white_time: Option<u128>,
+    black_time: Option<u128>,
+    white_increment: Option<u128>,
+    black_increment: Option<u128>,
+    moves_to_go: Option<u64>,
+    perft: bool,
+    depth: Option<u16>,
+    nodes: Option<u64>,
+    find_mate: Option<u64>,
+    move_time_in_ms: Option<u128>,
+}
+impl GoParameters {
+    fn empty() -> Self {
+        Self {
+            white_time: None,
+            black_time: None,
+            white_increment: None,
+            black_increment: None,
+            moves_to_go: None,
+            perft: false,
+            depth: None,
+            nodes: None,
+            find_mate: None,
+            move_time_in_ms: None,
+        }
+    }
+    fn parse(&mut self, args: &mut SplitWhitespace) {
+        while let Some(label) = args.next() {
+            match label {
+                "searchmoves" => {}
+                "ponder" => {}
+                "wtime" => {
+                    self.white_time = Some(args.next().unwrap().parse::<u128>().unwrap());
+                }
+                "btime" => {
+                    self.black_time = Some(args.next().unwrap().parse::<u128>().unwrap());
+                }
+                "winc" => {
+                    self.white_increment = Some(args.next().unwrap().parse::<u128>().unwrap());
+                }
+                "binc" => {
+                    self.black_increment = Some(args.next().unwrap().parse::<u128>().unwrap());
+                }
+                "movestogo" => {
+                    self.moves_to_go = Some(args.next().unwrap().parse::<u64>().unwrap());
+                }
+                "depth" => {
+                    self.depth = Some(args.next().unwrap().parse::<u16>().unwrap());
+                }
+                "nodes" => {
+                    self.nodes = Some(args.next().unwrap().parse::<u64>().unwrap());
+                }
+                "mate" => {
+                    self.find_mate = Some(args.next().unwrap().parse::<u64>().unwrap());
+                }
+                "movetime" => {
+                    self.move_time_in_ms = Some(args.next().unwrap().parse::<u128>().unwrap());
+                }
+                "perft" => {
+                    self.perft = true;
+                    self.depth = Some(args.next().unwrap().parse::<u16>().unwrap());
+                }
+                "infinite" => {
+                    self.move_time_in_ms = Some(MAX_TIME);
+                }
+                _ => unimplemented!(),
+            }
+        }
+    }
+}
 
 fn main() {
     let mut fen = None;
@@ -69,67 +143,16 @@ fn main() {
             }
             "ucinewgame" => {}
             "go" => {
-                let mut white_time = None;
-                let mut black_time = None;
-                let mut white_increment = None;
-                let mut black_increment = None;
-                let mut _moves_to_go = None;
-                let mut perft = false;
-                let mut depth = None;
-                let mut _nodes = None;
-                let mut _find_mate = None;
-                let mut move_time_in_ms = None;
-                while let Some(label) = args.next() {
-                    match label {
-                        "searchmoves" => {}
-                        "ponder" => {}
-                        "wtime" => {
-                            white_time = Some(args.next().unwrap().parse::<u128>().unwrap());
-                        }
-                        "btime" => {
-                            black_time = Some(args.next().unwrap().parse::<u128>().unwrap());
-                        }
-                        "winc" => {
-                            white_increment =
-                                Some(args.next().unwrap().parse::<u128>().unwrap());
-                        }
-                        "binc" => {
-                            black_increment =
-                                Some(args.next().unwrap().parse::<u128>().unwrap());
-                        }
-                        "movestogo" => {
-                            _moves_to_go = args.next();
-                        }
-                        "depth" => {
-                            depth = Some(args.next().unwrap().parse::<u16>().unwrap());
-                        }
-                        "nodes" => {
-                            _nodes = args.next();
-                        }
-                        "mate" => {
-                            _find_mate = args.next();
-                        }
-                        "movetime" => {
-                            move_time_in_ms =
-                                Some(args.next().unwrap().parse::<u128>().unwrap());
-                        }
-                        "perft" => {
-                            perft = true;
-                            depth = Some(args.next().unwrap().parse::<u16>().unwrap());
-                        }
-                        "infinite" => {
-                            move_time_in_ms = Some(MAX_TIME);
-                        }
-                        _ => unimplemented!(),
-                    }
-                }
+                let mut parameters = GoParameters::empty();
+                parameters.parse(&mut args);
+
                 let board = &mut Board::from_fen(&fen.unwrap());
                 fen = None;
 
-                if perft {
+                if parameters.perft {
                     println!(
                         "Nodes searched: {}",
-                        perft_root(board, false, true, depth.unwrap())
+                        perft_root(board, false, true, parameters.depth.unwrap())
                     );
                     continue;
                 }
@@ -169,17 +192,17 @@ fn main() {
                 moves.clear();
                 println!("{}", engine.board().to_fen());
 
-                let think_time = move_time_in_ms.unwrap_or_else(|| {
+                let think_time = parameters.move_time_in_ms.unwrap_or_else(|| {
                     let clock_time = (if engine.board().white_to_move {
-                        white_time
+                        parameters.white_time
                     } else {
-                        black_time
+                        parameters.black_time
                     })
                     .unwrap();
                     let increment = (if engine.board().white_to_move {
-                        white_increment
+                        parameters.white_increment
                     } else {
-                        black_increment
+                        parameters.black_increment
                     })
                     .unwrap_or(0);
                     (clock_time / 20 + increment / 2).min(MAX_TIME)
