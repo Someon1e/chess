@@ -66,10 +66,10 @@ impl Square {
     }
 
     pub fn file(&self) -> i8 {
-        self.index() % 8
+        self.index() & 0b111
     }
     pub fn rank(&self) -> i8 {
-        self.index() / 8
+        self.index() >> 3
     }
 
     pub fn to_notation(self) -> String {
