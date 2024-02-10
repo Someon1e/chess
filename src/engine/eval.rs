@@ -41,7 +41,7 @@ impl Eval {
 
                 let (middle_game_value, end_game_value) = Self::get_piece_value(
                     piece_index,
-                    square.flip_white_to_black().index() as usize,
+                    square.flip().index() as usize,
                 );
 
                 middle_game_score_white += middle_game_value;

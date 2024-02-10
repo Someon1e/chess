@@ -61,7 +61,7 @@ impl Square {
         self.0
     }
 
-    pub fn flip_white_to_black(&self) -> Self {
+    pub fn flip(&self) -> Self {
         Self(self.index() ^ 56)
     }
 
