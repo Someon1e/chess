@@ -1,4 +1,4 @@
-use crate::board::piece::Piece;
+use crate::board::{piece::Piece, square::Square};
 
 use super::{eval_data, Engine};
 
@@ -14,13 +14,19 @@ impl Eval {
         phase
     }
 
-    pub fn get_piece_value(piece_index: usize, square_index: usize) -> (i32, i32) {
+    fn get_piece_value(piece_index: usize, square_index: usize) -> (i32, i32) {
         let middle_game_piece_score =
             eval_data::MIDDLE_GAME_PIECE_VALUES_WITH_SQUARE[piece_index][square_index];
         let end_game_piece_score =
             eval_data::END_GAME_PIECE_VALUES_WITH_SQUARE[piece_index][square_index];
 
         (middle_game_piece_score, end_game_piece_score)
+    }
+    pub fn get_black_piece_value(piece: Piece, square: Square) -> (i32, i32) {
+        Self::get_piece_value(piece as usize - 6, square.index() as usize)
+    }
+    pub fn get_white_piece_value(piece: Piece, square: Square) -> (i32, i32) {
+        Self::get_piece_value(piece as usize, square.flip().index() as usize)
     }
 
     pub fn calculate_score(phase: i32, middle_game_score: i32, end_game_score: i32) -> i32 {
@@ -35,13 +41,12 @@ impl Eval {
 
         for piece in Piece::WHITE_PIECES {
             let mut bit_board = *engine.board.get_bit_board(piece);
-            let piece_index = piece as usize;
             while !bit_board.is_empty() {
                 let square = bit_board.pop_square();
 
-                let (middle_game_value, end_game_value) = Self::get_piece_value(
-                    piece_index,
-                    square.flip().index() as usize,
+                let (middle_game_value, end_game_value) = Self::get_white_piece_value(
+                    piece,
+                    square,
                 );
 
                 middle_game_score_white += middle_game_value;
@@ -54,12 +59,11 @@ impl Eval {
 
         for piece in Piece::BLACK_PIECES {
             let mut bit_board = *engine.board.get_bit_board(piece);
-            let piece_index = piece as usize - 6;
             while !bit_board.is_empty() {
                 let square = bit_board.pop_square();
 
                 let (middle_game_value, end_game_value) =
-                    Self::get_piece_value(piece_index, square.index() as usize);
+                    Self::get_black_piece_value(piece, square);
 
                 middle_game_score_black += middle_game_value;
                 end_game_score_black += end_game_value;

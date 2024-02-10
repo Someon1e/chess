@@ -34,23 +34,21 @@ impl MoveOrderer {
         // This won't take into account en passant
         if let Some(capturing) = engine.board.enemy_piece_at(moving_to) {
             let (capturing_middle_game_value, capturing_end_game_value) = {
-                let capturing_piece_index = capturing as usize % 6;
-                let mut capturing_square = moving_to;
-                if !engine.board.white_to_move {
-                    capturing_square = capturing_square.flip()
+                if engine.board.white_to_move {
+                    Eval::get_black_piece_value(capturing, moving_to)
+                } else {
+                    Eval::get_white_piece_value(capturing, moving_to)
                 }
-
-                Eval::get_piece_value(capturing_piece_index, capturing_square.index() as usize)
             };
 
             let (moving_middle_game_value, moving_end_game_value) = {
-                let moving_piece_index =
-                    engine.board.friendly_piece_at(moving_from).unwrap() as usize % 6;
-                let mut moving_from = moving_from;
+                let moving_piece =
+                    engine.board.friendly_piece_at(moving_from).unwrap();
                 if engine.board.white_to_move {
-                    moving_from = moving_from.flip()
+                    Eval::get_white_piece_value(moving_piece, moving_from)
+                } else {
+                    Eval::get_black_piece_value(moving_piece, moving_from)
                 }
-                Eval::get_piece_value(moving_piece_index, moving_from.index() as usize)
             };
 
             let phase = Eval::get_phase(engine);
