@@ -1,6 +1,11 @@
-use std::str::SplitWhitespace;
+use std::{str::SplitWhitespace, time::Instant};
 
-use crate::move_generator::move_data::{Flag, Move};
+use crate::{
+    board::{piece::Piece, square::Square, Board},
+    engine::Engine,
+    move_generator::move_data::{Flag, Move},
+    perft::perft_root,
+};
 
 pub fn encode_move(move_data: Move) -> String {
     let mut encoded = String::with_capacity(4);
@@ -16,7 +21,6 @@ pub fn encode_move(move_data: Move) -> String {
     };
     encoded
 }
-
 
 #[derive(Default)]
 pub struct GoParameters {
@@ -91,4 +95,146 @@ impl GoParameters {
             }
         }
     }
+}
+
+pub struct UCIProcessor {
+    pub max_thinking_time: u128,
+
+    pub moves: Vec<String>,
+    pub fen: Option<String>,
+}
+
+impl UCIProcessor {
+    pub fn uci(&self) {
+        println!(
+            "id name chess
+        id author someone
+        uciok"
+        );
+    }
+    pub fn isready(&self) {
+        println!("readyok");
+    }
+    pub fn position(&mut self, args: &mut SplitWhitespace) {
+        let mut startpos = true;
+        let mut building_fen = String::new();
+        while let Some(label) = args.next() {
+            match label {
+                "moves" => {
+                    self.moves.clear();
+                    while let Some(uci_move) = args.next() {
+                        self.moves.push((*uci_move).to_owned());
+                    }
+                }
+                "fen" => {
+                    startpos = false;
+                }
+                "startpos" => {
+                    startpos = true;
+                }
+                _ => {
+                    if !startpos {
+                        building_fen.push_str(label);
+                        building_fen.push(' ')
+                    }
+                }
+            }
+        }
+        if startpos {
+            const START_POSITION_FEN: &str =
+                "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
+            self.fen = Some(START_POSITION_FEN.to_owned());
+        } else {
+            self.fen = Some(building_fen)
+        }
+    }
+    pub fn go(&mut self, args: &mut SplitWhitespace) {
+        {
+            let mut parameters = GoParameters::empty();
+            parameters.parse(args);
+
+            let board = &mut Board::from_fen(self.fen.as_ref().unwrap());
+            self.fen = None;
+
+            if parameters.perft {
+                println!(
+                    "Nodes searched: {}",
+                    perft_root(board, false, true, parameters.depth.unwrap())
+                );
+                return;
+            }
+
+            let mut engine = Engine::new(board);
+
+            for uci_move in &self.moves {
+                let (from, to) = (&uci_move[0..2], &uci_move[2..4]);
+                let (from, to) = (Square::from_notation(from), Square::from_notation(to));
+                let piece = engine.board().piece_at(from).unwrap();
+
+                let mut flag = Flag::None;
+                if piece == Piece::WhitePawn || piece == Piece::BlackPawn {
+                    if from.rank().abs_diff(to.rank()) == 2 {
+                        flag = Flag::PawnTwoUp
+                    } else if engine.board().game_state.en_passant_square == Some(to) {
+                        flag = Flag::EnPassant
+                    } else if let Some(promotion) = uci_move.chars().nth(4) {
+                        flag = match promotion {
+                            'q' => Flag::QueenPromotion,
+                            'r' => Flag::RookPromotion,
+                            'n' => Flag::KnightPromotion,
+                            'b' => Flag::BishopPromotion,
+                            _ => {
+                                panic!("Invalid promotion notation")
+                            }
+                        }
+                    }
+                } else if (piece == Piece::BlackKing || piece == Piece::WhiteKing)
+                    && from.file().abs_diff(to.file()) > 1
+                {
+                    flag = Flag::Castle
+                }
+
+                engine.make_move(&Move { from, to, flag })
+            }
+            self.moves.clear();
+            println!("{}", engine.board().to_fen());
+
+            let think_time = if parameters.infinite {
+                self.max_thinking_time
+            } else {
+                parameters.move_time_in_ms.unwrap_or_else(|| {
+                    let clock_time = (if engine.board().white_to_move {
+                        parameters.white_time
+                    } else {
+                        parameters.black_time
+                    })
+                    .unwrap();
+                    let increment = (if engine.board().white_to_move {
+                        parameters.white_increment
+                    } else {
+                        parameters.black_increment
+                    })
+                    .unwrap_or(0);
+                    (clock_time / 20 + increment / 2).min(self.max_thinking_time)
+                })
+            };
+
+            let search_start = Instant::now();
+            let (best_move, _evaluation) = engine.iterative_deepening(
+                &mut |depth, (best_move, evaluation)| {
+                    println!(
+                        "info depth {depth} score cp {evaluation} time {} pv {}",
+                        search_start.elapsed().as_millis(),
+                        encode_move(best_move.decode())
+                    )
+                    // TODO: fix crash when depth goes very high
+                },
+                &mut || search_start.elapsed().as_millis() > think_time,
+            );
+            println!("bestmove {}", encode_move(best_move.decode()))
+        }
+    }
+    pub fn stop(&self) {}
+    pub fn ucinewgame(&self) {}
 }
