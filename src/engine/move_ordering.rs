@@ -34,7 +34,7 @@ impl MoveOrderer {
                 let capturing_piece_index = capturing as usize % 6;
                 let mut capturing_square = move_data.to();
                 if !engine.board.white_to_move {
-                    capturing_square = capturing_square.flip_white_to_black()
+                    capturing_square = capturing_square.flip()
                 }
 
                 Eval::get_piece_value(capturing_piece_index, capturing_square.index() as usize)
@@ -45,7 +45,7 @@ impl MoveOrderer {
                     engine.board.friendly_piece_at(move_data.from()).unwrap() as usize % 6;
                 let mut moving_from = move_data.from();
                 if engine.board.white_to_move {
-                    moving_from = moving_from.flip_white_to_black()
+                    moving_from = moving_from.flip()
                 }
                 Eval::get_piece_value(moving_piece_index, moving_from.index() as usize)
             };
