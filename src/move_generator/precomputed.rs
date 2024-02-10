@@ -1,7 +1,5 @@
 use std::sync::OnceLock;
 
-use lazy_static::lazy_static;
-
 use crate::board::{
     bit_board::BitBoard,
     square::{Square, DIRECTIONS},

@@ -1,5 +1,6 @@
+use std::sync::OnceLock;
+
 use ahash::AHashMap;
-use lazy_static::lazy_static;
 
 use crate::board::{
     bit_board::BitBoard,
@@ -83,7 +84,7 @@ fn make_legal_move_map(
     legal_moves_map
 }
 
-fn get_blockers_for_each_square(
+fn calculate_blockers_for_each_square(
     direction_start_index: usize,
     direction_end_index: usize,
 ) -> [BitBoard; 64] {
@@ -98,13 +99,21 @@ fn get_blockers_for_each_square(
     blockers
 }
 
-lazy_static! {
-    pub static ref ROOK_BLOCKERS: [BitBoard; 64] = get_blockers_for_each_square(0, 4);
-    pub static ref ROOK_MOVE_MAP: Vec<AHashMap<BitBoard, BitBoard>> =
-        make_legal_move_map(*ROOK_BLOCKERS, 0, 4);
-    pub static ref BISHOP_BLOCKERS: [BitBoard; 64] = get_blockers_for_each_square(4, 8);
-    pub static ref BISHOP_MOVE_MAP: Vec<AHashMap<BitBoard, BitBoard>> =
-        make_legal_move_map(*BISHOP_BLOCKERS, 4, 8);
+pub fn rook_blockers() -> &'static [BitBoard; 64] {
+    static COMPUTATION: OnceLock<[BitBoard; 64]> = OnceLock::new();
+    COMPUTATION.get_or_init(|| calculate_blockers_for_each_square(0, 4))
+}
+pub fn bishop_blockers() -> &'static [BitBoard; 64] {
+    static COMPUTATION: OnceLock<[BitBoard; 64]> = OnceLock::new();
+    COMPUTATION.get_or_init(|| calculate_blockers_for_each_square(4, 8))
+}
+pub fn rook_move_map() -> &'static Vec<AHashMap<BitBoard, BitBoard>> {
+    static COMPUTATION: OnceLock<Vec<AHashMap<BitBoard, BitBoard>>> = OnceLock::new();
+    COMPUTATION.get_or_init(|| make_legal_move_map(*rook_blockers(), 0, 4))
+}
+pub fn bishop_move_map() -> &'static Vec<AHashMap<BitBoard, BitBoard>> {
+    static COMPUTATION: OnceLock<Vec<AHashMap<BitBoard, BitBoard>>> = OnceLock::new();
+    COMPUTATION.get_or_init(|| make_legal_move_map(*bishop_blockers(), 4, 8))
 }
 
 #[cfg(test)]
@@ -116,7 +125,7 @@ mod tests {
         },
         move_generator::{
             precomputed::SQUARES_FROM_EDGE,
-            slider_lookup::{BISHOP_BLOCKERS, BISHOP_MOVE_MAP, ROOK_BLOCKERS, ROOK_MOVE_MAP},
+            slider_lookup::{bishop_blockers, bishop_move_map, rook_blockers, rook_move_map},
         },
     };
 
@@ -141,10 +150,10 @@ mod tests {
         let mut blockers = BitBoard::EMPTY;
         blockers.set(&Square::from_notation("f4"));
 
-        let rook_moves =
-            ROOK_MOVE_MAP[d4.index() as usize][&(blockers & ROOK_BLOCKERS[d4.index() as usize])];
-        let bishop_moves = BISHOP_MOVE_MAP[d4.index() as usize]
-            [&(blockers & BISHOP_BLOCKERS[d4.index() as usize])];
+        let rook_moves = rook_move_map()[d4.index() as usize]
+            [&(blockers & rook_blockers()[d4.index() as usize])];
+        let bishop_moves = bishop_move_map()[d4.index() as usize]
+            [&(blockers & bishop_blockers()[d4.index() as usize])];
 
         let legal_moves = rook_moves | bishop_moves;
         println!("{}", legal_moves);
