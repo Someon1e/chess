@@ -1,6 +1,5 @@
 use std::{
     io::{stdin, BufRead},
-    str::SplitWhitespace,
     time::Instant,
 };
 
@@ -9,86 +8,13 @@ use chess::{
     engine::Engine,
     move_generator::move_data::{Flag, Move},
     perft::perft_root,
-    uci,
+    uci::{self, GoParameters},
 };
 
 const START_POSITION_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 // Max time for thinking
 const MAX_TIME: u128 = 5 * 1000;
-
-#[derive(Default)]
-struct GoParameters {
-    white_time: Option<u128>,
-    black_time: Option<u128>,
-    white_increment: Option<u128>,
-    black_increment: Option<u128>,
-    moves_to_go: Option<u64>,
-    perft: bool,
-    depth: Option<u16>,
-    nodes: Option<u64>,
-    find_mate: Option<u64>,
-    move_time_in_ms: Option<u128>,
-}
-impl GoParameters {
-    fn empty() -> Self {
-        Self {
-            white_time: None,
-            black_time: None,
-            white_increment: None,
-            black_increment: None,
-            moves_to_go: None,
-            perft: false,
-            depth: None,
-            nodes: None,
-            find_mate: None,
-            move_time_in_ms: None,
-        }
-    }
-    fn parse(&mut self, args: &mut SplitWhitespace) {
-        while let Some(label) = args.next() {
-            match label {
-                "searchmoves" => {}
-                "ponder" => {}
-                "wtime" => {
-                    self.white_time = Some(args.next().unwrap().parse::<u128>().unwrap());
-                }
-                "btime" => {
-                    self.black_time = Some(args.next().unwrap().parse::<u128>().unwrap());
-                }
-                "winc" => {
-                    self.white_increment = Some(args.next().unwrap().parse::<u128>().unwrap());
-                }
-                "binc" => {
-                    self.black_increment = Some(args.next().unwrap().parse::<u128>().unwrap());
-                }
-                "movestogo" => {
-                    self.moves_to_go = Some(args.next().unwrap().parse::<u64>().unwrap());
-                }
-                "depth" => {
-                    self.depth = Some(args.next().unwrap().parse::<u16>().unwrap());
-                }
-                "nodes" => {
-                    self.nodes = Some(args.next().unwrap().parse::<u64>().unwrap());
-                }
-                "mate" => {
-                    self.find_mate = Some(args.next().unwrap().parse::<u64>().unwrap());
-                }
-                "movetime" => {
-                    self.move_time_in_ms = Some(args.next().unwrap().parse::<u128>().unwrap());
-                }
-                "perft" => {
-                    self.perft = true;
-                    self.depth = Some(args.next().unwrap().parse::<u16>().unwrap());
-                }
-                "infinite" => {
-                    self.move_time_in_ms = Some(MAX_TIME);
-                }
-                _ => unimplemented!(),
-            }
-        }
-    }
-}
 
 fn main() {
     let mut fen = None;
@@ -192,21 +118,25 @@ fn main() {
                 moves.clear();
                 println!("{}", engine.board().to_fen());
 
-                let think_time = parameters.move_time_in_ms.unwrap_or_else(|| {
-                    let clock_time = (if engine.board().white_to_move {
-                        parameters.white_time
-                    } else {
-                        parameters.black_time
+                let think_time = if parameters.infinite {
+                    MAX_TIME
+                } else {
+                    parameters.move_time_in_ms.unwrap_or_else(|| {
+                        let clock_time = (if engine.board().white_to_move {
+                            parameters.white_time
+                        } else {
+                            parameters.black_time
+                        })
+                        .unwrap();
+                        let increment = (if engine.board().white_to_move {
+                            parameters.white_increment
+                        } else {
+                            parameters.black_increment
+                        })
+                        .unwrap_or(0);
+                        (clock_time / 20 + increment / 2).min(MAX_TIME)
                     })
-                    .unwrap();
-                    let increment = (if engine.board().white_to_move {
-                        parameters.white_increment
-                    } else {
-                        parameters.black_increment
-                    })
-                    .unwrap_or(0);
-                    (clock_time / 20 + increment / 2).min(MAX_TIME)
-                });
+                };
 
                 let search_start = Instant::now();
                 let (best_move, _evaluation) = engine.iterative_deepening(
