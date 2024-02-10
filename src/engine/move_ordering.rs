@@ -14,14 +14,16 @@ impl MoveOrderer {
     ) -> i32 {
         let mut score = 0;
         match move_data.flag() {
-            Flag::EnPassant => score += 0,
-            Flag::PawnTwoUp => score += 0,
+            Flag::EnPassant => return 0,
+            Flag::PawnTwoUp => return 5,
+            Flag::Castle => return 20,
+
             Flag::BishopPromotion => score += 300,
             Flag::KnightPromotion => score += 400,
             Flag::RookPromotion => score += 300,
             Flag::QueenPromotion => score += 800,
-            Flag::Castle => score += 0,
-            Flag::None => score += 0,
+
+            Flag::None => {}
         }
 
         let moving_from = move_data.from();
