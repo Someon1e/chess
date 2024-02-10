@@ -44,7 +44,7 @@ impl<'a> Engine<'a> {
     }
 
     fn quiescence_search(&mut self, mut alpha: i32, beta: i32) -> i32 {
-        let stand_pat = Eval::evaluate(&self);
+        let stand_pat = Eval::evaluate(self);
         if stand_pat >= beta {
             return beta;
         }
