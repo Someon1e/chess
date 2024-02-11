@@ -116,8 +116,7 @@ fn fill_magic_table(
 
 fn magic_index(blockers: &BitBoard, magic: u64, shift: u64) -> usize {
     let hash = blockers.wrapping_mul(BitBoard::new(magic));
-    let index = (hash >> shift).as_usize();
-    index
+    (hash >> shift).as_usize()
 }
 
 const ROOK_MAGICS: [u64; 64] = [
