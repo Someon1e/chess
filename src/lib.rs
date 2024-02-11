@@ -2,6 +2,7 @@ pub mod board;
 pub mod engine;
 pub mod move_generator;
 pub mod perft;
+mod timer;
 pub mod uci;
 
 #[cfg(test)]
@@ -74,7 +75,7 @@ mod tests {
 
         let board = &mut Board::from_fen(fen);
 
-        let move_count = perft_root(board, true, false, depth);
+        let move_count = perft_root(board, true, false, depth, |out| println!("{}", out));
 
         let seconds_elapsed = start.elapsed().as_secs_f32();
         println!(

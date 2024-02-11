@@ -1,6 +1,6 @@
 use std::sync::OnceLock;
 
-use ahash::AHashMap;
+use fnv::FnvHashMap;
 
 use crate::board::{
     bit_board::BitBoard,
@@ -64,8 +64,8 @@ fn make_legal_move_map(
     square_blockers: [BitBoard; 64],
     direction_start_index: usize,
     direction_end_index: usize,
-) -> Vec<AHashMap<BitBoard, BitBoard>> {
-    let mut legal_moves_map: Vec<AHashMap<BitBoard, BitBoard>> = vec![AHashMap::default(); 64];
+) -> Vec<FnvHashMap<BitBoard, BitBoard>> {
+    let mut legal_moves_map: Vec<FnvHashMap<BitBoard, BitBoard>> = vec![FnvHashMap::default(); 64];
     for square_index in 0..64 {
         let from = Square::from_index(square_index);
         let blockers = square_blockers[from.index() as usize];
@@ -107,12 +107,12 @@ pub fn bishop_blockers() -> &'static [BitBoard; 64] {
     static COMPUTATION: OnceLock<[BitBoard; 64]> = OnceLock::new();
     COMPUTATION.get_or_init(|| calculate_blockers_for_each_square(4, 8))
 }
-pub fn rook_move_map() -> &'static Vec<AHashMap<BitBoard, BitBoard>> {
-    static COMPUTATION: OnceLock<Vec<AHashMap<BitBoard, BitBoard>>> = OnceLock::new();
+pub fn rook_move_map() -> &'static Vec<FnvHashMap<BitBoard, BitBoard>> {
+    static COMPUTATION: OnceLock<Vec<FnvHashMap<BitBoard, BitBoard>>> = OnceLock::new();
     COMPUTATION.get_or_init(|| make_legal_move_map(*rook_blockers(), 0, 4))
 }
-pub fn bishop_move_map() -> &'static Vec<AHashMap<BitBoard, BitBoard>> {
-    static COMPUTATION: OnceLock<Vec<AHashMap<BitBoard, BitBoard>>> = OnceLock::new();
+pub fn bishop_move_map() -> &'static Vec<FnvHashMap<BitBoard, BitBoard>> {
+    static COMPUTATION: OnceLock<Vec<FnvHashMap<BitBoard, BitBoard>>> = OnceLock::new();
     COMPUTATION.get_or_init(|| make_legal_move_map(*bishop_blockers(), 4, 8))
 }
 
