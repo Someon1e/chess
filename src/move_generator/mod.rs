@@ -158,11 +158,13 @@ impl MoveGenerator {
 
             let capture_position = en_passant_square.down(if self.white_to_move { 1 } else { -1 });
             if self.capture_mask.get(&capture_position) {
-                let mut pawns_able_to_en_passant = self.friendly_pawns & {
-                    // Generate attacks for an imaginary enemy pawn at the en passant square
-                    // The up-left and up-right of en_passant_square are squares that we can en passant from
-                    Self::pawn_attack_bit_board(en_passant_square, !self.white_to_move)
-                } & !self.orthogonal_pin_rays;
+                let mut pawns_able_to_en_passant = self.friendly_pawns
+                    & {
+                        // Generate attacks for an imaginary enemy pawn at the en passant square
+                        // The up-left and up-right of en_passant_square are squares that we can en passant from
+                        Self::pawn_attack_bit_board(en_passant_square, !self.white_to_move)
+                    }
+                    & !self.orthogonal_pin_rays;
                 'en_passant_check: while !pawns_able_to_en_passant.is_empty() {
                     let from = pawns_able_to_en_passant.pop_square();
 
@@ -351,8 +353,9 @@ impl MoveGenerator {
 }
 
 impl MoveGenerator {
-    fn calculate_enemy_slider(
+    fn calculate_enemy_rook(
         from: Square,
+        king_square: Square,
 
         capture_mask: &mut BitBoard,
         push_mask: &mut BitBoard,
@@ -362,35 +365,61 @@ impl MoveGenerator {
 
         is_in_check: &mut bool,
         is_in_double_check: &mut bool,
-
-        directions: &[Direction],
-        squares_from_edge: &[Direction],
     ) -> BitBoard {
-        let mut attacked = BitBoard::EMPTY;
-        for (direction, distance_from_edge) in directions.iter().zip(squares_from_edge) {
-            let mut ray = BitBoard::EMPTY;
-            for count in 1..=*distance_from_edge {
-                let move_to = from.offset(direction * count);
-                if king_bit_board.get(&move_to) {
-                    // This piece is checking the king
-                    capture_mask.set(&from);
-                    *push_mask |= ray;
-                    ray.set(&move_to);
+        let rook_blockers_excluding_king = (*occupied_squares & !*king_bit_board)
+            & relevant_rook_blockers()[from.index() as usize];
+        let rook_attacks = get_rook_moves(from, rook_blockers_excluding_king);
+        if rook_attacks.get(&king_square) {
+            // This piece is checking the king
+            capture_mask.set(&from);
 
-                    if *is_in_check {
-                        *is_in_double_check = true;
-                    }
-                    *is_in_check = true;
-                } else {
-                    ray.set(&move_to);
-                    if occupied_squares.get(&move_to) {
-                        break;
-                    }
-                }
+            if *is_in_check {
+                *is_in_double_check = true;
             }
-            attacked |= ray
+            *is_in_check = true;
+
+            let ray = get_rook_moves(
+                from,
+                *occupied_squares & relevant_rook_blockers()[from.index() as usize],
+            ) & !*king_bit_board & get_rook_moves(king_square, from.bitboard() & relevant_rook_blockers()[king_square.index() as usize]);
+
+            *push_mask |= ray;
         }
-        attacked
+        rook_attacks
+    }
+    fn calculate_enemy_bishop(
+        from: Square,
+        king_square: Square,
+
+        capture_mask: &mut BitBoard,
+        push_mask: &mut BitBoard,
+
+        king_bit_board: &BitBoard,
+        occupied_squares: &BitBoard,
+
+        is_in_check: &mut bool,
+        is_in_double_check: &mut bool,
+    ) -> BitBoard {
+        let bishop_blockers_excluding_king = (*occupied_squares & !*king_bit_board)
+            & relevant_bishop_blockers()[from.index() as usize];
+        let bishop_attacks = get_bishop_moves(from, bishop_blockers_excluding_king);
+        if bishop_attacks.get(&king_square) {
+            // This piece is checking the king
+            capture_mask.set(&from);
+
+            if *is_in_check {
+                *is_in_double_check = true;
+            }
+            *is_in_check = true;
+
+            let ray = get_bishop_moves(
+                from,
+                *occupied_squares & relevant_bishop_blockers()[from.index() as usize],
+            ) & !*king_bit_board & get_bishop_moves(king_square, from.bitboard() & relevant_bishop_blockers()[king_square.index() as usize]);
+
+            *push_mask |= ray;
+        }
+        bishop_attacks
     }
 
     fn king_attack_bit_board(square: Square) -> BitBoard {
@@ -610,55 +639,35 @@ impl MoveGenerator {
             }
         }
         {
-            let mut enemy_bishops = enemy_bishops;
-            while !enemy_bishops.is_empty() {
-                let from = enemy_bishops.pop_square();
-                let dangerous = Self::calculate_enemy_slider(
+            let mut enemy_diagonal = enemy_bishops | enemy_queens;
+            while !enemy_diagonal.is_empty() {
+                let from = enemy_diagonal.pop_square();
+                let dangerous = Self::calculate_enemy_bishop(
                     from,
+                    friendly_king_square,
                     &mut capture_mask,
                     &mut push_mask,
                     &friendly_king,
                     &occupied_squares,
                     &mut is_in_check,
                     &mut is_in_double_check,
-                    &DIRECTIONS[4..8],
-                    &SQUARES_FROM_EDGE[from.index() as usize][4..8],
                 );
                 king_danger_bit_board |= dangerous
             }
         }
         {
-            let mut enemy_rooks = enemy_rooks;
-            while !enemy_rooks.is_empty() {
-                let from = enemy_rooks.pop_square();
-                let dangerous = Self::calculate_enemy_slider(
+            let mut enemy_orthogonal = enemy_rooks | enemy_queens;
+            while !enemy_orthogonal.is_empty() {
+                let from = enemy_orthogonal.pop_square();
+                let dangerous = Self::calculate_enemy_rook(
                     from,
+                    friendly_king_square,
                     &mut capture_mask,
                     &mut push_mask,
                     &friendly_king,
                     &occupied_squares,
                     &mut is_in_check,
                     &mut is_in_double_check,
-                    &DIRECTIONS[0..4],
-                    &SQUARES_FROM_EDGE[from.index() as usize][0..4],
-                );
-                king_danger_bit_board |= dangerous
-            }
-        }
-        {
-            let mut enemy_queens = enemy_queens;
-            while !enemy_queens.is_empty() {
-                let from = enemy_queens.pop_square();
-                let dangerous = Self::calculate_enemy_slider(
-                    from,
-                    &mut capture_mask,
-                    &mut push_mask,
-                    &friendly_king,
-                    &occupied_squares,
-                    &mut is_in_check,
-                    &mut is_in_double_check,
-                    &DIRECTIONS[0..8],
-                    &SQUARES_FROM_EDGE[from.index() as usize][0..8],
                 );
                 king_danger_bit_board |= dangerous
             }
@@ -721,12 +730,14 @@ impl MoveGenerator {
 
         self.gen_pawns(add_move, captures_only);
         self.gen_knights(add_move, captures_only);
-        let mut friendly_diagonal = (self.friendly_bishops | self.friendly_queens) & !self.orthogonal_pin_rays;
+        let mut friendly_diagonal =
+            (self.friendly_bishops | self.friendly_queens) & !self.orthogonal_pin_rays;
         while !friendly_diagonal.is_empty() {
             let from = friendly_diagonal.pop_square();
             self.gen_bishop(from, add_move, captures_only)
         }
-        let mut friendly_orthogonal = (self.friendly_rooks | self.friendly_queens) & !self.diagonal_pin_rays;
+        let mut friendly_orthogonal =
+            (self.friendly_rooks | self.friendly_queens) & !self.diagonal_pin_rays;
         while !friendly_orthogonal.is_empty() {
             let from = friendly_orthogonal.pop_square();
             self.gen_rook(from, add_move, captures_only)
