@@ -76,15 +76,12 @@ fn calculate_king_moves_at_square() -> [BitBoard; 64] {
     let mut king_moves_at_square = [BitBoard::EMPTY; 64];
     for index in 0..64 {
         let square = Square::from_index(index as i8);
-        let rank = square.rank();
-        let file = square.file();
 
         let king_moves = &mut king_moves_at_square[index];
-        for direction in DIRECTIONS {
-            let move_to = square.offset(direction);
-            if move_to.within_bounds()
-                && (file.abs_diff(move_to.file())).max(rank.abs_diff(move_to.rank())) == 1
-            {
+        for (direction_index, direction) in DIRECTIONS.iter().enumerate() {
+            if SQUARES_FROM_EDGE[index][direction_index] != 0 {
+                let move_to = square.offset(*direction);
+
                 king_moves.set(&move_to);
             }
         }
