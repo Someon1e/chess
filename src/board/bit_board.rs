@@ -69,8 +69,14 @@ impl BitBoard {
     pub fn count(&self) -> u32 {
         self.0.count_ones()
     }
-    pub fn wrapping_sub(&self, rhs: Self) -> BitBoard {
+    pub fn wrapping_sub(&self, rhs: Self) -> Self {
         Self(self.0.wrapping_sub(rhs.0))
+    }
+    pub fn wrapping_mul(&self, rhs: Self) -> Self {
+        Self(self.0.wrapping_mul(rhs.0))
+    }
+    pub fn as_usize(&self) -> usize {
+        self.0 as usize
     }
 }
 
