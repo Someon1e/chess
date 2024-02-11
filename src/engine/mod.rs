@@ -84,7 +84,7 @@ impl<'a> Engine<'a> {
         for (index, other_key) in self.repetition_table.iter().enumerate().rev() {
             if *other_key == zobrist_key {
                 self.repetition_table.swap_remove(index);
-                break
+                break;
             }
         }
     }
