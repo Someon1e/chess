@@ -1,6 +1,6 @@
 use crate::board::bit_board::BitBoard;
 use crate::board::piece::Piece;
-use crate::board::square::{Direction, Square, DIRECTIONS};
+use crate::board::square::{Square, DIRECTIONS};
 use crate::board::Board;
 
 mod maker;
@@ -28,9 +28,8 @@ pub struct MoveGenerator {
 
     friendly_pawns: BitBoard,
     friendly_knights: BitBoard,
-    friendly_bishops: BitBoard,
-    friendly_rooks: BitBoard,
-    friendly_queens: BitBoard,
+    friendly_diagonal: BitBoard,
+    friendly_orthogonal: BitBoard,
 
     friendly_king_square: Square,
 
@@ -381,7 +380,11 @@ impl MoveGenerator {
             let ray = get_rook_moves(
                 from,
                 *occupied_squares & relevant_rook_blockers()[from.index() as usize],
-            ) & !*king_bit_board & get_rook_moves(king_square, from.bitboard() & relevant_rook_blockers()[king_square.index() as usize]);
+            ) & !*king_bit_board
+                & get_rook_moves(
+                    king_square,
+                    from.bitboard() & relevant_rook_blockers()[king_square.index() as usize],
+                );
 
             *push_mask |= ray;
         }
@@ -415,7 +418,11 @@ impl MoveGenerator {
             let ray = get_bishop_moves(
                 from,
                 *occupied_squares & relevant_bishop_blockers()[from.index() as usize],
-            ) & !*king_bit_board & get_bishop_moves(king_square, from.bitboard() & relevant_bishop_blockers()[king_square.index() as usize]);
+            ) & !*king_bit_board
+                & get_bishop_moves(
+                    king_square,
+                    from.bitboard() & relevant_bishop_blockers()[king_square.index() as usize],
+                );
 
             *push_mask |= ray;
         }
@@ -575,6 +582,9 @@ impl MoveGenerator {
         let friendly_rooks = *board.get_bit_board(friendly_pieces[3]);
         let friendly_queens = *board.get_bit_board(friendly_pieces[4]);
         let friendly_king = *board.get_bit_board(friendly_pieces[5]);
+        let friendly_diagonal = friendly_bishops | friendly_queens;
+        let friendly_orthogonal = friendly_rooks | friendly_queens;
+
         let friendly_piece_bit_board = friendly_pawns
             | friendly_knights
             | friendly_bishops
@@ -702,9 +712,8 @@ impl MoveGenerator {
             friendly_piece_bit_board,
             friendly_pawns,
             friendly_knights,
-            friendly_bishops,
-            friendly_rooks,
-            friendly_queens,
+            friendly_diagonal,
+            friendly_orthogonal,
             friendly_king_square,
             king_danger_bit_board,
             enemy_piece_bit_board,
@@ -730,14 +739,12 @@ impl MoveGenerator {
 
         self.gen_pawns(add_move, captures_only);
         self.gen_knights(add_move, captures_only);
-        let mut friendly_diagonal =
-            (self.friendly_bishops | self.friendly_queens) & !self.orthogonal_pin_rays;
+        let mut friendly_diagonal = (self.friendly_diagonal) & !self.orthogonal_pin_rays;
         while !friendly_diagonal.is_empty() {
             let from = friendly_diagonal.pop_square();
             self.gen_bishop(from, add_move, captures_only)
         }
-        let mut friendly_orthogonal =
-            (self.friendly_rooks | self.friendly_queens) & !self.diagonal_pin_rays;
+        let mut friendly_orthogonal = (self.friendly_orthogonal) & !self.diagonal_pin_rays;
         while !friendly_orthogonal.is_empty() {
             let from = friendly_orthogonal.pop_square();
             self.gen_rook(from, add_move, captures_only)
