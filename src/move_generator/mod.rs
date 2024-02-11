@@ -162,12 +162,9 @@ impl MoveGenerator {
                     // Generate attacks for an imaginary enemy pawn at the en passant square
                     // The up-left and up-right of en_passant_square are squares that we can en passant from
                     Self::pawn_attack_bit_board(en_passant_square, !self.white_to_move)
-                };
+                } & !self.orthogonal_pin_rays;
                 'en_passant_check: while !pawns_able_to_en_passant.is_empty() {
                     let from = pawns_able_to_en_passant.pop_square();
-                    if self.orthogonal_pin_rays.get(&from) {
-                        continue;
-                    }
 
                     if self.diagonal_pin_rays.get(&from)
                         && !self.diagonal_pin_rays.get(&en_passant_square)
