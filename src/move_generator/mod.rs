@@ -307,10 +307,6 @@ impl MoveGenerator {
 
 impl MoveGenerator {
     fn gen_bishop(&self, from: Square, add_move: &mut dyn FnMut(Move), captures_only: bool) {
-        if self.orthogonal_pin_rays.get(&from) {
-            return;
-        }
-
         let blockers = self.occupied_squares & relevant_bishop_blockers()[from.index() as usize];
         let possible_moves = get_bishop_moves(from, blockers);
         let mut legal_moves =
@@ -332,10 +328,6 @@ impl MoveGenerator {
         }
     }
     fn gen_rook(&self, from: Square, add_move: &mut dyn FnMut(Move), captures_only: bool) {
-        if self.diagonal_pin_rays.get(&from) {
-            return;
-        }
-
         let blockers = self.occupied_squares & relevant_rook_blockers()[from.index() as usize];
         let possible_moves = get_rook_moves(from, blockers);
         let mut legal_moves =
@@ -729,21 +721,15 @@ impl MoveGenerator {
 
         self.gen_pawns(add_move, captures_only);
         self.gen_knights(add_move, captures_only);
-        let mut friendly_bishops = self.friendly_bishops;
-        while !friendly_bishops.is_empty() {
-            let from = friendly_bishops.pop_square();
+        let mut friendly_diagonal = (self.friendly_bishops | self.friendly_queens) & !self.orthogonal_pin_rays;
+        while !friendly_diagonal.is_empty() {
+            let from = friendly_diagonal.pop_square();
             self.gen_bishop(from, add_move, captures_only)
         }
-        let mut friendly_rooks = self.friendly_rooks;
-        while !friendly_rooks.is_empty() {
-            let from = friendly_rooks.pop_square();
+        let mut friendly_orthogonal = (self.friendly_rooks | self.friendly_queens) & !self.diagonal_pin_rays;
+        while !friendly_orthogonal.is_empty() {
+            let from = friendly_orthogonal.pop_square();
             self.gen_rook(from, add_move, captures_only)
-        }
-        let mut friendly_queens = self.friendly_queens;
-        while !friendly_queens.is_empty() {
-            let from = friendly_queens.pop_square();
-            self.gen_bishop(from, add_move, captures_only);
-            self.gen_rook(from, add_move, captures_only);
         }
     }
 
