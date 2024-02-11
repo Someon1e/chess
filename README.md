@@ -17,5 +17,5 @@
 - Magic numbers for perfect hashing in sliding move lookup
 - Killer move heuristic
 - Null move heuristic
-- Remove ahash dependency
+- Remove fnv dependency
 - Multiple lines, so that it does not always play the same moves.

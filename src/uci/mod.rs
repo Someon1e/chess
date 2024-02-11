@@ -1,10 +1,11 @@
-use std::{str::SplitWhitespace, time::Instant};
+use std::str::SplitWhitespace;
 
 use crate::{
     board::{piece::Piece, square::Square, Board},
     engine::Engine,
     move_generator::move_data::{Flag, Move},
     perft::perft_root,
+    timer::timer::Time,
 };
 
 pub fn encode_move(move_data: Move) -> String {
@@ -102,18 +103,20 @@ pub struct UCIProcessor {
 
     pub moves: Vec<String>,
     pub fen: Option<String>,
+
+    pub out: fn(&str),
 }
 
 impl UCIProcessor {
     pub fn uci(&self) {
-        println!(
+        (self.out)(
             "id name chess
-        id author someone
-        uciok"
+id author someone
+uciok",
         );
     }
     pub fn isready(&self) {
-        println!("readyok");
+        (self.out)("readyok");
     }
     pub fn position(&mut self, args: &mut SplitWhitespace) {
         let mut startpos = true;
@@ -158,10 +161,10 @@ impl UCIProcessor {
             self.fen = None;
 
             if parameters.perft {
-                println!(
+                (self.out)(&format!(
                     "Nodes searched: {}",
-                    perft_root(board, false, true, parameters.depth.unwrap())
-                );
+                    perft_root(board, false, true, parameters.depth.unwrap(), self.out)
+                ));
                 return;
             }
 
@@ -198,7 +201,7 @@ impl UCIProcessor {
                 engine.make_move(&Move { from, to, flag })
             }
             self.moves.clear();
-            println!("{}", engine.board().to_fen());
+            (self.out)(&engine.board().to_fen());
 
             let think_time = if parameters.infinite {
                 self.max_thinking_time
@@ -220,19 +223,19 @@ impl UCIProcessor {
                 })
             };
 
-            let search_start = Instant::now();
+            let search_start = Time::now();
             let (best_move, _evaluation) = engine.iterative_deepening(
                 &mut |depth, (best_move, evaluation)| {
-                    println!(
+                    (self.out)(&format!(
                         "info depth {depth} score cp {evaluation} time {} pv {}",
-                        search_start.elapsed().as_millis(),
+                        search_start.miliseconds(),
                         encode_move(best_move.decode())
-                    )
+                    ))
                     // TODO: fix crash when depth goes very high
                 },
-                &mut || search_start.elapsed().as_millis() > think_time,
+                &mut || search_start.miliseconds() as u128 > think_time,
             );
-            println!("bestmove {}", encode_move(best_move.decode()))
+            (self.out)(&format!("bestmove {}", encode_move(best_move.decode())))
         }
     }
     pub fn stop(&self) {}

@@ -32,7 +32,13 @@ fn perft(board: &mut Board, check_zobrist: bool, bulk_count: bool, depth: u16) -
     move_count
 }
 
-pub fn perft_root(board: &mut Board, check_zobrist: bool, bulk_count: bool, depth: u16) -> usize {
+pub fn perft_root(
+    board: &mut Board,
+    check_zobrist: bool,
+    bulk_count: bool,
+    depth: u16,
+    log: fn(&str),
+) -> usize {
     let mut move_count = 0;
     MoveGenerator::new(board).gen(
         &mut |move_data| {
@@ -45,7 +51,7 @@ pub fn perft_root(board: &mut Board, check_zobrist: bool, bulk_count: bool, dept
             }
 
             let inner = perft(board, check_zobrist, bulk_count, depth - 1);
-            println!("{}: {}", uci::encode_move(move_data), inner);
+            log(&format!("{}: {}", uci::encode_move(move_data), inner));
             move_count += inner;
 
             if !bulk_count || depth != 1 {
