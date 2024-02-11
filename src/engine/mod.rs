@@ -4,8 +4,6 @@ mod eval_data;
 mod move_ordering;
 mod transposition;
 
-use fnv::FnvHashSet;
-
 use crate::{
     board::{zobrist::Zobrist, Board},
     move_generator::{move_data::Move, MoveGenerator},
@@ -21,7 +19,7 @@ use self::{
 pub struct Engine<'a> {
     board: &'a mut Board,
     transposition_table: Vec<Option<NodeValue>>,
-    repetition_table: FnvHashSet<Zobrist>,
+    repetition_table: Vec<Zobrist>,
     best_move: EncodedMove,
     best_score: i32,
 }
@@ -33,7 +31,7 @@ impl<'a> Engine<'a> {
         Self {
             board,
             transposition_table: vec![None; TRANSPOSITION_CAPACITY],
-            repetition_table: FnvHashSet::default(),
+            repetition_table: Vec::with_capacity(5),
             best_move: EncodedMove::NONE,
             best_score: -i32::MAX,
         }
@@ -76,13 +74,19 @@ impl<'a> Engine<'a> {
         return_value.unwrap_or(alpha)
     }
     pub fn make_move(&mut self, move_data: &Move) {
-        self.repetition_table.insert(self.board.zobrist_key());
+        self.repetition_table.push(self.board.zobrist_key());
         self.board.make_move(move_data);
     }
     pub fn unmake_move(&mut self, move_data: &Move) {
         self.board.unmake_move(move_data);
-        /*assert!(*/
-        self.repetition_table.remove(&self.board.zobrist_key())/*)*/;
+
+        let zobrist_key = self.board.zobrist_key();
+        for (index, other_key) in self.repetition_table.iter().enumerate().rev() {
+            if *other_key == zobrist_key {
+                self.repetition_table.swap_remove(index);
+                break
+            }
+        }
     }
     pub fn negamax(
         &mut self,
