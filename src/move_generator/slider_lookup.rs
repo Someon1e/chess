@@ -206,10 +206,10 @@ mod tests {
         for square_index in 0..64 {
             let square = Square::from_index(square_index);
 
+            let blockers = relevant_rook_blockers()[square_index as usize];
+            let index_bits = blockers.count() as u64;
             loop {
                 let magic = random.next_u64() & random.next_u64() & random.next_u64();
-                let blockers = relevant_rook_blockers()[square_index as usize];
-                let index_bits = blockers.count() as u64;
                 let filled = fill_magic_table(square, blockers, magic, index_bits, 0, 4);
                 if let Ok(filled) = filled {
                     keys[square_index as usize] = Key {
@@ -239,11 +239,10 @@ mod tests {
 
         for square_index in 0..64 {
             let square = Square::from_index(square_index);
-
+            let blockers = relevant_bishop_blockers()[square_index as usize];
+            let index_bits = blockers.count() as u64;
             loop {
                 let magic = random.next_u64() & random.next_u64() & random.next_u64();
-                let blockers = relevant_bishop_blockers()[square_index as usize];
-                let index_bits = blockers.count() as u64;
                 let filled = fill_magic_table(square, blockers, magic, index_bits, 4, 8);
                 if let Ok(filled) = filled {
                     keys[square_index as usize] = Key {
