@@ -22,6 +22,36 @@ pub fn encode_move(move_data: Move) -> String {
     };
     encoded
 }
+pub fn decode_move(board: &Board, uci_move: &str) -> Move {
+    let (from, to) = (&uci_move[0..2], &uci_move[2..4]);
+    let (from, to) = (Square::from_notation(from), Square::from_notation(to));
+    let piece = board.piece_at(from).unwrap();
+
+    let mut flag = Flag::None;
+    if piece == Piece::WhitePawn || piece == Piece::BlackPawn {
+        if from.rank().abs_diff(to.rank()) == 2 {
+            flag = Flag::PawnTwoUp
+        } else if board.game_state.en_passant_square == Some(to) {
+            flag = Flag::EnPassant
+        } else if let Some(promotion) = uci_move.chars().nth(4) {
+            flag = match promotion {
+                'q' => Flag::QueenPromotion,
+                'r' => Flag::RookPromotion,
+                'n' => Flag::KnightPromotion,
+                'b' => Flag::BishopPromotion,
+                _ => {
+                    panic!("Invalid promotion notation")
+                }
+            }
+        }
+    } else if (piece == Piece::BlackKing || piece == Piece::WhiteKing)
+        && from.file().abs_diff(to.file()) > 1
+    {
+        flag = Flag::Castle
+    }
+
+    Move { from, to, flag }
+}
 
 #[derive(Default)]
 pub struct GoParameters {
@@ -170,34 +200,7 @@ uciok",
         let mut engine = Engine::new(board);
 
         for uci_move in &self.moves {
-            let (from, to) = (&uci_move[0..2], &uci_move[2..4]);
-            let (from, to) = (Square::from_notation(from), Square::from_notation(to));
-            let piece = engine.board().piece_at(from).unwrap();
-
-            let mut flag = Flag::None;
-            if piece == Piece::WhitePawn || piece == Piece::BlackPawn {
-                if from.rank().abs_diff(to.rank()) == 2 {
-                    flag = Flag::PawnTwoUp
-                } else if engine.board().game_state.en_passant_square == Some(to) {
-                    flag = Flag::EnPassant
-                } else if let Some(promotion) = uci_move.chars().nth(4) {
-                    flag = match promotion {
-                        'q' => Flag::QueenPromotion,
-                        'r' => Flag::RookPromotion,
-                        'n' => Flag::KnightPromotion,
-                        'b' => Flag::BishopPromotion,
-                        _ => {
-                            panic!("Invalid promotion notation")
-                        }
-                    }
-                }
-            } else if (piece == Piece::BlackKing || piece == Piece::WhiteKing)
-                && from.file().abs_diff(to.file()) > 1
-            {
-                flag = Flag::Castle
-            }
-
-            engine.make_move(&Move { from, to, flag })
+            engine.make_move(&decode_move(engine.board(), uci_move))
         }
         self.moves.clear();
         (self.out)(&engine.board().to_fen());
