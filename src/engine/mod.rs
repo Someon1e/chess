@@ -220,7 +220,7 @@ impl<'a> Engine<'a> {
             if index == 0 {
                 break;
             }
-            index = index - 1;
+            index -= 1;
         }
         self.transposition_table[zobrist_index] = Some(NodeValue {
             zobrist_key,

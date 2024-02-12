@@ -40,7 +40,7 @@ impl ZobristRandoms {
     }
     pub fn read() -> &'static Self {
         static COMPUTATION: OnceLock<ZobristRandoms> = OnceLock::new();
-        COMPUTATION.get_or_init(|| Self::new())
+        COMPUTATION.get_or_init(Self::new)
     }
 }
 
