@@ -41,7 +41,7 @@ impl Eval {
 
         for piece in Piece::WHITE_PIECES {
             let mut bit_board = *engine.board.get_bit_board(piece);
-            while !bit_board.is_empty() {
+            while bit_board.is_not_empty() {
                 let square = bit_board.pop_square();
 
                 let (middle_game_value, end_game_value) =
@@ -57,7 +57,7 @@ impl Eval {
 
         for piece in Piece::BLACK_PIECES {
             let mut bit_board = *engine.board.get_bit_board(piece);
-            while !bit_board.is_empty() {
+            while bit_board.is_not_empty() {
                 let square = bit_board.pop_square();
 
                 let (middle_game_value, end_game_value) =
