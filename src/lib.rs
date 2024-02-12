@@ -13,7 +13,6 @@ mod tests {
 
     use super::board::Board;
 
-    pub const START_POSITION_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     pub const TEST_FENS: [(u16, usize, &str); 25] = [
         (
             1,
@@ -67,7 +66,7 @@ mod tests {
         (6, 2217, "K1k5/8/P7/8/8/8/8/8 w - - 0 1"),
         (7, 567584, "8/k1P5/8/1K6/8/8/8/8 w - - 0 1"),
         (4, 23527, "8/8/2k5/5q2/5n2/8/5K2/8 b - - 0 1"),
-        (6, 119060324, START_POSITION_FEN),
+        (6, 119060324, Board::START_POSITION_FEN),
     ];
 
     fn debug_perft(fen: &str, depth: u16, expected_move_count: usize) {
