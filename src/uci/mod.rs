@@ -156,7 +156,7 @@ uciok",
                 "moves" => {
                     self.moves.clear();
                     while let Some(uci_move) = args.next() {
-                        self.moves.push((*uci_move).to_owned());
+                        self.moves.push(uci_move.to_owned());
                     }
                 }
                 "fen" => {
