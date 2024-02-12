@@ -147,45 +147,82 @@ impl Board {
         self.white_to_move = white_to_move;
 
         let flag = move_data.flag;
-        let promotion_piece = flag.get_promotion_piece(white_to_move);
-        if let Some(promotion_piece) = promotion_piece {
-            let moving_bit_board = if white_to_move {
-                self.get_bit_board_mut(Piece::WhitePawn)
-            } else {
-                self.get_bit_board_mut(Piece::BlackPawn)
-            };
-            moving_bit_board.set(&move_data.from);
-            self.get_bit_board_mut(promotion_piece).unset(&move_data.to);
-        } else {
-            let moving_bit_board =
-                self.get_bit_board_mut(self.friendly_piece_at(move_data.to).unwrap());
-            moving_bit_board.toggle(&move_data.from, &move_data.to);
-        }
+        match flag {
+            Flag::None => {
+                let moving_bit_board =
+                    self.get_bit_board_mut(self.friendly_piece_at(move_data.to).unwrap());
+                moving_bit_board.toggle(&move_data.from, &move_data.to);
 
-        if flag == Flag::Castle {
-            let is_king_side = move_data.to.file() == 6;
-            let rook_to_offset = if is_king_side { -1 } else { 1 };
-            let rook_from_offset = if is_king_side { 1 } else { -2 };
-            let rook_bit_board = if white_to_move {
-                self.get_bit_board_mut(Piece::WhiteRook)
-            } else {
-                self.get_bit_board_mut(Piece::BlackRook)
-            };
-            rook_bit_board.toggle(
-                &move_data.to.offset(rook_from_offset),
-                &move_data.to.offset(rook_to_offset),
-            );
-        } else if let Some(captured) = capture {
-            let capture_position = if flag == Flag::EnPassant {
-                self.game_state
-                    .en_passant_square
-                    .unwrap()
-                    .down(if white_to_move { 1 } else { -1 })
-            } else {
-                move_data.to
-            };
-            let capturing_bit_board = self.get_bit_board_mut(captured);
-            capturing_bit_board.set(&capture_position)
-        }
+                if let Some(capture) = capture {
+                    let capturing_bit_board = self.get_bit_board_mut(capture);
+                    capturing_bit_board.set(&move_data.to);
+                }
+            }
+
+            Flag::PawnTwoUp => {
+                let moving_bit_board = self.get_bit_board_mut(if white_to_move {
+                    Piece::WhitePawn
+                } else {
+                    Piece::BlackPawn
+                });
+                moving_bit_board.toggle(&move_data.from, &move_data.to);
+            }
+
+            Flag::RookPromotion
+            | Flag::BishopPromotion
+            | Flag::KnightPromotion
+            | Flag::QueenPromotion => {
+                let moving_bit_board = self.get_bit_board_mut(if white_to_move {
+                    Piece::WhitePawn
+                } else {
+                    Piece::BlackPawn
+                });
+                moving_bit_board.set(&move_data.from);
+                self.get_bit_board_mut(flag.get_promotion_piece(white_to_move).unwrap())
+                    .unset(&move_data.to);
+
+                if let Some(capture) = capture {
+                    let capturing_bit_board = self.get_bit_board_mut(capture);
+                    capturing_bit_board.set(&move_data.to);
+                }
+            }
+
+            Flag::EnPassant => {
+                let capture_position = {
+                    self.game_state
+                        .en_passant_square
+                        .unwrap()
+                        .down(if white_to_move { 1 } else { -1 })
+                };
+                let capturing_bit_board = self.get_bit_board_mut(capture.unwrap());
+                capturing_bit_board.set(&capture_position);
+
+                let moving_bit_board =
+                    self.get_bit_board_mut(self.friendly_piece_at(move_data.to).unwrap());
+                moving_bit_board.toggle(&move_data.from, &move_data.to);
+            }
+
+            Flag::Castle => {
+                let is_king_side = move_data.to.file() == 6;
+                let rook_to_offset = if is_king_side { -1 } else { 1 };
+                let rook_from_offset = if is_king_side { 1 } else { -2 };
+                let rook_bit_board = if white_to_move {
+                    self.get_bit_board_mut(Piece::WhiteRook)
+                } else {
+                    self.get_bit_board_mut(Piece::BlackRook)
+                };
+                rook_bit_board.toggle(
+                    &move_data.to.offset(rook_from_offset),
+                    &move_data.to.offset(rook_to_offset),
+                );
+
+                let moving_bit_board = self.get_bit_board_mut(if white_to_move {
+                    Piece::WhiteKing
+                } else {
+                    Piece::BlackKing
+                });
+                moving_bit_board.toggle(&move_data.from, &move_data.to);
+            }
+        };
     }
 }
