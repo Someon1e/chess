@@ -8,6 +8,12 @@ use crate::{
 
 use super::{encoded_move::EncodedMove, eval::Eval, Engine};
 
+#[derive(Clone, Copy)]
+pub struct MoveGuess {
+    guess: i32,
+    pub move_data: EncodedMove,
+}
+
 pub struct MoveOrderer {}
 impl MoveOrderer {
     pub fn guess_move_value(
@@ -80,49 +86,55 @@ impl MoveOrderer {
     }
 
     pub fn put_highest_guessed_move_on_top(
-        moves: &mut [EncodedMove; 218],
-        move_guesses: &mut [i32; 218],
+        move_guesses: &mut [MoveGuess; 218],
         last_unsorted_index: usize,
-    ) -> EncodedMove {
+    ) -> MoveGuess {
         let (mut index_of_highest_move, mut highest_guess) =
-            (last_unsorted_index, move_guesses[last_unsorted_index]);
+            (last_unsorted_index, move_guesses[last_unsorted_index].guess);
         for index in 0..last_unsorted_index {
-            let guess = move_guesses[index];
+            let guess = move_guesses[index].guess;
             if guess > highest_guess {
                 highest_guess = guess;
                 index_of_highest_move = index;
             }
         }
         if index_of_highest_move != last_unsorted_index {
-            moves.swap(index_of_highest_move, last_unsorted_index);
             move_guesses.swap(index_of_highest_move, last_unsorted_index);
         }
-        moves[last_unsorted_index]
+        move_guesses[last_unsorted_index]
     }
 
     pub fn get_sorted_moves(
         engine: &Engine,
         move_generator: &MoveGenerator,
         best_move: &EncodedMove,
-    ) -> ([EncodedMove; 218], [i32; 218], usize) {
-        let mut moves = [EncodedMove::NONE; 218];
-        let mut move_guesses = [0; 218];
+    ) -> ([MoveGuess; 218], usize) {
+        let mut move_guesses = [MoveGuess {
+            move_data: EncodedMove::NONE,
+            guess: 0,
+        }; 218];
         let mut index = 0;
         move_generator.gen(
             &mut |move_data| {
                 let encoded = EncodedMove::new(move_data);
-                moves[index] = encoded;
-                move_guesses[index] = if encoded == *best_move {
-                    10000
-                } else {
-                    Self::guess_move_value(engine, &move_generator.enemy_pawn_attacks(), &move_data)
+                move_guesses[index] = MoveGuess {
+                    move_data: encoded,
+                    guess: if encoded == *best_move {
+                        10000
+                    } else {
+                        Self::guess_move_value(
+                            engine,
+                            &move_generator.enemy_pawn_attacks(),
+                            &move_data,
+                        )
+                    },
                 };
                 index += 1
             },
             false,
         );
 
-        (moves, move_guesses, index)
+        (move_guesses, index)
     }
 }
 
@@ -141,7 +153,7 @@ mod tests {
     fn move_ordering_works() {
         let mut board = Board::from_fen("8/P6p/6r1/1q1n4/2P3R1/8/2K2k2/8 w - - 0 1");
         let move_generator = MoveGenerator::new(&board);
-        let (mut moves, mut move_guesses, move_count) = MoveOrderer::get_sorted_moves(
+        let (mut move_guesses, move_count) = MoveOrderer::get_sorted_moves(
             &Engine::new(&mut board),
             &move_generator,
             &EncodedMove::NONE,
@@ -149,10 +161,9 @@ mod tests {
         let mut index = move_count;
         let mut next_move = || {
             index -= 1;
-            let move_data =
-                MoveOrderer::put_highest_guessed_move_on_top(&mut moves, &mut move_guesses, index);
-            println!("{move_data}");
-            (move_data, index != 0)
+            let move_guess = MoveOrderer::put_highest_guessed_move_on_top(&mut move_guesses, index);
+            println!("{} {}", move_guess.move_data, move_guess.guess);
+            (move_guess.move_data, index != 0)
         };
         assert!(
             next_move().0.decode()
