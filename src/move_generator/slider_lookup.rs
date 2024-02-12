@@ -201,8 +201,8 @@ fn init_lookup(
     for square_index in 0..64 {
         let square = Square::from_index(square_index);
 
-        let magic = magics[square.index() as usize];
-        let shift = shifts[square.index() as usize];
+        let magic = magics[square_index as usize];
+        let shift = shifts[square_index as usize];
         let filled = fill_magic_table(
             square,
             magic,
@@ -335,7 +335,7 @@ mod tests {
         let mut rook_lookup: Vec<Vec<BitBoard>> = vec![vec![]; 64];
         let mut rook_shifts = [0; 64];
         let mut magics = [0; 64];
-        'next_magic: for square_index in 0..64 {
+        for square_index in 0..64 {
             let square = Square::from_index(square_index);
 
             loop {
@@ -351,7 +351,7 @@ mod tests {
                     rook_lookup[square_index as usize] = filled;
                     rook_shifts[square_index as usize] = 64 - index_bits;
                     magics[square_index as usize] = magic;
-                    continue 'next_magic;
+                    break;
                 }
             }
         }
@@ -363,7 +363,7 @@ mod tests {
         let mut bishop_lookup: Vec<Vec<BitBoard>> = vec![vec![]; 64];
         let mut bishop_shifts = [0; 64];
         let mut magics = [0; 64];
-        'next_magic: for square_index in 0..64 {
+        for square_index in 0..64 {
             let square = Square::from_index(square_index);
 
             loop {
@@ -379,7 +379,7 @@ mod tests {
                     bishop_lookup[square_index as usize] = filled;
                     bishop_shifts[square_index as usize] = 64 - index_bits;
                     magics[square_index as usize] = magic;
-                    continue 'next_magic;
+                    break;
                 }
             }
         }
