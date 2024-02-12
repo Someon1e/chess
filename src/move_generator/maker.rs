@@ -39,24 +39,16 @@ impl Board {
                 self.game_state.castling_rights.unset_black_queen_side();
             }
         } else {
-            if move_data.from == Square::from_index(0)
-                || move_data.to == Square::from_index(0)
-            {
+            if move_data.from == Square::from_index(0) || move_data.to == Square::from_index(0) {
                 self.game_state.castling_rights.unset_white_queen_side();
             }
-            if move_data.from == Square::from_index(7)
-                || move_data.to == Square::from_index(7)
-            {
+            if move_data.from == Square::from_index(7) || move_data.to == Square::from_index(7) {
                 self.game_state.castling_rights.unset_white_king_side();
             }
-            if move_data.from == Square::from_index(56)
-                || move_data.to == Square::from_index(56)
-            {
+            if move_data.from == Square::from_index(56) || move_data.to == Square::from_index(56) {
                 self.game_state.castling_rights.unset_black_queen_side();
             }
-            if move_data.from == Square::from_index(63)
-                || move_data.to == Square::from_index(63)
-            {
+            if move_data.from == Square::from_index(63) || move_data.to == Square::from_index(63) {
                 self.game_state.castling_rights.unset_black_king_side();
             }
         }

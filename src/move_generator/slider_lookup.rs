@@ -88,34 +88,6 @@ pub fn relevant_bishop_blockers() -> &'static [BitBoard; 64] {
     COMPUTATION.get_or_init(|| calculate_blockers_for_each_square(4, 8))
 }
 
-#[derive(Debug)]
-struct TableFillError;
-fn fill_magic_table(
-    square: Square,
-    blockers: BitBoard,
-    magic: u64,
-    index_bits: u64,
-    direction_start_index: usize,
-    direction_end_index: usize,
-) -> Result<Vec<BitBoard>, TableFillError> {
-    let mut table = vec![BitBoard::EMPTY; 1 << index_bits];
-    for blocker_combination in iterate_combinations(blockers) {
-        let moves = gen_slider_moves(
-            square,
-            &blocker_combination,
-            direction_start_index,
-            direction_end_index,
-        );
-        let table_entry = &mut table[magic_index(&blocker_combination, magic, 64 - index_bits)];
-        if table_entry.is_empty() {
-            *table_entry = moves;
-        } else if *table_entry != moves {
-            return Err(TableFillError);
-        }
-    }
-    Ok(table)
-}
-
 fn magic_index(blockers: &BitBoard, magic: u64, shift: u64) -> usize {
     let hash = blockers.wrapping_mul(BitBoard::new(magic));
     (hash >> shift).as_usize()
@@ -187,9 +159,37 @@ mod tests {
         },
     };
 
-    use super::{all_blockers, fill_magic_table, iterate_combinations};
+    use super::{all_blockers, gen_slider_moves, iterate_combinations, magic_index};
 
     use rand_chacha::rand_core::{RngCore, SeedableRng};
+
+    #[derive(Debug)]
+    struct TableFillError;
+    fn fill_magic_table(
+        square: Square,
+        blockers: BitBoard,
+        magic: u64,
+        index_bits: u64,
+        direction_start_index: usize,
+        direction_end_index: usize,
+    ) -> Result<Vec<BitBoard>, TableFillError> {
+        let mut table = vec![BitBoard::EMPTY; 1 << index_bits];
+        for blocker_combination in iterate_combinations(blockers) {
+            let moves = gen_slider_moves(
+                square,
+                &blocker_combination,
+                direction_start_index,
+                direction_end_index,
+            );
+            let table_entry = &mut table[magic_index(&blocker_combination, magic, 64 - index_bits)];
+            if table_entry.is_empty() {
+                *table_entry = moves;
+            } else if *table_entry != moves {
+                return Err(TableFillError);
+            }
+        }
+        Ok(table)
+    }
 
     #[test]
     fn find_rook_magics() {
