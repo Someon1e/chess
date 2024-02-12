@@ -71,7 +71,7 @@ impl Zobrist {
 
         for (piece, bit_board) in board.bit_boards.iter().enumerate() {
             let mut bit_board = *bit_board;
-            while !bit_board.is_empty() {
+            while bit_board.is_not_empty() {
                 let square = bit_board.pop_square();
                 key.xor_piece(piece, square.index() as usize)
             }

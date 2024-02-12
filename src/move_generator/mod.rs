@@ -98,7 +98,7 @@ impl MoveGenerator {
                 (non_orthogonally_pinned_pawns & not_on_the_right_edge) >> 9
             } & self.enemy_piece_bit_board
                 & self.capture_mask;
-            while !capture_right.is_empty() {
+            while capture_right.is_not_empty() {
                 let capture = capture_right.pop_square();
                 let from = capture.offset(capture_right_offset);
 
@@ -132,7 +132,7 @@ impl MoveGenerator {
                 (non_orthogonally_pinned_pawns & not_on_the_left_edge) >> 7
             } & self.enemy_piece_bit_board
                 & self.capture_mask;
-            while !capture_left.is_empty() {
+            while capture_left.is_not_empty() {
                 let capture = capture_left.pop_square();
                 let from = capture.offset(capture_left_offset);
                 let is_diagonally_pinned = self.diagonal_pin_rays.get(&from);
@@ -164,7 +164,7 @@ impl MoveGenerator {
                         Self::pawn_attack_bit_board(en_passant_square, !self.white_to_move)
                     }
                     & !self.orthogonal_pin_rays;
-                'en_passant_check: while !pawns_able_to_en_passant.is_empty() {
+                'en_passant_check: while pawns_able_to_en_passant.is_not_empty() {
                     let from = pawns_able_to_en_passant.pop_square();
 
                     if self.diagonal_pin_rays.get(&from)
@@ -228,7 +228,7 @@ impl MoveGenerator {
 
             let mut single_push_no_promotions = single_push & self.push_mask & !push_promotions;
 
-            while !single_push_no_promotions.is_empty() {
+            while single_push_no_promotions.is_not_empty() {
                 let move_to = single_push_no_promotions.pop_square();
                 let from = move_to.offset(down_offset);
                 if !self.orthogonal_pin_rays.get(&from) || self.orthogonal_pin_rays.get(&move_to) {
@@ -239,7 +239,7 @@ impl MoveGenerator {
                     });
                 }
             }
-            while !push_promotions.is_empty() {
+            while push_promotions.is_not_empty() {
                 let move_to = push_promotions.pop_square();
                 let from = move_to.offset(down_offset);
                 if !self.orthogonal_pin_rays.get(&from) || self.orthogonal_pin_rays.get(&move_to) {
@@ -262,7 +262,7 @@ impl MoveGenerator {
                 } else {
                     BitBoard::RANK_5
                 };
-            while !double_push.is_empty() {
+            while double_push.is_not_empty() {
                 let move_to = double_push.pop_square();
                 let from = move_to.offset(double_down_offset);
                 if !self.orthogonal_pin_rays.get(&from) || self.orthogonal_pin_rays.get(&move_to) {
@@ -291,10 +291,10 @@ impl MoveGenerator {
             mask &= self.enemy_piece_bit_board
         }
 
-        while !non_pinned_knights.is_empty() {
+        while non_pinned_knights.is_not_empty() {
             let from = non_pinned_knights.pop_square();
             let mut knight_moves = Self::knight_attack_bit_board(from) & mask;
-            while !knight_moves.is_empty() {
+            while knight_moves.is_not_empty() {
                 let move_to = knight_moves.pop_square();
                 add_move(Move {
                     from,
@@ -319,7 +319,7 @@ impl MoveGenerator {
             legal_moves &= self.diagonal_pin_rays;
         }
 
-        while !legal_moves.is_empty() {
+        while legal_moves.is_not_empty() {
             let move_to = legal_moves.pop_square();
             add_move(Move {
                 from,
@@ -340,7 +340,7 @@ impl MoveGenerator {
             legal_moves &= self.orthogonal_pin_rays;
         }
 
-        while !legal_moves.is_empty() {
+        while legal_moves.is_not_empty() {
             let move_to = legal_moves.pop_square();
             add_move(Move {
                 from,
@@ -439,7 +439,7 @@ impl MoveGenerator {
         if captures_only {
             king_moves &= self.enemy_piece_bit_board
         }
-        while !king_moves.is_empty() {
+        while king_moves.is_not_empty() {
             let move_to = king_moves.pop_square();
             add_move(Move {
                 from: self.friendly_king_square,
@@ -617,10 +617,10 @@ impl MoveGenerator {
 
         {
             let mut enemy_pawns = enemy_pawns;
-            while !enemy_pawns.is_empty() {
+            while enemy_pawns.is_not_empty() {
                 let from = enemy_pawns.pop_square();
                 let pawn_attacks = Self::pawn_attack_bit_board(from, !white_to_move);
-                if !(pawn_attacks & friendly_king).is_empty() {
+                if (pawn_attacks & friendly_king).is_not_empty() {
                     // Pawn is checking the king
                     if is_in_check {
                         is_in_double_check = true;
@@ -634,10 +634,10 @@ impl MoveGenerator {
         }
         {
             let mut enemy_knights = enemy_knights;
-            while !enemy_knights.is_empty() {
+            while enemy_knights.is_not_empty() {
                 let from = enemy_knights.pop_square();
                 let knight_attacks = Self::knight_attack_bit_board(from);
-                if !(knight_attacks & friendly_king).is_empty() {
+                if (knight_attacks & friendly_king).is_not_empty() {
                     // Knight is checking the king
                     if is_in_check {
                         is_in_double_check = true;
@@ -650,7 +650,7 @@ impl MoveGenerator {
         }
         {
             let mut enemy_diagonal = enemy_bishops | enemy_queens;
-            while !enemy_diagonal.is_empty() {
+            while enemy_diagonal.is_not_empty() {
                 let from = enemy_diagonal.pop_square();
                 let dangerous = Self::calculate_enemy_bishop(
                     from,
@@ -667,7 +667,7 @@ impl MoveGenerator {
         }
         {
             let mut enemy_orthogonal = enemy_rooks | enemy_queens;
-            while !enemy_orthogonal.is_empty() {
+            while enemy_orthogonal.is_not_empty() {
                 let from = enemy_orthogonal.pop_square();
                 let dangerous = Self::calculate_enemy_rook(
                     from,
@@ -684,7 +684,7 @@ impl MoveGenerator {
         }
         {
             let mut enemy_king = enemy_king;
-            while !enemy_king.is_empty() {
+            while enemy_king.is_not_empty() {
                 let from = enemy_king.pop_square();
                 king_danger_bit_board |= Self::king_attack_bit_board(from)
             }
@@ -740,12 +740,12 @@ impl MoveGenerator {
         self.gen_pawns(add_move, captures_only);
         self.gen_knights(add_move, captures_only);
         let mut friendly_diagonal = (self.friendly_diagonal) & !self.orthogonal_pin_rays;
-        while !friendly_diagonal.is_empty() {
+        while friendly_diagonal.is_not_empty() {
             let from = friendly_diagonal.pop_square();
             self.gen_bishop(from, add_move, captures_only)
         }
         let mut friendly_orthogonal = (self.friendly_orthogonal) & !self.diagonal_pin_rays;
-        while !friendly_orthogonal.is_empty() {
+        while friendly_orthogonal.is_not_empty() {
             let from = friendly_orthogonal.pop_square();
             self.gen_rook(from, add_move, captures_only)
         }
