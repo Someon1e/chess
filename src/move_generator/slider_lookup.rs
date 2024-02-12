@@ -5,7 +5,7 @@ use crate::{
         bit_board::BitBoard,
         square::{Direction, Square, DIRECTIONS},
     },
-    move_generator::slider_keys::ROOK_KEYS,
+    move_generator::slider_keys::{BISHOP_TABLE_SIZE, ROOK_KEYS, ROOK_TABLE_SIZE},
 };
 
 use super::{
@@ -153,7 +153,7 @@ fn init_lookup(
 
 fn rook_lookup() -> &'static Vec<BitBoard> {
     static COMPUTATION: OnceLock<Vec<BitBoard>> = OnceLock::new();
-    COMPUTATION.get_or_init(|| init_lookup(102400, ROOK_KEYS, 0, 4))
+    COMPUTATION.get_or_init(|| init_lookup(ROOK_TABLE_SIZE, ROOK_KEYS, 0, 4))
 }
 
 pub fn get_rook_moves(square: Square, relevant_blockers: BitBoard) -> BitBoard {
@@ -163,7 +163,7 @@ pub fn get_rook_moves(square: Square, relevant_blockers: BitBoard) -> BitBoard {
 
 fn bishop_lookup() -> &'static Vec<BitBoard> {
     static COMPUTATION: OnceLock<Vec<BitBoard>> = OnceLock::new();
-    COMPUTATION.get_or_init(|| init_lookup(5248, BISHOP_KEYS, 4, 8))
+    COMPUTATION.get_or_init(|| init_lookup(BISHOP_TABLE_SIZE, BISHOP_KEYS, 4, 8))
 }
 
 pub fn get_bishop_moves(square: Square, relevant_blockers: BitBoard) -> BitBoard {
