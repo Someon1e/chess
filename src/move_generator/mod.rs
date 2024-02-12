@@ -6,6 +6,7 @@ use crate::board::Board;
 mod maker;
 pub mod move_data;
 mod precomputed;
+mod slider_keys;
 mod slider_lookup;
 
 use self::move_data::{Flag, Move};
