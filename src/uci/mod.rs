@@ -89,35 +89,35 @@ impl GoParameters {
                 "searchmoves" => {}
                 "ponder" => {}
                 "wtime" => {
-                    self.white_time = Some(args.next().unwrap().parse::<u128>().unwrap());
+                    self.white_time = Some(args.next().unwrap().parse().unwrap());
                 }
                 "btime" => {
-                    self.black_time = Some(args.next().unwrap().parse::<u128>().unwrap());
+                    self.black_time = Some(args.next().unwrap().parse().unwrap());
                 }
                 "winc" => {
-                    self.white_increment = Some(args.next().unwrap().parse::<u128>().unwrap());
+                    self.white_increment = Some(args.next().unwrap().parse().unwrap());
                 }
                 "binc" => {
-                    self.black_increment = Some(args.next().unwrap().parse::<u128>().unwrap());
+                    self.black_increment = Some(args.next().unwrap().parse().unwrap());
                 }
                 "movestogo" => {
-                    self.moves_to_go = Some(args.next().unwrap().parse::<u64>().unwrap());
+                    self.moves_to_go = Some(args.next().unwrap().parse().unwrap());
                 }
                 "depth" => {
-                    self.depth = Some(args.next().unwrap().parse::<u16>().unwrap());
+                    self.depth = Some(args.next().unwrap().parse().unwrap());
                 }
                 "nodes" => {
-                    self.nodes = Some(args.next().unwrap().parse::<u64>().unwrap());
+                    self.nodes = Some(args.next().unwrap().parse().unwrap());
                 }
                 "mate" => {
-                    self.find_mate = Some(args.next().unwrap().parse::<u64>().unwrap());
+                    self.find_mate = Some(args.next().unwrap().parse().unwrap());
                 }
                 "movetime" => {
-                    self.move_time_in_ms = Some(args.next().unwrap().parse::<u128>().unwrap());
+                    self.move_time_in_ms = Some(args.next().unwrap().parse().unwrap());
                 }
                 "perft" => {
                     self.perft = true;
-                    self.depth = Some(args.next().unwrap().parse::<u16>().unwrap());
+                    self.depth = Some(args.next().unwrap().parse().unwrap());
                 }
                 "infinite" => {
                     self.infinite = true;
