@@ -327,6 +327,7 @@ pub const ROOK_KEYS: [Key; 64] = [
         offset: 98304,
     },
 ];
+pub const ROOK_TABLE_SIZE: usize = 102400;
 
 pub const BISHOP_KEYS: [Key; 64] = [
     Key {
@@ -650,3 +651,4 @@ pub const BISHOP_KEYS: [Key; 64] = [
         offset: 5184,
     },
 ];
+pub const BISHOP_TABLE_SIZE: usize = 5248;
