@@ -174,10 +174,7 @@ uciok",
             }
         }
         if startpos {
-            const START_POSITION_FEN: &str =
-                "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-
-            self.fen = Some(START_POSITION_FEN.to_owned());
+            self.fen = Some(Board::START_POSITION_FEN.to_owned());
         } else {
             self.fen = Some(building_fen)
         }

@@ -29,6 +29,9 @@ impl Display for Board {
 }
 
 impl Board {
+    pub const START_POSITION_FEN: &'static str =
+        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
     pub fn piece_at(&self, square: Square) -> Option<Piece> {
         for piece in Piece::ALL_PIECES {
             let bit_board = self.get_bit_board(piece);
