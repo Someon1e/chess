@@ -154,7 +154,7 @@ impl<'a> Engine<'a> {
         if ply == 0 {
             hash_move = &self.best_move;
         }
-        let (mut moves, mut move_guesses, move_count) =
+        let (mut move_guesses, move_count) =
             MoveOrderer::get_sorted_moves(self, &move_generator, hash_move);
 
         if move_count == 0 {
@@ -175,7 +175,7 @@ impl<'a> Engine<'a> {
         let mut index = move_count - 1;
         loop {
             let move_data =
-                MoveOrderer::put_highest_guessed_move_on_top(&mut moves, &mut move_guesses, index);
+                MoveOrderer::put_highest_guessed_move_on_top(&mut move_guesses, index).move_data;
 
             self.make_move(&move_data.decode());
 
