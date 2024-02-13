@@ -1,6 +1,6 @@
 use super::square::Square;
-use std::fmt;
-use std::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, Not, Shl, Shr};
+use core::fmt;
+use core::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, Not, Shl, Shr};
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct BitBoard(u64);

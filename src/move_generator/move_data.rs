@@ -1,5 +1,5 @@
 use crate::board::{piece::Piece, square::Square};
-use std::fmt;
+use core::fmt;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Flag {

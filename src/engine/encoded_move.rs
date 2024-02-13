@@ -2,7 +2,7 @@ use crate::{
     board::square::Square,
     move_generator::move_data::{Flag, Move},
 };
-use std::fmt;
+use core::fmt;
 
 #[derive(PartialEq, Clone, Copy)]
 pub struct EncodedMove(u16);
