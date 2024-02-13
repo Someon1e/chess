@@ -136,6 +136,7 @@ impl MoveGenerator {
             while capture_left.is_not_empty() {
                 let capture = capture_left.pop_square();
                 let from = capture.offset(capture_left_offset);
+                
                 let is_diagonally_pinned = self.diagonal_pin_rays.get(&from);
 
                 if is_diagonally_pinned && !self.diagonal_pin_rays.get(&capture) {
@@ -638,7 +639,7 @@ impl MoveGenerator {
             while enemy_knights.is_not_empty() {
                 let from = enemy_knights.pop_square();
                 let knight_attacks = Self::knight_attack_bit_board(from);
-                if (knight_attacks & friendly_king).is_not_empty() {
+                if knight_attacks.overlaps(&friendly_king) {
                     // Knight is checking the king
                     if is_in_check {
                         is_in_double_check = true;

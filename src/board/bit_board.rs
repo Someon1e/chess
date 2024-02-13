@@ -58,8 +58,11 @@ impl BitBoard {
     pub fn toggle(&mut self, a: &Square, b: &Square) {
         self.0 ^= (a.bitboard() | b.bitboard()).0;
     }
+    pub fn overlaps(&self, bitboard: &BitBoard) -> bool {
+        (*self & *bitboard).is_not_empty()
+    }
     pub fn get(&self, square: &Square) -> bool {
-        (*self & square.bitboard()).is_not_empty()
+        self.overlaps(&square.bitboard())
     }
     pub fn first_square(&self) -> Square {
         Square::from_index(self.0.trailing_zeros() as i8)
