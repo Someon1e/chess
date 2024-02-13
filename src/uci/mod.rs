@@ -1,4 +1,4 @@
-use std::str::SplitWhitespace;
+use core::str::SplitWhitespace;
 
 use crate::{
     board::{piece::Piece, square::Square, Board},

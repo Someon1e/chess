@@ -1,5 +1,5 @@
 use super::bit_board::BitBoard;
-use std::fmt;
+use core::fmt;
 
 #[derive(PartialEq, Copy, Clone, Debug)]
 pub struct Square(i8);

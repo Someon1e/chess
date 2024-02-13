@@ -13,9 +13,9 @@ use super::{
     slider_keys::{Key, BISHOP_KEYS},
 };
 
-fn iterate_combinations(squares: BitBoard) -> impl std::iter::Iterator<Item = BitBoard> {
+fn iterate_combinations(squares: BitBoard) -> impl core::iter::Iterator<Item = BitBoard> {
     let mut next = Some(BitBoard::EMPTY);
-    std::iter::from_fn(move || {
+    core::iter::from_fn(move || {
         let result = next;
         next = Some((next?.wrapping_sub(squares)) & squares);
         if next.unwrap() == BitBoard::EMPTY {

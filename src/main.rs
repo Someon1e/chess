@@ -2,7 +2,7 @@
 use std::io::{stdin, BufRead};
 
 use chess::uci::UCIProcessor;
-use std::cell::RefCell;
+use core::cell::RefCell;
 
 // Max time for thinking
 const MAX_TIME: u128 = 5 * 1000;
