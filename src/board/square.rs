@@ -91,7 +91,7 @@ impl Square {
             - 1;
         Square::from_coords(rank as i8, file as i8)
     }
-    pub fn bitboard(&self) -> BitBoard {
+    pub fn bit_board(&self) -> BitBoard {
         BitBoard::from_square(self)
     }
 }
@@ -112,7 +112,7 @@ mod tests {
         assert!(also_b2.to_notation() == "b2");
         assert!(also_b2.index() == 9);
 
-        let bit_board = also_b2.bitboard();
+        let bit_board = also_b2.bit_board();
 
         let mut same_bit_board = BitBoard::EMPTY;
         same_bit_board.set(&also_b2);

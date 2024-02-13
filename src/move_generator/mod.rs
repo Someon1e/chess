@@ -385,7 +385,7 @@ impl MoveGenerator {
             ) & !*king_bit_board
                 & get_rook_moves(
                     king_square,
-                    from.bitboard() & relevant_rook_blockers()[king_square.index() as usize],
+                    from.bit_board() & relevant_rook_blockers()[king_square.index() as usize],
                 );
 
             *push_mask |= ray;
@@ -423,7 +423,7 @@ impl MoveGenerator {
             ) & !*king_bit_board
                 & get_bishop_moves(
                     king_square,
-                    from.bitboard() & relevant_bishop_blockers()[king_square.index() as usize],
+                    from.bit_board() & relevant_bishop_blockers()[king_square.index() as usize],
                 );
 
             *push_mask |= ray;

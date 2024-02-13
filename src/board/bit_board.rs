@@ -50,19 +50,19 @@ impl BitBoard {
         Self(1 << square.index())
     }
     pub fn set(&mut self, square: &Square) {
-        self.0 |= square.bitboard().0
+        self.0 |= square.bit_board().0
     }
     pub fn unset(&mut self, square: &Square) {
-        self.0 &= !(square.bitboard().0);
+        self.0 &= !(square.bit_board().0);
     }
     pub fn toggle(&mut self, a: &Square, b: &Square) {
-        self.0 ^= (a.bitboard() | b.bitboard()).0;
+        self.0 ^= (a.bit_board() | b.bit_board()).0;
     }
-    pub fn overlaps(&self, bitboard: &BitBoard) -> bool {
-        (*self & *bitboard).is_not_empty()
+    pub fn overlaps(&self, bit_board: &BitBoard) -> bool {
+        (*self & *bit_board).is_not_empty()
     }
     pub fn get(&self, square: &Square) -> bool {
-        self.overlaps(&square.bitboard())
+        self.overlaps(&square.bit_board())
     }
     pub fn first_square(&self) -> Square {
         Square::from_index(self.0.trailing_zeros() as i8)
