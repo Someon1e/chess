@@ -136,7 +136,7 @@ impl MoveGenerator {
             while capture_left.is_not_empty() {
                 let capture = capture_left.pop_square();
                 let from = capture.offset(capture_left_offset);
-                
+
                 let is_diagonally_pinned = self.diagonal_pin_rays.get(&from);
 
                 if is_diagonally_pinned && !self.diagonal_pin_rays.get(&capture) {
@@ -370,7 +370,7 @@ impl MoveGenerator {
         let rook_blockers_excluding_king = (*occupied_squares & !*king_bit_board)
             & relevant_rook_blockers()[from.index() as usize];
         let rook_attacks = get_rook_moves(from, rook_blockers_excluding_king);
-        if rook_attacks.get(&king_square) {
+        if rook_attacks.overlaps(king_bit_board) {
             // This piece is checking the king
             capture_mask.set(&from);
 
@@ -408,7 +408,7 @@ impl MoveGenerator {
         let bishop_blockers_excluding_king = (*occupied_squares & !*king_bit_board)
             & relevant_bishop_blockers()[from.index() as usize];
         let bishop_attacks = get_bishop_moves(from, bishop_blockers_excluding_king);
-        if bishop_attacks.get(&king_square) {
+        if bishop_attacks.overlaps(king_bit_board) {
             // This piece is checking the king
             capture_mask.set(&from);
 
