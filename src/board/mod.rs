@@ -33,27 +33,30 @@ impl Board {
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
     pub fn piece_at(&self, square: Square) -> Option<Piece> {
+        let square_bit_board = square.bitboard();
         for piece in Piece::ALL_PIECES {
-            let bit_board = self.get_bit_board(piece);
-            if bit_board.get(&square) {
+            let piece_bit_board = self.get_bit_board(piece);
+            if piece_bit_board.overlaps(&square_bit_board) {
                 return Some(piece);
             }
         }
         None
     }
     pub fn white_piece_at(&self, square: Square) -> Option<Piece> {
+        let square_bit_board = square.bitboard();
         for piece in Piece::WHITE_PIECES {
-            let bit_board = self.get_bit_board(piece);
-            if bit_board.get(&square) {
+            let piece_bit_board = self.get_bit_board(piece);
+            if piece_bit_board.overlaps(&square_bit_board) {
                 return Some(piece);
             }
         }
         None
     }
     pub fn black_piece_at(&self, square: Square) -> Option<Piece> {
+        let square_bit_board = square.bitboard();
         for piece in Piece::BLACK_PIECES {
-            let bit_board = self.get_bit_board(piece);
-            if bit_board.get(&square) {
+            let piece_bit_board = self.get_bit_board(piece);
+            if piece_bit_board.overlaps(&square_bit_board) {
                 return Some(piece);
             }
         }
