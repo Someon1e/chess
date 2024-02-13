@@ -1,3 +1,4 @@
+
 use std::io::{stdin, BufRead};
 
 use chess::uci::UCIProcessor;
