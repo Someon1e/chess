@@ -51,11 +51,7 @@ pub fn perft_root(
             }
 
             let inner = perft(board, check_zobrist, bulk_count, depth - 1);
-            log(&format!(
-                "{}: {}",
-                uci::encode_move(move_data),
-                inner
-            ));
+            log(&format!("{}: {}", uci::encode_move(move_data), inner));
             move_count += inner;
 
             if !bulk_count || depth != 1 {
