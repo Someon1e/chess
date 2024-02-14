@@ -54,7 +54,7 @@ impl<'a> Engine<'a> {
         let (mut move_guesses, move_count) =
             MoveOrderer::get_sorted_moves_captures_only(self, &move_generator);
         if move_count == 0 {
-            return alpha
+            return alpha;
         }
         let mut index = move_count - 1;
         loop {

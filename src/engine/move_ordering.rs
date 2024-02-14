@@ -114,7 +114,7 @@ impl MoveOrderer {
 
             Flag::None => 0,
 
-            _ => unreachable!()
+            _ => unreachable!(),
         };
 
         let moving_from = move_data.from;
@@ -139,11 +139,12 @@ impl MoveOrderer {
             }
         };
 
-        flag_score + Eval::calculate_score(
-            Eval::get_phase(engine),
-            capturing_middle_game_value - moving_from_middle_game_value,
-            capturing_end_game_value - moving_from_end_game_value,
-        )
+        flag_score
+            + Eval::calculate_score(
+                Eval::get_phase(engine),
+                capturing_middle_game_value - moving_from_middle_game_value,
+                capturing_end_game_value - moving_from_end_game_value,
+            )
     }
 
     pub fn get_sorted_moves_captures_only(
