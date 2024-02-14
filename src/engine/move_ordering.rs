@@ -14,6 +14,8 @@ pub struct MoveGuess {
     pub move_data: EncodedMove,
 }
 
+const MAX_LEGAL_MOVES: usize = 218;
+
 pub struct MoveOrderer {}
 impl MoveOrderer {
     pub fn guess_move_value(
@@ -86,7 +88,7 @@ impl MoveOrderer {
     }
 
     pub fn put_highest_guessed_move_on_top(
-        move_guesses: &mut [MoveGuess; 218],
+        move_guesses: &mut [MoveGuess; MAX_LEGAL_MOVES],
         last_unsorted_index: usize,
     ) -> MoveGuess {
         let (mut index_of_highest_move, mut highest_guess) =
@@ -108,11 +110,11 @@ impl MoveOrderer {
         engine: &Engine,
         move_generator: &MoveGenerator,
         best_move: &EncodedMove,
-    ) -> ([MoveGuess; 218], usize) {
+    ) -> ([MoveGuess; MAX_LEGAL_MOVES], usize) {
         let mut move_guesses = [MoveGuess {
             move_data: EncodedMove::NONE,
             guess: 0,
-        }; 218];
+        }; MAX_LEGAL_MOVES];
         let mut index = 0;
         move_generator.gen(
             &mut |move_data| {
