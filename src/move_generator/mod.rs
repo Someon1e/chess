@@ -498,9 +498,8 @@ impl MoveGenerator {
         friendly_piece_bit_board: &BitBoard,
         friendly_king_square: &Square,
 
-        enemy_bishops: &BitBoard,
-        enemy_rooks: &BitBoard,
-        enemy_queens: &BitBoard,
+        enemy_orthogonal: &BitBoard,
+        enemy_diagonal: &BitBoard,
         enemy_piece_bit_board: &BitBoard,
     ) -> (BitBoard, BitBoard) {
         let mut orthogonal_pin_rays = BitBoard::EMPTY;
@@ -525,25 +524,24 @@ impl MoveGenerator {
                         // This is the second time a friendly piece has blocked the ray
                         // Not pinned.
                         break;
-                    } else {
-                        is_friendly_piece_on_ray = true;
                     }
+                    is_friendly_piece_on_ray = true;
                 } else if enemy_piece_bit_board.get(&move_to) {
-                    let is_queen = enemy_queens.get(&move_to);
-                    let is_rook = enemy_rooks.get(&move_to);
-                    let is_bishop = enemy_bishops.get(&move_to);
-                    if is_queen || (is_rook_movement && is_rook) || (!is_rook_movement && is_bishop)
-                    {
-                        if is_friendly_piece_on_ray {
-                            // Friendly piece is blocking check, it is pinned
-                            if is_rook_movement {
-                                orthogonal_pin_rays |= ray
-                            } else {
-                                diagonal_pin_rays |= ray
-                            }
-                        }
+                    let can_pin = if is_rook_movement {
+                        enemy_orthogonal.get(&move_to)
                     } else {
+                        enemy_diagonal.get(&move_to)
+                    };
+                    if !can_pin {
                         break;
+                    }
+                    if is_friendly_piece_on_ray {
+                        // Friendly piece is blocking check, it is pinned
+                        if is_rook_movement {
+                            orthogonal_pin_rays |= ray
+                        } else {
+                            diagonal_pin_rays |= ray
+                        }
                     }
                 }
             }
@@ -646,8 +644,9 @@ impl MoveGenerator {
                 king_danger_bit_board |= knight_attacks
             }
         }
+        let enemy_diagonal = enemy_bishops | enemy_queens;
         {
-            let mut enemy_diagonal = enemy_bishops | enemy_queens;
+            let mut enemy_diagonal = enemy_diagonal;
             while enemy_diagonal.is_not_empty() {
                 let from = enemy_diagonal.pop_square();
                 let dangerous = Self::calculate_enemy_bishop(
@@ -663,8 +662,9 @@ impl MoveGenerator {
                 king_danger_bit_board |= dangerous
             }
         }
+        let enemy_orthogonal = enemy_rooks | enemy_queens;
         {
-            let mut enemy_orthogonal = enemy_rooks | enemy_queens;
+            let mut enemy_orthogonal = enemy_orthogonal;
             while enemy_orthogonal.is_not_empty() {
                 let from = enemy_orthogonal.pop_square();
                 let dangerous = Self::calculate_enemy_rook(
@@ -696,9 +696,8 @@ impl MoveGenerator {
         let (orthogonal_pin_rays, diagonal_pin_rays) = Self::calculate_pin_rays(
             &friendly_piece_bit_board,
             &friendly_king_square,
-            &enemy_bishops,
-            &enemy_rooks,
-            &enemy_queens,
+            &enemy_orthogonal,
+            &enemy_diagonal,
             &enemy_piece_bit_board,
         );
 
