@@ -616,7 +616,7 @@ impl MoveGenerator {
             while enemy_pawns.is_not_empty() {
                 let from = enemy_pawns.pop_square();
                 let pawn_attacks = Self::pawn_attack_bit_board(from, !white_to_move);
-                if (pawn_attacks & friendly_king).is_not_empty() {
+                if pawn_attacks.overlaps(&friendly_king) {
                     // Pawn is checking the king
                     if is_in_check {
                         is_in_double_check = true;
