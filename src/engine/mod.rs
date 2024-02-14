@@ -50,28 +50,34 @@ impl<'a> Engine<'a> {
             alpha = stand_pat;
         }
 
-        let mut return_value = None;
-        MoveGenerator::new(self.board).gen(
-            &mut |capture| {
-                if return_value.is_some() {
-                    return;
-                }
+        let move_generator = MoveGenerator::new(self.board);
+        let (mut move_guesses, move_count) =
+            MoveOrderer::get_sorted_moves_captures_only(self, &move_generator);
+        if move_count == 0 {
+            return alpha
+        }
+        let mut index = move_count - 1;
+        loop {
+            let move_data =
+                MoveOrderer::put_highest_guessed_move_on_top(&mut move_guesses, index).move_data;
 
-                self.board.make_move(&capture);
-                let score = -self.quiescence_search(-beta, -alpha);
-                self.board.unmake_move(&capture);
+            self.board.make_move(&move_data.decode());
+            let score = -self.quiescence_search(-beta, -alpha);
+            self.board.unmake_move(&move_data.decode());
 
-                if score >= beta {
-                    return_value = Some(beta);
-                    return;
-                }
-                if score > alpha {
-                    alpha = score;
-                }
-            },
-            true,
-        );
-        return_value.unwrap_or(alpha)
+            if score >= beta {
+                return beta;
+            }
+            if score > alpha {
+                alpha = score;
+            }
+
+            if index == 0 {
+                break;
+            }
+            index -= 1;
+        }
+        alpha
     }
     pub fn make_move(&mut self, move_data: &Move) {
         self.repetition_table.push(self.board.zobrist_key());

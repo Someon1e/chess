@@ -15,14 +15,11 @@ pub struct MoveGuess {
 }
 
 const MAX_LEGAL_MOVES: usize = 218;
+const MAX_CAPTURES: usize = 74;
 
 pub struct MoveOrderer {}
 impl MoveOrderer {
-    pub fn guess_move_value(
-        engine: &Engine,
-        enemy_pawn_attacks: &BitBoard,
-        move_data: &Move,
-    ) -> i32 {
+    fn guess_move_value(engine: &Engine, enemy_pawn_attacks: &BitBoard, move_data: &Move) -> i32 {
         let mut score = 0;
         match move_data.flag {
             Flag::EnPassant => return 0,
@@ -88,7 +85,7 @@ impl MoveOrderer {
     }
 
     pub fn put_highest_guessed_move_on_top(
-        move_guesses: &mut [MoveGuess; MAX_LEGAL_MOVES],
+        move_guesses: &mut [MoveGuess],
         last_unsorted_index: usize,
     ) -> MoveGuess {
         let (mut index_of_highest_move, mut highest_guess) =
@@ -104,6 +101,73 @@ impl MoveOrderer {
             move_guesses.swap(index_of_highest_move, last_unsorted_index);
         }
         move_guesses[last_unsorted_index]
+    }
+
+    fn guess_capture_value(engine: &Engine, move_data: &Move) -> i32 {
+        let flag_score = match move_data.flag {
+            Flag::EnPassant => return 0,
+
+            Flag::BishopPromotion => 400,
+            Flag::KnightPromotion => 500,
+            Flag::RookPromotion => 400,
+            Flag::QueenPromotion => 900,
+
+            Flag::None => 0,
+
+            _ => unreachable!()
+        };
+
+        let moving_from = move_data.from;
+        let moving_to = move_data.to;
+
+        let moving_piece = engine.board.friendly_piece_at(moving_from).unwrap();
+        let (moving_from_middle_game_value, moving_from_end_game_value) = {
+            if engine.board.white_to_move {
+                Eval::get_white_piece_value(moving_piece, moving_from)
+            } else {
+                Eval::get_black_piece_value(moving_piece, moving_from)
+            }
+        };
+
+        let capturing = engine.board.enemy_piece_at(moving_to).unwrap();
+
+        let (capturing_middle_game_value, capturing_end_game_value) = {
+            if engine.board.white_to_move {
+                Eval::get_black_piece_value(capturing, moving_to)
+            } else {
+                Eval::get_white_piece_value(capturing, moving_to)
+            }
+        };
+
+        flag_score + Eval::calculate_score(
+            Eval::get_phase(engine),
+            capturing_middle_game_value - moving_from_middle_game_value,
+            capturing_end_game_value - moving_from_end_game_value,
+        )
+    }
+
+    pub fn get_sorted_moves_captures_only(
+        engine: &Engine,
+        move_generator: &MoveGenerator,
+    ) -> ([MoveGuess; MAX_CAPTURES], usize) {
+        let mut move_guesses = [MoveGuess {
+            move_data: EncodedMove::NONE,
+            guess: 0,
+        }; MAX_CAPTURES];
+        let mut index = 0;
+        move_generator.gen(
+            &mut |move_data| {
+                let encoded = EncodedMove::new(move_data);
+                move_guesses[index] = MoveGuess {
+                    move_data: encoded,
+                    guess: Self::guess_capture_value(engine, &move_data),
+                };
+                index += 1
+            },
+            true,
+        );
+
+        (move_guesses, index)
     }
 
     pub fn get_sorted_moves(
