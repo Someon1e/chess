@@ -14,7 +14,7 @@ impl Board {
 
         self.game_state
             .zobrist_key
-            .xor_piece(piece as usize, move_data.from.index() as usize);
+            .xor_piece(piece as usize, move_data.from.usize());
 
         let flag = move_data.flag;
 
@@ -66,12 +66,12 @@ impl Board {
             self.get_bit_board_mut(promotion_piece).set(&move_data.to);
             self.game_state
                 .zobrist_key
-                .xor_piece(promotion_piece as usize, move_data.to.index() as usize);
+                .xor_piece(promotion_piece as usize, move_data.to.usize());
         } else {
             moving_bit_board.toggle(&move_data.from, &move_data.to);
             self.game_state
                 .zobrist_key
-                .xor_piece(piece as usize, move_data.to.index() as usize);
+                .xor_piece(piece as usize, move_data.to.usize());
         }
 
         let en_passant_square = self.game_state.en_passant_square;
@@ -105,10 +105,10 @@ impl Board {
             rook_bit_board.toggle(rook_from, rook_to);
             self.game_state
                 .zobrist_key
-                .xor_piece(rook as usize, rook_from.index() as usize);
+                .xor_piece(rook as usize, rook_from.usize());
             self.game_state
                 .zobrist_key
-                .xor_piece(rook as usize, rook_to.index() as usize);
+                .xor_piece(rook as usize, rook_to.usize());
         } else if flag == Flag::EnPassant {
             let capture_position =
                 en_passant_square
@@ -125,7 +125,7 @@ impl Board {
             capturing_bit_board.unset(&capture_position);
             self.game_state
                 .zobrist_key
-                .xor_piece(captured as usize, capture_position.index() as usize);
+                .xor_piece(captured as usize, capture_position.usize());
         } else {
             self.game_state.captured = self.enemy_piece_at(move_data.to);
             if let Some(captured) = self.game_state.captured {
@@ -133,7 +133,7 @@ impl Board {
                 capturing_bit_board.unset(&move_data.to);
                 self.game_state
                     .zobrist_key
-                    .xor_piece(captured as usize, move_data.to.index() as usize);
+                    .xor_piece(captured as usize, move_data.to.usize());
             }
         }
 

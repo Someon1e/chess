@@ -23,10 +23,10 @@ impl Eval {
         (middle_game_piece_score, end_game_piece_score)
     }
     pub fn get_black_piece_value(piece: Piece, square: Square) -> (i32, i32) {
-        Self::get_piece_value(piece as usize - 6, square.index() as usize)
+        Self::get_piece_value(piece as usize - 6, square.usize())
     }
     pub fn get_white_piece_value(piece: Piece, square: Square) -> (i32, i32) {
-        Self::get_piece_value(piece as usize, square.flip().index() as usize)
+        Self::get_piece_value(piece as usize, square.flip().usize())
     }
 
     pub fn calculate_score(phase: i32, middle_game_score: i32, end_game_score: i32) -> i32 {

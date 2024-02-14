@@ -66,27 +66,27 @@ fn all_blockers(
 fn gen_rook_or_bishop(from: Square, blockers: &BitBoard, direction_offset: usize) -> BitBoard {
     let mut moves = BitBoard::EMPTY;
 
-    let rays = &all_rays()[from.index() as usize];
+    let rays = &all_rays()[from.usize()];
 
     let mut ray = rays[direction_offset];
     let blocker = ray & *blockers;
-    ray ^= all_rays()[blocker.first_square().index() as usize][direction_offset];
+    ray ^= all_rays()[blocker.first_square().usize()][direction_offset];
     moves |= ray;
 
     let mut ray = rays[direction_offset + 1];
     let blocker = ray & *blockers;
-    ray ^= all_rays()[blocker.first_square().index() as usize][direction_offset + 1];
+    ray ^= all_rays()[blocker.first_square().usize()][direction_offset + 1];
     moves |= ray;
 
     let mut ray = rays[direction_offset + 2];
     let blocker = ray & *blockers;
-    ray ^= all_rays()[(blocker | BitBoard::new(1)).last_square().index() as usize]
+    ray ^= all_rays()[(blocker | BitBoard::new(1)).last_square().usize()]
         [direction_offset + 2];
     moves |= ray;
 
     let mut ray = rays[direction_offset + 3];
     let blocker = ray & *blockers;
-    ray ^= all_rays()[(blocker | BitBoard::new(1)).last_square().index() as usize]
+    ray ^= all_rays()[(blocker | BitBoard::new(1)).last_square().usize()]
         [direction_offset + 3];
     moves |= ray;
 
@@ -131,7 +131,7 @@ fn init_lookup(size: usize, keys: [Key; 64], direction_offset: usize) -> Vec<Bit
         let blockers = all_blockers(
             square,
             &DIRECTIONS[direction_offset..direction_offset + 4],
-            &SQUARES_FROM_EDGE[square.index() as usize][direction_offset..direction_offset + 4],
+            &SQUARES_FROM_EDGE[square.usize()][direction_offset..direction_offset + 4],
         );
         for blocker_combination in iterate_combinations(blockers) {
             let moves = gen_rook_or_bishop(square, &blocker_combination, direction_offset);
@@ -147,7 +147,7 @@ fn rook_lookup() -> &'static Vec<BitBoard> {
 }
 
 pub fn get_rook_moves(square: Square, relevant_blockers: BitBoard) -> BitBoard {
-    let key = ROOK_KEYS[square.index() as usize];
+    let key = ROOK_KEYS[square.usize()];
     rook_lookup()[key.offset + magic_index(&relevant_blockers, key.magic, key.shift)]
 }
 
@@ -157,7 +157,7 @@ fn bishop_lookup() -> &'static Vec<BitBoard> {
 }
 
 pub fn get_bishop_moves(square: Square, relevant_blockers: BitBoard) -> BitBoard {
-    let key = BISHOP_KEYS[square.index() as usize];
+    let key = BISHOP_KEYS[square.usize()];
     bishop_lookup()[key.offset + magic_index(&relevant_blockers, key.magic, key.shift)]
 }
 
@@ -274,7 +274,7 @@ mod tests {
     #[test]
     fn blocker_combinations() {
         let d4 = Square::from_notation("d4");
-        let blockers = all_blockers(d4, &DIRECTIONS, &SQUARES_FROM_EDGE[d4.index() as usize]);
+        let blockers = all_blockers(d4, &DIRECTIONS, &SQUARES_FROM_EDGE[d4.usize()]);
         let expected_number_of_combinations = 1 << blockers.count();
         println!("{blockers}");
         let mut number_of_combinations = 0;
@@ -302,10 +302,10 @@ mod tests {
         blockers.set(&Square::from_notation("f4"));
 
         let rook_moves =
-            get_rook_moves(d4, blockers & relevant_rook_blockers()[d4.index() as usize]);
+            get_rook_moves(d4, blockers & relevant_rook_blockers()[d4.usize()]);
         let bishop_moves = get_bishop_moves(
             d4,
-            blockers & relevant_bishop_blockers()[d4.index() as usize],
+            blockers & relevant_bishop_blockers()[d4.usize()],
         );
 
         let legal_moves = rook_moves | bishop_moves;

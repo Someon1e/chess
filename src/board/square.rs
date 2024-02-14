@@ -60,6 +60,9 @@ impl Square {
     pub const fn index(&self) -> i8 {
         self.0
     }
+    pub const fn usize(&self) -> usize {
+        self.0 as usize
+    }
 
     pub fn flip(&self) -> Self {
         Self(self.index() ^ 56)
