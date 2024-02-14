@@ -17,14 +17,14 @@ const DOWN_OFFSET: Direction = -8;
 const LEFT_OFFSET: Direction = -1;
 const RIGHT_OFFSET: Direction = 1;
 pub const DIRECTIONS: [Direction; 8] = [
-    UP_OFFSET,
-    DOWN_OFFSET,
-    LEFT_OFFSET,
     RIGHT_OFFSET,
+    UP_OFFSET,
+    LEFT_OFFSET,
+    DOWN_OFFSET,
     UP_OFFSET + LEFT_OFFSET,
-    DOWN_OFFSET + RIGHT_OFFSET,
     UP_OFFSET + RIGHT_OFFSET,
     DOWN_OFFSET + LEFT_OFFSET,
+    DOWN_OFFSET + RIGHT_OFFSET,
 ];
 
 impl Square {

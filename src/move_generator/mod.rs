@@ -14,7 +14,7 @@ use self::precomputed::{
     king_moves_at_square, knight_moves_at_square, pawn_attacks, SQUARES_FROM_EDGE,
 };
 use self::slider_lookup::{
-    get_bishop_moves, get_rook_moves, relevant_bishop_blockers, relevant_rook_blockers,
+    all_rays, get_bishop_moves, get_rook_moves, relevant_bishop_blockers, relevant_rook_blockers,
 };
 
 pub struct MoveGenerator {
@@ -178,23 +178,19 @@ impl MoveGenerator {
                     if self.friendly_king_square.rank() == from.rank() {
                         // Check if en passant will reveal a check
                         // Not covered by pin rays because enemy pawn was blocking
-                        // Check by scanning left and right from our king to find enemy queens/rooks that are not obstructed
-                        for (direction, distance_from_edge) in DIRECTIONS[2..4]
-                            .iter()
-                            .zip(&SQUARES_FROM_EDGE[from.index() as usize][2..4])
-                        {
-                            for count in 1..=*distance_from_edge {
-                                let scanner = from.offset(direction * count);
-                                if scanner == from || scanner == capture_position {
-                                    continue;
-                                }
-                                if self.enemy_rooks_and_queens_bit_board.get(&scanner) {
-                                    continue 'en_passant_check;
-                                }
-                                if self.occupied_squares.get(&scanner) {
-                                    break;
-                                };
-                            }
+                        // Check by scanning left and right from the pawn to find enemy queens/rooks that are not obstructed
+                        let right = all_rays()[from.index() as usize][0];
+                        let blocker =
+                            right & (self.occupied_squares & !capture_position.bit_board());
+                        if blocker.overlaps(&self.enemy_rooks_and_queens_bit_board) {
+                            continue 'en_passant_check;
+                        }
+
+                        let left = all_rays()[from.index() as usize][2];
+                        let blocker =
+                            left & (self.occupied_squares & !capture_position.bit_board());
+                        if blocker.overlaps(&self.enemy_rooks_and_queens_bit_board) {
+                            continue 'en_passant_check;
                         }
                     }
 

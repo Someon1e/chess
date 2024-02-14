@@ -13,6 +13,29 @@ use super::{
     slider_keys::{Key, BISHOP_KEYS},
 };
 
+fn calculate_all_rays() -> [[BitBoard; 8]; 65] {
+    let mut rays = [[BitBoard::EMPTY; 8]; 65];
+    for square_index in 0..64 {
+        let from = Square::from_index(square_index as i8);
+        for (direction_index, (direction, distance_from_edge)) in DIRECTIONS
+            .iter()
+            .zip(SQUARES_FROM_EDGE[square_index])
+            .enumerate()
+        {
+            let ray = &mut rays[square_index][direction_index];
+            for count in 1..=distance_from_edge {
+                let move_to = from.offset(direction * count);
+                ray.set(&move_to)
+            }
+        }
+    }
+    rays
+}
+pub fn all_rays() -> &'static [[BitBoard; 8]; 65] {
+    static COMPUTATION: OnceLock<[[BitBoard; 8]; 65]> = OnceLock::new();
+    COMPUTATION.get_or_init(|| calculate_all_rays())
+}
+
 fn iterate_combinations(squares: BitBoard) -> impl core::iter::Iterator<Item = BitBoard> {
     let mut next = Some(BitBoard::EMPTY);
     core::iter::from_fn(move || {
@@ -40,27 +63,33 @@ fn all_blockers(
     bit_board
 }
 
-fn gen_slider_moves(
-    from: Square,
-    blockers: &BitBoard,
-    direction_start_index: usize,
-    direction_end_index: usize,
-) -> BitBoard {
+fn gen_rook_or_bishop(from: Square, blockers: &BitBoard, direction_offset: usize) -> BitBoard {
     let mut moves = BitBoard::EMPTY;
 
-    let squares_from_edge = &SQUARES_FROM_EDGE[from.index() as usize];
-    for index in direction_start_index..direction_end_index {
-        let direction = DIRECTIONS[index];
+    let rays = &all_rays()[from.index() as usize];
 
-        for count in 1..=squares_from_edge[index] {
-            let move_to = from.offset(direction * count);
+    let mut ray = rays[direction_offset];
+    let blocker = ray & *blockers;
+    ray ^= all_rays()[blocker.first_square().index() as usize][direction_offset];
+    moves |= ray;
 
-            moves.set(&move_to);
-            if blockers.get(&move_to) {
-                break;
-            }
-        }
-    }
+    let mut ray = rays[direction_offset + 1];
+    let blocker = ray & *blockers;
+    ray ^= all_rays()[blocker.first_square().index() as usize][direction_offset + 1];
+    moves |= ray;
+
+    let mut ray = rays[direction_offset + 2];
+    let blocker = ray & *blockers;
+    ray ^= all_rays()[(blocker | BitBoard::new(1)).last_square().index() as usize]
+        [direction_offset + 2];
+    moves |= ray;
+
+    let mut ray = rays[direction_offset + 3];
+    let blocker = ray & *blockers;
+    ray ^= all_rays()[(blocker | BitBoard::new(1)).last_square().index() as usize]
+        [direction_offset + 3];
+    moves |= ray;
+
     moves
 }
 
@@ -93,13 +122,7 @@ fn magic_index(blockers: &BitBoard, magic: u64, shift: u64) -> usize {
     (hash >> shift).as_usize()
 }
 
-fn init_lookup(
-    size: usize,
-
-    keys: [Key; 64],
-    direction_start_index: usize,
-    direction_end_index: usize,
-) -> Vec<BitBoard> {
+fn init_lookup(size: usize, keys: [Key; 64], direction_offset: usize) -> Vec<BitBoard> {
     let mut lookup = vec![BitBoard::EMPTY; size];
     for square_index in 0..64 {
         let square = Square::from_index(square_index);
@@ -107,16 +130,11 @@ fn init_lookup(
         let key = keys[square_index as usize];
         let blockers = all_blockers(
             square,
-            &DIRECTIONS[direction_start_index..direction_end_index],
-            &SQUARES_FROM_EDGE[square.index() as usize][direction_start_index..direction_end_index],
+            &DIRECTIONS[direction_offset..direction_offset + 4],
+            &SQUARES_FROM_EDGE[square.index() as usize][direction_offset..direction_offset + 4],
         );
         for blocker_combination in iterate_combinations(blockers) {
-            let moves = gen_slider_moves(
-                square,
-                &blocker_combination,
-                direction_start_index,
-                direction_end_index,
-            );
+            let moves = gen_rook_or_bishop(square, &blocker_combination, direction_offset);
             lookup[key.offset + magic_index(&blocker_combination, key.magic, key.shift)] = moves;
         }
     }
@@ -125,7 +143,7 @@ fn init_lookup(
 
 fn rook_lookup() -> &'static Vec<BitBoard> {
     static COMPUTATION: OnceLock<Vec<BitBoard>> = OnceLock::new();
-    COMPUTATION.get_or_init(|| init_lookup(ROOK_TABLE_SIZE, ROOK_KEYS, 0, 4))
+    COMPUTATION.get_or_init(|| init_lookup(ROOK_TABLE_SIZE, ROOK_KEYS, 0))
 }
 
 pub fn get_rook_moves(square: Square, relevant_blockers: BitBoard) -> BitBoard {
@@ -135,7 +153,7 @@ pub fn get_rook_moves(square: Square, relevant_blockers: BitBoard) -> BitBoard {
 
 fn bishop_lookup() -> &'static Vec<BitBoard> {
     static COMPUTATION: OnceLock<Vec<BitBoard>> = OnceLock::new();
-    COMPUTATION.get_or_init(|| init_lookup(BISHOP_TABLE_SIZE, BISHOP_KEYS, 4, 8))
+    COMPUTATION.get_or_init(|| init_lookup(BISHOP_TABLE_SIZE, BISHOP_KEYS, 4))
 }
 
 pub fn get_bishop_moves(square: Square, relevant_blockers: BitBoard) -> BitBoard {
@@ -159,7 +177,7 @@ mod tests {
         },
     };
 
-    use super::{all_blockers, gen_slider_moves, iterate_combinations, magic_index};
+    use super::{all_blockers, gen_rook_or_bishop, iterate_combinations, magic_index};
 
     use rand_chacha::rand_core::{RngCore, SeedableRng};
 
@@ -170,17 +188,11 @@ mod tests {
         blockers: BitBoard,
         magic: u64,
         index_bits: u64,
-        direction_start_index: usize,
-        direction_end_index: usize,
+        direction_offset: usize,
     ) -> Result<Vec<BitBoard>, TableFillError> {
         let mut table = vec![BitBoard::EMPTY; 1 << index_bits];
         for blocker_combination in iterate_combinations(blockers) {
-            let moves = gen_slider_moves(
-                square,
-                &blocker_combination,
-                direction_start_index,
-                direction_end_index,
-            );
+            let moves = gen_rook_or_bishop(square, &blocker_combination, direction_offset);
             let table_entry = &mut table[magic_index(&blocker_combination, magic, 64 - index_bits)];
             if table_entry.is_empty() {
                 *table_entry = moves;
@@ -210,7 +222,7 @@ mod tests {
             let index_bits = blockers.count() as u64;
             loop {
                 let magic = random.next_u64() & random.next_u64() & random.next_u64();
-                let filled = fill_magic_table(square, blockers, magic, index_bits, 0, 4);
+                let filled = fill_magic_table(square, blockers, magic, index_bits, 0);
                 if let Ok(filled) = filled {
                     keys[square_index as usize] = Key {
                         magic: magic,
@@ -243,7 +255,7 @@ mod tests {
             let index_bits = blockers.count() as u64;
             loop {
                 let magic = random.next_u64() & random.next_u64() & random.next_u64();
-                let filled = fill_magic_table(square, blockers, magic, index_bits, 4, 8);
+                let filled = fill_magic_table(square, blockers, magic, index_bits, 4);
                 if let Ok(filled) = filled {
                     keys[square_index as usize] = Key {
                         magic: magic,
@@ -271,7 +283,18 @@ mod tests {
         }
         assert_eq!(number_of_combinations, expected_number_of_combinations)
     }
+    #[test]
+    fn move_lookup_slow() {
+        let d4 = Square::from_notation("d4");
+        let mut blockers = BitBoard::EMPTY;
+        blockers.set(&Square::from_notation("h8"));
+        println!("{}", blockers.last_square());
+        println!("{}", blockers.first_square());
 
+        let rook_moves = gen_rook_or_bishop(d4, &blockers, 4);
+
+        println!("{}", rook_moves);
+    }
     #[test]
     fn move_lookup() {
         let d4 = Square::from_notation("d4");

@@ -1,6 +1,7 @@
 use super::square::Square;
 use core::fmt;
 use core::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, Not, Shl, Shr};
+use std::ops::{BitXor, BitXorAssign};
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct BitBoard(u64);
@@ -64,6 +65,9 @@ impl BitBoard {
     pub fn get(&self, square: &Square) -> bool {
         self.overlaps(&square.bit_board())
     }
+    pub fn last_square(&self) -> Square {
+        Square::from_index(63 - self.0.leading_zeros() as i8)
+    }
     pub fn first_square(&self) -> Square {
         Square::from_index(self.0.trailing_zeros() as i8)
     }
@@ -111,6 +115,9 @@ implement_assign_op!(BitOrAssign, bitor_assign, |);
 
 implement_op!(BitAnd, bitand, &);
 implement_assign_op!(BitAndAssign, bitand_assign, &);
+
+implement_op!(BitXor, bitxor, ^);
+implement_assign_op!(BitXorAssign, bitxor_assign, ^);
 
 macro_rules! shift {
     ($op:ident, $name:ident, $operator:tt) => {
