@@ -28,14 +28,14 @@ pub const SQUARES_FROM_EDGE: [[i8; 8]; 64] = {
         let file = square.file();
 
         squares_from_edge[index] = [
-            7 - rank,
-            rank,
-            file,
-            7 - file,
-            min(7 - rank, file),
-            min(rank, 7 - file),
-            min(7 - rank, 7 - file),
-            min(rank, file),
+            7 - file,                // right
+            7 - rank,                // up
+            file,                    // left
+            rank,                    // down
+            min(7 - rank, file),     // up left
+            min(7 - rank, 7 - file), // up right
+            min(rank, file),         // down left
+            min(rank, 7 - file),     // down right
         ];
         index += 1;
         if index == 64 {
