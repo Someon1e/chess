@@ -67,9 +67,9 @@ impl MoveGenerator {
     }
     fn pawn_attack_bit_board(from: Square, white: bool) -> BitBoard {
         if white {
-            pawn_attacks().white_pawn_attacks_at_square[from.index() as usize]
+            pawn_attacks().white_pawn_attacks_at_square[from.usize()]
         } else {
-            pawn_attacks().black_pawn_attacks_at_square[from.index() as usize]
+            pawn_attacks().black_pawn_attacks_at_square[from.usize()]
         }
     }
     fn gen_pawns(&self, add_move: &mut dyn FnMut(Move), captures_only: bool) {
@@ -179,14 +179,14 @@ impl MoveGenerator {
                         // Check if en passant will reveal a check
                         // Not covered by pin rays because enemy pawn was blocking
                         // Check by scanning left and right from the pawn to find enemy queens/rooks that are not obstructed
-                        let right = all_rays()[from.index() as usize][0];
+                        let right = all_rays()[from.usize()][0];
                         let blocker =
                             right & (self.occupied_squares & !capture_position.bit_board());
                         if blocker.overlaps(&self.enemy_rooks_and_queens_bit_board) {
                             continue 'en_passant_check;
                         }
 
-                        let left = all_rays()[from.index() as usize][2];
+                        let left = all_rays()[from.usize()][2];
                         let blocker =
                             left & (self.occupied_squares & !capture_position.bit_board());
                         if blocker.overlaps(&self.enemy_rooks_and_queens_bit_board) {
@@ -277,7 +277,7 @@ impl MoveGenerator {
 
 impl MoveGenerator {
     fn knight_attack_bit_board(square: Square) -> BitBoard {
-        knight_moves_at_square()[square.index() as usize]
+        knight_moves_at_square()[square.usize()]
     }
 
     fn gen_knights(&self, add_move: &mut dyn FnMut(Move), captures_only: bool) {
@@ -306,7 +306,7 @@ impl MoveGenerator {
 
 impl MoveGenerator {
     fn gen_bishop(&self, from: Square, add_move: &mut dyn FnMut(Move), captures_only: bool) {
-        let blockers = self.occupied_squares & relevant_bishop_blockers()[from.index() as usize];
+        let blockers = self.occupied_squares & relevant_bishop_blockers()[from.usize()];
         let possible_moves = get_bishop_moves(from, blockers);
         let mut legal_moves =
             possible_moves & !self.friendly_piece_bit_board & (self.capture_mask | self.push_mask);
@@ -327,7 +327,7 @@ impl MoveGenerator {
         }
     }
     fn gen_rook(&self, from: Square, add_move: &mut dyn FnMut(Move), captures_only: bool) {
-        let blockers = self.occupied_squares & relevant_rook_blockers()[from.index() as usize];
+        let blockers = self.occupied_squares & relevant_rook_blockers()[from.usize()];
         let possible_moves = get_rook_moves(from, blockers);
         let mut legal_moves =
             possible_moves & !self.friendly_piece_bit_board & (self.capture_mask | self.push_mask);
@@ -364,7 +364,7 @@ impl MoveGenerator {
         is_in_double_check: &mut bool,
     ) -> BitBoard {
         let rook_blockers_excluding_king = (*occupied_squares & !*king_bit_board)
-            & relevant_rook_blockers()[from.index() as usize];
+            & relevant_rook_blockers()[from.usize()];
         let rook_attacks = get_rook_moves(from, rook_blockers_excluding_king);
         if rook_attacks.overlaps(king_bit_board) {
             // This piece is checking the king
@@ -377,11 +377,11 @@ impl MoveGenerator {
 
             let ray = get_rook_moves(
                 from,
-                *occupied_squares & relevant_rook_blockers()[from.index() as usize],
+                *occupied_squares & relevant_rook_blockers()[from.usize()],
             ) & !*king_bit_board
                 & get_rook_moves(
                     king_square,
-                    from.bit_board() & relevant_rook_blockers()[king_square.index() as usize],
+                    from.bit_board() & relevant_rook_blockers()[king_square.usize()],
                 );
 
             *push_mask |= ray;
@@ -402,7 +402,7 @@ impl MoveGenerator {
         is_in_double_check: &mut bool,
     ) -> BitBoard {
         let bishop_blockers_excluding_king = (*occupied_squares & !*king_bit_board)
-            & relevant_bishop_blockers()[from.index() as usize];
+            & relevant_bishop_blockers()[from.usize()];
         let bishop_attacks = get_bishop_moves(from, bishop_blockers_excluding_king);
         if bishop_attacks.overlaps(king_bit_board) {
             // This piece is checking the king
@@ -415,11 +415,11 @@ impl MoveGenerator {
 
             let ray = get_bishop_moves(
                 from,
-                *occupied_squares & relevant_bishop_blockers()[from.index() as usize],
+                *occupied_squares & relevant_bishop_blockers()[from.usize()],
             ) & !*king_bit_board
                 & get_bishop_moves(
                     king_square,
-                    from.bit_board() & relevant_bishop_blockers()[king_square.index() as usize],
+                    from.bit_board() & relevant_bishop_blockers()[king_square.usize()],
                 );
 
             *push_mask |= ray;
@@ -428,7 +428,7 @@ impl MoveGenerator {
     }
 
     fn king_attack_bit_board(square: Square) -> BitBoard {
-        king_moves_at_square()[square.index() as usize]
+        king_moves_at_square()[square.usize()]
     }
     fn gen_king(&self, add_move: &mut dyn FnMut(Move), captures_only: bool) {
         let mut king_moves = Self::king_attack_bit_board(self.friendly_king_square)
@@ -506,7 +506,7 @@ impl MoveGenerator {
         let mut diagonal_pin_rays = BitBoard::EMPTY;
         for (index, (direction, distance_from_edge)) in DIRECTIONS
             .iter()
-            .zip(&SQUARES_FROM_EDGE[friendly_king_square.index() as usize])
+            .zip(&SQUARES_FROM_EDGE[friendly_king_square.usize()])
             .enumerate()
         {
             let is_rook_movement = index < 4;
