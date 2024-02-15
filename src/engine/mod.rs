@@ -6,7 +6,7 @@ mod transposition;
 
 use crate::{
     board::{zobrist::Zobrist, Board},
-    move_generator::{move_data::Move, MoveGenerator},
+    move_generator::{move_data::{Flag, Move}, MoveGenerator},
 };
 
 use self::{
@@ -20,6 +20,7 @@ pub struct Engine<'a> {
     board: &'a mut Board,
     transposition_table: Vec<Option<NodeValue>>,
     repetition_table: Vec<Zobrist>,
+    killer_moves: [EncodedMove; 32],
     best_move: EncodedMove,
     best_score: i32,
 }
@@ -32,6 +33,7 @@ impl<'a> Engine<'a> {
             board,
             transposition_table: vec![None; TRANSPOSITION_CAPACITY],
             repetition_table: Vec::with_capacity(5),
+            killer_moves: [EncodedMove::NONE; 32],
             best_move: EncodedMove::NONE,
             best_score: -i32::MAX,
         }
@@ -160,8 +162,16 @@ impl<'a> Engine<'a> {
         if ply == 0 {
             hash_move = &self.best_move;
         }
-        let (mut move_guesses, move_count) =
-            MoveOrderer::get_sorted_moves(self, &move_generator, hash_move);
+        let (mut move_guesses, move_count) = MoveOrderer::get_sorted_moves(
+            self,
+            &move_generator,
+            hash_move,
+            &if (ply as usize) < self.killer_moves.len() {
+                self.killer_moves[ply as usize]
+            } else {
+                EncodedMove::NONE
+            },
+        );
 
         if move_count == 0 {
             if move_generator.is_in_check() {
@@ -202,6 +212,11 @@ impl<'a> Engine<'a> {
                 return 0;
             }
             if score >= beta {
+                if *move_data.flag() == Flag::None
+                    && !move_generator.enemy_piece_bit_board().get(&move_data.to())
+                {
+                    self.killer_moves[ply as usize] = move_data
+                }
                 node_type = NodeType::Beta;
                 best_move = move_data;
                 self.transposition_table[zobrist_index] = Some(NodeValue {
