@@ -414,8 +414,8 @@ impl MoveGenerator {
     }
     fn gen_king(&self, add_move: &mut dyn FnMut(Move), captures_only: bool) {
         let mut king_moves = Self::king_attack_bit_board(self.friendly_king_square)
-            & !(self.friendly_piece_bit_board)
-            & !(self.king_danger_bit_board);
+            & !self.friendly_piece_bit_board
+            & !self.king_danger_bit_board;
         if captures_only {
             king_moves &= self.enemy_piece_bit_board
         }
@@ -441,7 +441,7 @@ impl MoveGenerator {
                 BitBoard::new(0b01100000 << 56)
             };
 
-            if (castle_mask & cannot_castle_into).is_empty() {
+            if !(castle_mask.overlaps(&cannot_castle_into)) {
                 add_move(Move {
                     from: self.friendly_king_square,
                     to: move_to,
@@ -457,13 +457,13 @@ impl MoveGenerator {
                 BitBoard::new(0b00001110 << 56)
             };
 
-            if (castle_block_mask & self.occupied_squares).is_empty() {
+            if !castle_block_mask.overlaps(&self.occupied_squares) {
                 let castle_mask = if self.white_to_move {
                     BitBoard::new(0b00001100)
                 } else {
                     BitBoard::new(0b00001100 << 56)
                 };
-                if (castle_mask & cannot_castle_into).is_empty() {
+                if !castle_mask.overlaps(&cannot_castle_into) {
                     add_move(Move {
                         from: self.friendly_king_square,
                         to: move_to,
