@@ -257,7 +257,7 @@ impl<'a> Engine<'a> {
         &mut self,
         depth_completed: &mut dyn FnMut(u16, (EncodedMove, i32)),
         should_cancel: &mut dyn FnMut() -> bool,
-    ) -> (EncodedMove, i32) {
+    ) -> (u16, EncodedMove, i32) {
         let mut depth = 0;
         while !should_cancel() {
             depth += 1;
@@ -271,7 +271,7 @@ impl<'a> Engine<'a> {
             }
             depth_completed(depth, (self.best_move, self.best_score));
         }
-        (self.best_move, self.best_score)
+        (depth, self.best_move, self.best_score)
     }
 }
 

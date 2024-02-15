@@ -223,7 +223,7 @@ uciok",
         };
 
         let search_start = Time::now();
-        let (best_move, _evaluation) = engine.iterative_deepening(
+        let (depth, best_move, evaluation) = engine.iterative_deepening(
             &mut |depth, (best_move, evaluation)| {
                 (self.out)(&format!(
                     "info depth {depth} score cp {evaluation} time {} pv {}",
@@ -234,7 +234,12 @@ uciok",
             },
             &mut || search_start.miliseconds() as u128 > think_time,
         );
-        (self.out)(&format!("bestmove {}", encode_move(best_move.decode())))
+        (self.out)(&format!(
+            "info depth {depth} score cp {evaluation} time {} pv {}",
+            search_start.miliseconds(),
+            encode_move(best_move.decode())
+        ));
+        (self.out)(&format!("bestmove {}", encode_move(best_move.decode())));
     }
 
     pub fn stop(&self) {}
