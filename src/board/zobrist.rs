@@ -5,6 +5,7 @@ use rand_chacha;
 use rand_chacha::rand_core::{RngCore, SeedableRng};
 use rand_chacha::ChaCha20Rng;
 
+use std::ops::Rem;
 use std::sync::OnceLock;
 
 pub struct ZobristRandoms {
@@ -92,8 +93,11 @@ impl Zobrist {
     pub fn flip_side_to_move(&mut self) {
         self.0 ^= ZobristRandoms::read().side_to_move;
     }
+}
 
-    pub fn index(&self, size: usize) -> usize {
-        self.0 as usize % size
+impl Rem<usize> for Zobrist {
+    type Output = usize;
+    fn rem(self, rhs: usize) -> Self::Output {
+        self.0 as usize % rhs
     }
 }
