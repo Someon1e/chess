@@ -49,6 +49,8 @@ impl ZobristRandoms {
 pub struct Zobrist(u64);
 
 impl Zobrist {
+    pub const EMPTY: Self = Self(0);
+
     pub fn xor_en_passant(&mut self, en_passant_square: &Square) {
         self.0 ^= ZobristRandoms::read().en_passant_square_file[en_passant_square.file() as usize]
     }
@@ -61,14 +63,10 @@ impl Zobrist {
         self.0 ^= ZobristRandoms::read().piece_arrays[piece_index][square_index];
     }
 
-    pub fn empty() -> Self {
-        Self(0)
-    }
-
     pub fn compute(board: &Board) -> Self {
         // For debugging only.
 
-        let mut key = Self::empty();
+        let mut key = Self::EMPTY;
 
         for (piece, bit_board) in board.bit_boards.iter().enumerate() {
             let mut bit_board = *bit_board;
