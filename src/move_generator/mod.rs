@@ -91,67 +91,53 @@ impl MoveGenerator {
             } else {
                 NOT_A_FILE
             };
-            let capture_right_offset = if self.white_to_move { -9 } else { 9 };
-
-            let mut capture_right = if self.white_to_move {
-                (non_orthogonally_pinned_pawns & not_on_the_right_edge) << 9
-            } else {
-                (non_orthogonally_pinned_pawns & not_on_the_right_edge) >> 9
-            } & self.enemy_piece_bit_board
-                & self.capture_mask;
-            while capture_right.is_not_empty() {
-                let capture = capture_right.pop_square();
-                let from = capture.offset(capture_right_offset);
-
-                let is_diagonally_pinned = self.diagonal_pin_rays.get(&from);
-
-                if is_diagonally_pinned && !self.diagonal_pin_rays.get(&capture) {
-                    continue;
-                }
-                if promotion_rank.get(&capture) {
-                    Self::gen_promotions(add_move, from, capture)
-                } else {
-                    add_move(Move {
-                        from,
-                        to: capture,
-                        flag: Flag::None,
-                    });
-                }
-            }
-
-            let capture_left_offset = if self.white_to_move { -7 } else { 7 };
-
             let not_on_the_left_edge = if self.white_to_move {
                 NOT_A_FILE
             } else {
                 NOT_H_FILE
             };
+            let capture_right_offset = if self.white_to_move { -9 } else { 9 };
+            let capture_left_offset = if self.white_to_move { -7 } else { 7 };
+
+            let can_capture = self.enemy_piece_bit_board & self.capture_mask;
+            let mut capture_right = if self.white_to_move {
+                (non_orthogonally_pinned_pawns & not_on_the_right_edge) << 9
+            } else {
+                (non_orthogonally_pinned_pawns & not_on_the_right_edge) >> 9
+            } & can_capture;
 
             let mut capture_left = if self.white_to_move {
                 (non_orthogonally_pinned_pawns & not_on_the_left_edge) << 7
             } else {
                 (non_orthogonally_pinned_pawns & not_on_the_left_edge) >> 7
-            } & self.enemy_piece_bit_board
-                & self.capture_mask;
-            while capture_left.is_not_empty() {
-                let capture = capture_left.pop_square();
-                let from = capture.offset(capture_left_offset);
+            } & can_capture;
 
-                let is_diagonally_pinned = self.diagonal_pin_rays.get(&from);
+            macro_rules! captures {
+                ($captures:expr, $offset:expr) => {
+                    while $captures.is_not_empty() {
+                        let capture = $captures.pop_square();
+                        let from = capture.offset($offset);
 
-                if is_diagonally_pinned && !self.diagonal_pin_rays.get(&capture) {
-                    continue;
-                }
-                if promotion_rank.get(&capture) {
-                    Self::gen_promotions(add_move, from, capture)
-                } else {
-                    add_move(Move {
-                        from,
-                        to: capture,
-                        flag: Flag::None,
-                    });
-                }
+                        let is_diagonally_pinned = self.diagonal_pin_rays.get(&from);
+
+                        if is_diagonally_pinned && !self.diagonal_pin_rays.get(&capture) {
+                            continue;
+                        }
+                        if promotion_rank.get(&capture) {
+                            Self::gen_promotions(add_move, from, capture)
+                        } else {
+                            add_move(Move {
+                                from,
+                                to: capture,
+                                flag: Flag::None,
+                            });
+                        }
+                    }
+                };
             }
+
+            captures!(capture_right, capture_right_offset);
+            captures!(capture_left, capture_left_offset)
         }
 
         if let Some(en_passant_square) = self.en_passant_square {
