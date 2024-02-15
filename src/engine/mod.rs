@@ -114,7 +114,7 @@ impl<'a> Engine<'a> {
             return 0;
         }
 
-        let zobrist_index = zobrist_key.index(TRANSPOSITION_CAPACITY);
+        let zobrist_index = zobrist_key % self.transposition_table.capacity();
 
         let mut hash_move = &EncodedMove::NONE;
 
