@@ -193,17 +193,12 @@ impl MoveGenerator {
             return;
         }
 
-        let (single_push, down_offset) = if self.white_to_move {
-            (
-                ((self.friendly_pawns & !self.diagonal_pin_rays) << 8) & self.empty_squares,
-                -8,
-            )
+        let single_push = if self.white_to_move {
+            (self.friendly_pawns & !self.diagonal_pin_rays) << 8
         } else {
-            (
-                ((self.friendly_pawns & !self.diagonal_pin_rays) >> 8) & self.empty_squares,
-                8,
-            )
-        };
+            (self.friendly_pawns & !self.diagonal_pin_rays) >> 8
+        } & self.empty_squares;
+        let one_down_offset = if self.white_to_move { -8 } else { 8 };
 
         {
             // Move pawn one square up
@@ -214,7 +209,7 @@ impl MoveGenerator {
 
             while single_push_no_promotions.is_not_empty() {
                 let move_to = single_push_no_promotions.pop_square();
-                let from = move_to.offset(down_offset);
+                let from = move_to.offset(one_down_offset);
                 if !self.orthogonal_pin_rays.get(&from) || self.orthogonal_pin_rays.get(&move_to) {
                     add_move(Move {
                         from,
@@ -225,7 +220,7 @@ impl MoveGenerator {
             }
             while push_promotions.is_not_empty() {
                 let move_to = push_promotions.pop_square();
-                let from = move_to.offset(down_offset);
+                let from = move_to.offset(one_down_offset);
                 if !self.orthogonal_pin_rays.get(&from) || self.orthogonal_pin_rays.get(&move_to) {
                     Self::gen_promotions(add_move, from, move_to)
                 }
@@ -234,11 +229,12 @@ impl MoveGenerator {
 
         {
             // Move pawn two squares up
-            let (double_push, double_down_offset) = if self.white_to_move {
-                (single_push << 8 & self.push_mask, -16)
+            let double_push = if self.white_to_move {
+                single_push << 8
             } else {
-                (single_push >> 8 & self.push_mask, 16)
-            };
+                single_push >> 8
+            } & self.push_mask;
+            let double_down_offset = one_down_offset * 2;
             let mut double_push = double_push
                 & self.empty_squares
                 & if self.white_to_move {
