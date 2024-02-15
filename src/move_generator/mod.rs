@@ -696,8 +696,7 @@ impl MoveGenerator {
             friendly_king_square,
             king_danger_bit_board,
             enemy_piece_bit_board,
-            enemy_rooks_and_queens_bit_board: *board.get_bit_board(enemy_pieces[3])
-                | *board.get_bit_board(enemy_pieces[4]),
+            enemy_rooks_and_queens_bit_board: enemy_rooks | enemy_queens,
             occupied_squares,
             empty_squares,
             is_in_check,
