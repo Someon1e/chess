@@ -363,8 +363,8 @@ impl MoveGenerator {
         is_in_check: &mut bool,
         is_in_double_check: &mut bool,
     ) -> BitBoard {
-        let rook_blockers_excluding_king = (*occupied_squares & !*king_bit_board)
-            & relevant_rook_blockers()[from.usize()];
+        let rook_blockers_excluding_king =
+            (*occupied_squares & !*king_bit_board) & relevant_rook_blockers()[from.usize()];
         let rook_attacks = get_rook_moves(from, rook_blockers_excluding_king);
         if rook_attacks.overlaps(king_bit_board) {
             // This piece is checking the king
@@ -401,8 +401,8 @@ impl MoveGenerator {
         is_in_check: &mut bool,
         is_in_double_check: &mut bool,
     ) -> BitBoard {
-        let bishop_blockers_excluding_king = (*occupied_squares & !*king_bit_board)
-            & relevant_bishop_blockers()[from.usize()];
+        let bishop_blockers_excluding_king =
+            (*occupied_squares & !*king_bit_board) & relevant_bishop_blockers()[from.usize()];
         let bishop_attacks = get_bishop_moves(from, bishop_blockers_excluding_king);
         if bishop_attacks.overlaps(king_bit_board) {
             // This piece is checking the king

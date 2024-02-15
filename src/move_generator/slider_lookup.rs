@@ -80,14 +80,12 @@ fn gen_rook_or_bishop(from: Square, blockers: &BitBoard, direction_offset: usize
 
     let mut ray = rays[direction_offset + 2];
     let blocker = ray & *blockers;
-    ray ^= all_rays()[(blocker | BitBoard::new(1)).last_square().usize()]
-        [direction_offset + 2];
+    ray ^= all_rays()[(blocker | BitBoard::new(1)).last_square().usize()][direction_offset + 2];
     moves |= ray;
 
     let mut ray = rays[direction_offset + 3];
     let blocker = ray & *blockers;
-    ray ^= all_rays()[(blocker | BitBoard::new(1)).last_square().usize()]
-        [direction_offset + 3];
+    ray ^= all_rays()[(blocker | BitBoard::new(1)).last_square().usize()][direction_offset + 3];
     moves |= ray;
 
     moves
@@ -122,17 +120,18 @@ fn magic_index(blockers: &BitBoard, magic: u64, shift: u64) -> usize {
     (hash >> shift).as_usize()
 }
 
-fn init_lookup(size: usize, keys: [Key; 64], direction_offset: usize) -> Vec<BitBoard> {
+fn init_lookup(
+    size: usize,
+    keys: [Key; 64],
+    blockers: [BitBoard; 64],
+    direction_offset: usize,
+) -> Vec<BitBoard> {
     let mut lookup = vec![BitBoard::EMPTY; size];
     for square_index in 0..64 {
         let square = Square::from_index(square_index);
 
         let key = keys[square_index as usize];
-        let blockers = all_blockers(
-            square,
-            &DIRECTIONS[direction_offset..direction_offset + 4],
-            &SQUARES_FROM_EDGE[square.usize()][direction_offset..direction_offset + 4],
-        );
+        let blockers = blockers[square_index as usize];
         for blocker_combination in iterate_combinations(blockers) {
             let moves = gen_rook_or_bishop(square, &blocker_combination, direction_offset);
             lookup[key.offset + magic_index(&blocker_combination, key.magic, key.shift)] = moves;
@@ -143,7 +142,8 @@ fn init_lookup(size: usize, keys: [Key; 64], direction_offset: usize) -> Vec<Bit
 
 fn rook_lookup() -> &'static Vec<BitBoard> {
     static COMPUTATION: OnceLock<Vec<BitBoard>> = OnceLock::new();
-    COMPUTATION.get_or_init(|| init_lookup(ROOK_TABLE_SIZE, ROOK_KEYS, 0))
+    COMPUTATION
+        .get_or_init(|| init_lookup(ROOK_TABLE_SIZE, ROOK_KEYS, *relevant_rook_blockers(), 0))
 }
 
 pub fn get_rook_moves(square: Square, relevant_blockers: BitBoard) -> BitBoard {
@@ -153,7 +153,14 @@ pub fn get_rook_moves(square: Square, relevant_blockers: BitBoard) -> BitBoard {
 
 fn bishop_lookup() -> &'static Vec<BitBoard> {
     static COMPUTATION: OnceLock<Vec<BitBoard>> = OnceLock::new();
-    COMPUTATION.get_or_init(|| init_lookup(BISHOP_TABLE_SIZE, BISHOP_KEYS, 4))
+    COMPUTATION.get_or_init(|| {
+        init_lookup(
+            BISHOP_TABLE_SIZE,
+            BISHOP_KEYS,
+            *relevant_bishop_blockers(),
+            4,
+        )
+    })
 }
 
 pub fn get_bishop_moves(square: Square, relevant_blockers: BitBoard) -> BitBoard {
@@ -301,12 +308,8 @@ mod tests {
         let mut blockers = BitBoard::EMPTY;
         blockers.set(&Square::from_notation("f4"));
 
-        let rook_moves =
-            get_rook_moves(d4, blockers & relevant_rook_blockers()[d4.usize()]);
-        let bishop_moves = get_bishop_moves(
-            d4,
-            blockers & relevant_bishop_blockers()[d4.usize()],
-        );
+        let rook_moves = get_rook_moves(d4, blockers & relevant_rook_blockers()[d4.usize()]);
+        let bishop_moves = get_bishop_moves(d4, blockers & relevant_bishop_blockers()[d4.usize()]);
 
         let legal_moves = rook_moves | bishop_moves;
         println!("{}", legal_moves);
