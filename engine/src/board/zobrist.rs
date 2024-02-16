@@ -2,7 +2,7 @@ use super::game_state::CastlingRights;
 use super::square::Square;
 use super::Board;
 
-use std::ops::Rem;
+use core::ops::Rem;
 
 #[derive(Debug)]
 pub struct ZobristRandoms {
