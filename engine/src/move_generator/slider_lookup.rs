@@ -49,17 +49,30 @@ pub fn iterate_combinations(squares: BitBoard) -> impl core::iter::Iterator<Item
 }
 
 pub fn rook_or_bishop_blockers(from: Square, direction_offset: usize) -> BitBoard {
-    let mut bit_board = BitBoard::EMPTY;
-    for (direction, distance_from_edge) in DIRECTIONS[direction_offset..direction_offset + 4]
-        .iter()
-        .zip(&SQUARES_FROM_EDGE[from.index() as usize][direction_offset..direction_offset + 4])
-    {
-        for count in 1..=*distance_from_edge - 1 {
-            let move_to = from.offset(direction * count);
-            bit_board.set(&move_to)
-        }
-    }
-    bit_board
+    let square_index = from.usize();
+    let squares_from_edge = SQUARES_FROM_EDGE[square_index];
+
+    let mut moves = BitBoard::EMPTY;
+
+    let rays = &all_rays()[from.usize()];
+
+    let mut ray = rays[direction_offset];
+    ray.unset(&from.offset(DIRECTIONS[direction_offset] * squares_from_edge[direction_offset]));
+    moves |= ray;
+
+    let mut ray = rays[direction_offset + 1];
+    ray.unset(&from.offset(DIRECTIONS[direction_offset + 1] * squares_from_edge[direction_offset + 1]));
+    moves |= ray;
+
+    let mut ray = rays[direction_offset + 2];
+    ray.unset(&from.offset(DIRECTIONS[direction_offset + 2] * squares_from_edge[direction_offset + 2]));
+    moves |= ray;
+
+    let mut ray = rays[direction_offset + 3];
+    ray.unset(&from.offset(DIRECTIONS[direction_offset + 3] * squares_from_edge[direction_offset + 3]));
+    moves |= ray;
+
+    moves
 }
 
 pub fn gen_rook_or_bishop(from: Square, blockers: &BitBoard, direction_offset: usize) -> BitBoard {
