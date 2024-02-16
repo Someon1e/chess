@@ -1,6 +1,6 @@
 use std::io::{stdin, BufRead};
 
-use chess::uci::UCIProcessor;
+use engine::uci::UCIProcessor;
 use core::cell::RefCell;
 
 // Max time for thinking

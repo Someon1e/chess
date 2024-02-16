@@ -1,13 +1,13 @@
 use crate::board::{piece::Piece, square::Square};
 
-use super::{eval_data, Engine};
+use super::{eval_data, Search};
 
 pub struct Eval {}
 impl Eval {
-    pub fn get_phase(engine: &Engine) -> i32 {
+    pub fn get_phase(search: &Search) -> i32 {
         let mut phase = 0;
         for piece in Piece::ALL_PIECES {
-            let bit_board = *engine.board.get_bit_board(piece);
+            let bit_board = *search.board.get_bit_board(piece);
             let piece_index = piece as usize;
             phase += bit_board.count() as i32 * eval_data::PIECE_PHASES[piece_index]
         }
@@ -35,12 +35,12 @@ impl Eval {
         (middle_game_score * middle_game_phase + end_game_score * end_game_phase) / 24
     }
 
-    pub fn evaluate(engine: &Engine) -> i32 {
+    pub fn evaluate(search: &Search) -> i32 {
         let mut middle_game_score_white = 0;
         let mut end_game_score_white = 0;
 
         for piece in Piece::WHITE_PIECES {
-            let mut bit_board = *engine.board.get_bit_board(piece);
+            let mut bit_board = *search.board.get_bit_board(piece);
             while bit_board.is_not_empty() {
                 let square = bit_board.pop_square();
 
@@ -56,7 +56,7 @@ impl Eval {
         let mut end_game_score_black = 0;
 
         for piece in Piece::BLACK_PIECES {
-            let mut bit_board = *engine.board.get_bit_board(piece);
+            let mut bit_board = *search.board.get_bit_board(piece);
             while bit_board.is_not_empty() {
                 let square = bit_board.pop_square();
 
@@ -68,11 +68,11 @@ impl Eval {
             }
         }
 
-        let phase = Self::get_phase(engine);
+        let phase = Self::get_phase(search);
         Self::calculate_score(
             phase,
             middle_game_score_white - middle_game_score_black,
             end_game_score_white - end_game_score_black,
-        ) * if engine.board.white_to_move { 1 } else { -1 }
+        ) * if search.board.white_to_move { 1 } else { -1 }
     }
 }

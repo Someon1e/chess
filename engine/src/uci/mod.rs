@@ -2,7 +2,7 @@ use core::str::SplitWhitespace;
 
 use crate::{
     board::{piece::Piece, square::Square, Board},
-    engine::Engine,
+    search::Search,
     move_generator::move_data::{Flag, Move},
     perft::perft_root,
     timer::timer::Time,
@@ -194,25 +194,25 @@ uciok",
             return;
         }
 
-        let mut engine = Engine::new(board);
+        let mut search = Search::new(board);
 
         for uci_move in &self.moves {
-            engine.make_move(&decode_move(engine.board(), uci_move))
+            search.make_move(&decode_move(search.board(), uci_move))
         }
         self.moves.clear();
-        (self.out)(&engine.board().to_fen());
+        (self.out)(&search.board().to_fen());
 
         let think_time = if parameters.infinite {
             self.max_thinking_time
         } else {
             parameters.move_time_in_ms.unwrap_or_else(|| {
-                let clock_time = (if engine.board().white_to_move {
+                let clock_time = (if search.board().white_to_move {
                     parameters.white_time
                 } else {
                     parameters.black_time
                 })
                 .unwrap();
-                let increment = (if engine.board().white_to_move {
+                let increment = (if search.board().white_to_move {
                     parameters.white_increment
                 } else {
                     parameters.black_increment
@@ -223,7 +223,7 @@ uciok",
         };
 
         let search_start = Time::now();
-        let (depth, best_move, evaluation) = engine.iterative_deepening(
+        let (depth, best_move, evaluation) = search.iterative_deepening(
             &mut |depth, (best_move, evaluation)| {
                 (self.out)(&format!(
                     "info depth {depth} score cp {evaluation} time {} pv {}",
