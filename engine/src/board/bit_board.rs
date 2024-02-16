@@ -79,11 +79,12 @@ impl BitBoard {
     pub fn count(&self) -> u32 {
         self.0.count_ones()
     }
-    pub fn wrapping_sub(&self, rhs: Self) -> Self {
-        Self(self.0.wrapping_sub(rhs.0))
+    pub fn carry_rippler(&self, d: Self) -> Self {
+        BitBoard::new(self.0.wrapping_sub(d.0) & d.0)
     }
-    pub fn wrapping_mul(&self, rhs: Self) -> Self {
-        Self(self.0.wrapping_mul(rhs.0))
+    pub fn magic_index(&self, magic: u64, shift: u64) -> usize {
+        let hash = self.0.wrapping_mul(magic);
+        (hash >> shift) as usize
     }
     pub fn as_usize(&self) -> usize {
         self.0 as usize

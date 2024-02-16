@@ -3,7 +3,7 @@ use engine::{
     move_generator::{
         slider_keys::Key,
         slider_lookup::{
-            gen_rook_or_bishop, iterate_combinations, magic_index, relevant_bishop_blockers,
+            gen_rook_or_bishop, iterate_combinations, relevant_bishop_blockers,
             relevant_rook_blockers,
         },
     },
@@ -23,7 +23,7 @@ fn fill_magic_table(
     let mut table = vec![BitBoard::EMPTY; 1 << index_bits];
     for blocker_combination in iterate_combinations(blockers) {
         let moves = gen_rook_or_bishop(square, &blocker_combination, direction_offset);
-        let table_entry = &mut table[magic_index(&blocker_combination, magic, 64 - index_bits)];
+        let table_entry = &mut table[blocker_combination.magic_index(magic, 64 - index_bits)];
         if table_entry.is_empty() {
             *table_entry = moves;
         } else if *table_entry != moves {
