@@ -21,10 +21,13 @@ fn main() {
     let mut castling_rights = [0; 16];
     castling_rights.fill_with(|| rng.next_u64());
 
-    println!("{:?}", ZobristRandoms {
-        piece_arrays,
-        side_to_move,
-        en_passant_square_file,
-        castling_rights,
-    });
+    println!(
+        "{:?}",
+        ZobristRandoms {
+            piece_arrays,
+            side_to_move,
+            en_passant_square_file,
+            castling_rights,
+        }
+    );
 }

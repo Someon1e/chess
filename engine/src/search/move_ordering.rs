@@ -175,7 +175,7 @@ impl MoveOrderer {
         search: &Search,
         move_generator: &MoveGenerator,
         hash_move: &EncodedMove,
-        killer_move: &EncodedMove
+        killer_move: &EncodedMove,
     ) -> ([MoveGuess; MAX_LEGAL_MOVES], usize) {
         let mut move_guesses = [MoveGuess {
             move_data: EncodedMove::NONE,
@@ -195,7 +195,7 @@ impl MoveOrderer {
                             &move_generator.enemy_pawn_attacks(),
                             &move_data,
                         )
-                    } + if encoded == *killer_move {100} else {0},
+                    } + if encoded == *killer_move { 100 } else { 0 },
                 };
                 index += 1
             },
@@ -210,11 +210,11 @@ impl MoveOrderer {
 mod tests {
     use crate::{
         board::{square::Square, Board},
-        search::{encoded_move::EncodedMove, move_ordering::MoveOrderer, Search},
         move_generator::{
             move_data::{Flag, Move},
             MoveGenerator,
         },
+        search::{encoded_move::EncodedMove, move_ordering::MoveOrderer, Search},
     };
 
     #[test]
@@ -225,7 +225,7 @@ mod tests {
             &Search::new(&mut board),
             &move_generator,
             &EncodedMove::NONE,
-            &EncodedMove::NONE
+            &EncodedMove::NONE,
         );
         let mut index = move_count;
         let mut next_move = || {
