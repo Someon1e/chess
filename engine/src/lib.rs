@@ -1,7 +1,7 @@
 pub mod board;
-pub mod search;
 pub mod move_generator;
 pub mod perft;
+pub mod search;
 mod timer;
 pub mod uci;
 

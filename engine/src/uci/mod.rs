@@ -2,9 +2,9 @@ use core::str::SplitWhitespace;
 
 use crate::{
     board::{piece::Piece, square::Square, Board},
-    search::Search,
     move_generator::move_data::{Flag, Move},
     perft::perft_root,
+    search::Search,
     timer::timer::Time,
 };
 

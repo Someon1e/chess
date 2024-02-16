@@ -6,7 +6,10 @@ mod transposition;
 
 use crate::{
     board::{zobrist::Zobrist, Board},
-    move_generator::{move_data::{Flag, Move}, MoveGenerator},
+    move_generator::{
+        move_data::{Flag, Move},
+        MoveGenerator,
+    },
 };
 
 use self::{

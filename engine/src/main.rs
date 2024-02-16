@@ -1,7 +1,7 @@
 use std::io::{stdin, BufRead};
 
-use engine::uci::UCIProcessor;
 use core::cell::RefCell;
+use engine::uci::UCIProcessor;
 
 // Max time for thinking
 const MAX_TIME: u128 = 5 * 1000;
