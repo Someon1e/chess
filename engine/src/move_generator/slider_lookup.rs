@@ -3,7 +3,7 @@ use std::sync::OnceLock;
 use crate::{
     board::{
         bit_board::BitBoard,
-        square::{Direction, Square, DIRECTIONS},
+        square::{Square, DIRECTIONS},
     },
     move_generator::slider_keys::{BISHOP_TABLE_SIZE, ROOK_KEYS, ROOK_TABLE_SIZE},
 };
@@ -48,13 +48,12 @@ pub fn iterate_combinations(squares: BitBoard) -> impl core::iter::Iterator<Item
     })
 }
 
-pub fn all_blockers(
-    from: Square,
-    directions: &[Direction],
-    squares_from_edge: &[Direction],
-) -> BitBoard {
+pub fn rook_or_bishop_blockers(from: Square, direction_offset: usize) -> BitBoard {
     let mut bit_board = BitBoard::EMPTY;
-    for (direction, distance_from_edge) in directions.iter().zip(squares_from_edge) {
+    for (direction, distance_from_edge) in DIRECTIONS[direction_offset..direction_offset + 4]
+        .iter()
+        .zip(&SQUARES_FROM_EDGE[from.index() as usize][direction_offset..direction_offset + 4])
+    {
         for count in 1..=*distance_from_edge - 1 {
             let move_to = from.offset(direction * count);
             bit_board.set(&move_to)
@@ -91,28 +90,22 @@ pub fn gen_rook_or_bishop(from: Square, blockers: &BitBoard, direction_offset: u
     moves
 }
 
-fn calculate_blockers_for_each_square(
-    direction_start_index: usize,
-    direction_end_index: usize,
-) -> [BitBoard; 64] {
+fn calculate_blockers_for_each_square(direction_offset: usize) -> [BitBoard; 64] {
     let mut blockers = [BitBoard::EMPTY; 64];
     for square_index in 0..64 {
-        blockers[square_index as usize] = all_blockers(
-            Square::from_index(square_index),
-            &DIRECTIONS[direction_start_index..direction_end_index],
-            &SQUARES_FROM_EDGE[square_index as usize][direction_start_index..direction_end_index],
-        )
+        blockers[square_index as usize] =
+            rook_or_bishop_blockers(Square::from_index(square_index), direction_offset)
     }
     blockers
 }
 
 pub fn relevant_rook_blockers() -> &'static [BitBoard; 64] {
     static COMPUTATION: OnceLock<[BitBoard; 64]> = OnceLock::new();
-    COMPUTATION.get_or_init(|| calculate_blockers_for_each_square(0, 4))
+    COMPUTATION.get_or_init(|| calculate_blockers_for_each_square(0))
 }
 pub fn relevant_bishop_blockers() -> &'static [BitBoard; 64] {
     static COMPUTATION: OnceLock<[BitBoard; 64]> = OnceLock::new();
-    COMPUTATION.get_or_init(|| calculate_blockers_for_each_square(4, 8))
+    COMPUTATION.get_or_init(|| calculate_blockers_for_each_square(4))
 }
 
 pub fn magic_index(blockers: &BitBoard, magic: u64, shift: u64) -> usize {
@@ -171,23 +164,19 @@ pub fn get_bishop_moves(square: Square, relevant_blockers: BitBoard) -> BitBoard
 #[cfg(test)]
 mod tests {
     use crate::{
-        board::{
-            bit_board::BitBoard,
-            square::{Square, DIRECTIONS},
-        },
-        move_generator::{
-            precomputed::SQUARES_FROM_EDGE,
-            slider_lookup::{
-                all_blockers, gen_rook_or_bishop, get_bishop_moves, get_rook_moves,
-                iterate_combinations, relevant_bishop_blockers, relevant_rook_blockers,
-            },
+        board::{bit_board::BitBoard, square::Square},
+        move_generator::slider_lookup::{
+            gen_rook_or_bishop, get_bishop_moves, get_rook_moves, iterate_combinations,
+            relevant_bishop_blockers, relevant_rook_blockers, rook_or_bishop_blockers,
         },
     };
 
     #[test]
     fn blocker_combinations() {
         let d4 = Square::from_notation("d4");
-        let blockers = all_blockers(d4, &DIRECTIONS, &SQUARES_FROM_EDGE[d4.usize()]);
+        let rook_blockers = rook_or_bishop_blockers(d4, 0);
+        let bishop_blockers = rook_or_bishop_blockers(d4, 4);
+        let blockers = rook_blockers | bishop_blockers;
         let expected_number_of_combinations = 1 << blockers.count();
         println!("{blockers}");
         let mut number_of_combinations = 0;
