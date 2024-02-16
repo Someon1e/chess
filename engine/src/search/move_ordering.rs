@@ -6,7 +6,7 @@ use crate::{
     },
 };
 
-use super::{encoded_move::EncodedMove, eval::Eval, Engine};
+use super::{encoded_move::EncodedMove, eval::Eval, Search};
 
 #[derive(Clone, Copy)]
 pub struct MoveGuess {
@@ -19,7 +19,7 @@ const MAX_CAPTURES: usize = 74;
 
 pub struct MoveOrderer {}
 impl MoveOrderer {
-    fn guess_move_value(engine: &Engine, enemy_pawn_attacks: &BitBoard, move_data: &Move) -> i32 {
+    fn guess_move_value(search: &Search, enemy_pawn_attacks: &BitBoard, move_data: &Move) -> i32 {
         let mut score = 0;
         match move_data.flag {
             Flag::EnPassant => return 0,
@@ -41,21 +41,21 @@ impl MoveOrderer {
             score -= 50;
         }
 
-        let moving_piece = engine.board.friendly_piece_at(moving_from).unwrap();
+        let moving_piece = search.board.friendly_piece_at(moving_from).unwrap();
         let (moving_from_middle_game_value, moving_from_end_game_value) = {
-            if engine.board.white_to_move {
+            if search.board.white_to_move {
                 Eval::get_white_piece_value(moving_piece, moving_from)
             } else {
                 Eval::get_black_piece_value(moving_piece, moving_from)
             }
         };
 
-        let phase = Eval::get_phase(engine);
+        let phase = Eval::get_phase(search);
 
         // This won't take into account en passant
-        if let Some(capturing) = engine.board.enemy_piece_at(moving_to) {
+        if let Some(capturing) = search.board.enemy_piece_at(moving_to) {
             let (capturing_middle_game_value, capturing_end_game_value) = {
-                if engine.board.white_to_move {
+                if search.board.white_to_move {
                     Eval::get_black_piece_value(capturing, moving_to)
                 } else {
                     Eval::get_white_piece_value(capturing, moving_to)
@@ -69,7 +69,7 @@ impl MoveOrderer {
             );
         } else {
             let (moving_to_middle_game_value, moving_to_end_game_value) = {
-                if engine.board.white_to_move {
+                if search.board.white_to_move {
                     Eval::get_white_piece_value(moving_piece, moving_to)
                 } else {
                     Eval::get_black_piece_value(moving_piece, moving_to)
@@ -103,7 +103,7 @@ impl MoveOrderer {
         move_guesses[last_unsorted_index]
     }
 
-    fn guess_capture_value(engine: &Engine, move_data: &Move) -> i32 {
+    fn guess_capture_value(search: &Search, move_data: &Move) -> i32 {
         let flag_score = match move_data.flag {
             Flag::EnPassant => return 0,
 
@@ -120,19 +120,19 @@ impl MoveOrderer {
         let moving_from = move_data.from;
         let moving_to = move_data.to;
 
-        let moving_piece = engine.board.friendly_piece_at(moving_from).unwrap();
+        let moving_piece = search.board.friendly_piece_at(moving_from).unwrap();
         let (moving_from_middle_game_value, moving_from_end_game_value) = {
-            if engine.board.white_to_move {
+            if search.board.white_to_move {
                 Eval::get_white_piece_value(moving_piece, moving_from)
             } else {
                 Eval::get_black_piece_value(moving_piece, moving_from)
             }
         };
 
-        let capturing = engine.board.enemy_piece_at(moving_to).unwrap();
+        let capturing = search.board.enemy_piece_at(moving_to).unwrap();
 
         let (capturing_middle_game_value, capturing_end_game_value) = {
-            if engine.board.white_to_move {
+            if search.board.white_to_move {
                 Eval::get_black_piece_value(capturing, moving_to)
             } else {
                 Eval::get_white_piece_value(capturing, moving_to)
@@ -141,14 +141,14 @@ impl MoveOrderer {
 
         flag_score
             + Eval::calculate_score(
-                Eval::get_phase(engine),
+                Eval::get_phase(search),
                 capturing_middle_game_value - moving_from_middle_game_value,
                 capturing_end_game_value - moving_from_end_game_value,
             )
     }
 
     pub fn get_sorted_moves_captures_only(
-        engine: &Engine,
+        search: &Search,
         move_generator: &MoveGenerator,
     ) -> ([MoveGuess; MAX_CAPTURES], usize) {
         let mut move_guesses = [MoveGuess {
@@ -161,7 +161,7 @@ impl MoveOrderer {
                 let encoded = EncodedMove::new(move_data);
                 move_guesses[index] = MoveGuess {
                     move_data: encoded,
-                    guess: Self::guess_capture_value(engine, &move_data),
+                    guess: Self::guess_capture_value(search, &move_data),
                 };
                 index += 1
             },
@@ -172,7 +172,7 @@ impl MoveOrderer {
     }
 
     pub fn get_sorted_moves(
-        engine: &Engine,
+        search: &Search,
         move_generator: &MoveGenerator,
         hash_move: &EncodedMove,
         killer_move: &EncodedMove
@@ -191,7 +191,7 @@ impl MoveOrderer {
                         10000
                     } else {
                         Self::guess_move_value(
-                            engine,
+                            search,
                             &move_generator.enemy_pawn_attacks(),
                             &move_data,
                         )
@@ -210,7 +210,7 @@ impl MoveOrderer {
 mod tests {
     use crate::{
         board::{square::Square, Board},
-        engine::{encoded_move::EncodedMove, move_ordering::MoveOrderer, Engine},
+        search::{encoded_move::EncodedMove, move_ordering::MoveOrderer, Search},
         move_generator::{
             move_data::{Flag, Move},
             MoveGenerator,
@@ -222,7 +222,7 @@ mod tests {
         let mut board = Board::from_fen("8/P6p/6r1/1q1n4/2P3R1/8/2K2k2/8 w - - 0 1");
         let move_generator = MoveGenerator::new(&board);
         let (mut move_guesses, move_count) = MoveOrderer::get_sorted_moves(
-            &Engine::new(&mut board),
+            &Search::new(&mut board),
             &move_generator,
             &EncodedMove::NONE,
             &EncodedMove::NONE

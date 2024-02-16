@@ -1,5 +1,5 @@
 pub mod board;
-pub mod engine;
+pub mod search;
 pub mod move_generator;
 pub mod perft;
 mod timer;

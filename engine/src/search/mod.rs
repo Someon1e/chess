@@ -16,7 +16,7 @@ use self::{
     transposition::{NodeType, NodeValue, TRANSPOSITION_CAPACITY},
 };
 
-pub struct Engine<'a> {
+pub struct Search<'a> {
     board: &'a mut Board,
     transposition_table: Vec<Option<NodeValue>>,
     repetition_table: Vec<Zobrist>,
@@ -27,7 +27,7 @@ pub struct Engine<'a> {
 
 const CHECKMATE_SCORE: i32 = -i32::MAX + 1;
 
-impl<'a> Engine<'a> {
+impl<'a> Search<'a> {
     pub fn new(board: &'a mut Board) -> Self {
         Self {
             board,
@@ -279,7 +279,7 @@ impl<'a> Engine<'a> {
 mod tests {
     use crate::{
         board::Board,
-        engine::{eval::Eval, Engine},
+        search::{eval::Eval, Search},
     };
 
     #[test]
@@ -289,8 +289,8 @@ mod tests {
         let mut quiet =
             Board::from_fen("rnb1kbnr/ppp1pppp/8/3q4/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
         assert_eq!(
-            Engine::new(&mut board).quiescence_search(-i32::MAX, i32::MAX),
-            Eval::evaluate(&Engine::new(&mut quiet))
+            Search::new(&mut board).quiescence_search(-i32::MAX, i32::MAX),
+            Eval::evaluate(&Search::new(&mut quiet))
         )
     }
 
@@ -299,8 +299,8 @@ mod tests {
         let mut starting_rank_pawn = Board::from_fen("8/8/8/8/8/8/4P3/8 w - - 0 1");
         let mut one_step_from_promoting_pawn = Board::from_fen("8/4P3/8/8/8/8/8/8 w - - 0 1");
         assert!(
-            Eval::evaluate(&Engine::new(&mut one_step_from_promoting_pawn))
-                > Eval::evaluate(&Engine::new(&mut starting_rank_pawn))
+            Eval::evaluate(&Search::new(&mut one_step_from_promoting_pawn))
+                > Eval::evaluate(&Search::new(&mut starting_rank_pawn))
         )
     }
 }
