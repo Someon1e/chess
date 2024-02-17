@@ -99,25 +99,23 @@ fn calculate_pawn_attacks() -> PrecomputedPawnAttacks {
 
     for index in 0..64 {
         let square = Square::from_index(index as i8);
-        let rank = square.rank();
-        let file = square.file();
 
         let white_pawn_attacks = &mut white_pawn_attacks_at_square[index];
         let black_pawn_attacks = &mut black_pawn_attacks_at_square[index];
 
-        if file > 0 {
-            if rank < 7 {
+        if BitBoard::NOT_A_FILE.get(&square) {
+            if !BitBoard::RANK_8.get(&square) {
                 white_pawn_attacks.set(&square.up(1).left(1));
             }
-            if rank > 0 {
+            if !BitBoard::RANK_1.get(&square) {
                 black_pawn_attacks.set(&square.down(1).left(1));
             }
         }
-        if file < 7 {
-            if rank < 7 {
+        if BitBoard::NOT_H_FILE.get(&square) {
+            if !BitBoard::RANK_8.get(&square) {
                 white_pawn_attacks.set(&square.up(1).right(1));
             }
-            if rank > 0 {
+            if !BitBoard::RANK_1.get(&square) {
                 black_pawn_attacks.set(&square.down(1).right(1));
             }
         }
