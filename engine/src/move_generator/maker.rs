@@ -197,8 +197,11 @@ impl Board {
                 let capturing_bit_board = self.get_bit_board_mut(capture.unwrap());
                 capturing_bit_board.set(&capture_position);
 
-                let moving_bit_board =
-                    self.get_bit_board_mut(self.friendly_piece_at(move_data.to).unwrap());
+                let moving_bit_board = self.get_bit_board_mut(if white_to_move {
+                    Piece::WhitePawn
+                } else {
+                    Piece::BlackPawn
+                });
                 moving_bit_board.toggle(&move_data.from, &move_data.to);
             }
 
