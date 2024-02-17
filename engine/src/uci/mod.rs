@@ -155,7 +155,7 @@ uciok",
             match label {
                 "moves" => {
                     self.moves.clear();
-                    while let Some(uci_move) = args.next() {
+                    for uci_move in args.by_ref() {
                         self.moves.push(uci_move.to_owned());
                     }
                 }
@@ -232,7 +232,7 @@ uciok",
                 ))
                 // TODO: fix crash when depth goes very high
             },
-            &mut || search_start.miliseconds() as u128 > think_time,
+            &mut || search_start.miliseconds() > think_time,
         );
         (self.out)(&format!(
             "info depth {depth} score cp {evaluation} time {} pv {}",

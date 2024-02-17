@@ -14,9 +14,9 @@ pub mod timer {
                 start: unsafe { time() },
             }
         }
-        pub fn miliseconds(&self) -> u64 {
+        pub fn miliseconds(&self) -> u128 {
             let now = unsafe { time() };
-            ((now - self.start) * 1000.0) as u64
+            ((now - self.start) * 1000.0) as u128
         }
     }
 }
