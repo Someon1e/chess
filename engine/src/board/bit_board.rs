@@ -25,6 +25,9 @@ impl fmt::Display for BitBoard {
 }
 
 impl BitBoard {
+    pub const NOT_A_FILE: BitBoard = BitBoard::new(!0x101010101010101);
+    pub const NOT_H_FILE: BitBoard = BitBoard::new(!(0x101010101010101 << 7));
+
     pub const RANK_1: BitBoard = Self::new(0b11111111);
     pub const RANK_2: BitBoard = Self::new(0b11111111 << 8);
     pub const RANK_3: BitBoard = Self::new(0b11111111 << 16);

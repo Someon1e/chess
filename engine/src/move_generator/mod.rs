@@ -82,19 +82,17 @@ impl MoveGenerator {
         {
             // Captures
 
-            const NOT_A_FILE: BitBoard = BitBoard::new(!0x101010101010101);
-            const NOT_H_FILE: BitBoard = BitBoard::new(!(0x101010101010101 << 7));
             let non_orthogonally_pinned_pawns = self.friendly_pawns & !(self.orthogonal_pin_rays);
 
             let not_on_the_right_edge = if self.white_to_move {
-                NOT_H_FILE
+                BitBoard::NOT_H_FILE
             } else {
-                NOT_A_FILE
+                BitBoard::NOT_A_FILE
             };
             let not_on_the_left_edge = if self.white_to_move {
-                NOT_A_FILE
+                BitBoard::NOT_A_FILE
             } else {
-                NOT_H_FILE
+                BitBoard::NOT_H_FILE
             };
             let capture_right_offset = if self.white_to_move { -9 } else { 9 };
             let capture_left_offset = if self.white_to_move { -7 } else { 7 };
