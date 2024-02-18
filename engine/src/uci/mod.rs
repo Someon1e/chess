@@ -196,7 +196,7 @@ uciok",
         if parameters.perft {
             (self.out)(&format!(
                 "Nodes searched: {}",
-                perft_root(board, false, true, parameters.depth.unwrap(), self.out)
+                perft_root(board, parameters.depth.unwrap(), self.out)
             ));
             return;
         }
