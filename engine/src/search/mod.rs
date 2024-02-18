@@ -114,6 +114,8 @@ impl<'a> Search<'a> {
     }
     fn negamax(
         &mut self,
+
+        allow_null_move: bool,
         ply: u16,
         depth: u16,
 
@@ -136,10 +138,9 @@ impl<'a> Search<'a> {
 
         let zobrist_index = zobrist_key % self.transposition_table.len();
 
-        let mut hash_move = &EncodedMove::NONE;
+        let mut hash_move = EncodedMove::NONE;
 
-        // TODO: thoroughly test this works
-        if let Some(saved) = &self.transposition_table[zobrist_index] {
+        if let Some(saved) = self.transposition_table[zobrist_index] {
             if saved.zobrist_key != zobrist_key {
                 // eprintln!("Collision!")
             } else {
@@ -159,7 +160,7 @@ impl<'a> Search<'a> {
                         }
                     }
                 }
-                hash_move = &saved.best_move
+                hash_move = saved.best_move
             }
         }
 
@@ -177,14 +178,29 @@ impl<'a> Search<'a> {
 
         let move_generator = MoveGenerator::new(self.board);
 
+        const NULL_MOVE_R: u16 = 3;
+        if allow_null_move && ply_remaining > NULL_MOVE_R && !move_generator.is_in_check() {
+            // TODO: thoroughly test this works
+
+            self.board.make_null_move();
+            let score = -self.negamax(false, ply + 1, depth - NULL_MOVE_R + 1, should_cancel, -beta, -beta + 1);
+            self.board.unmake_null_move();
+            if should_cancel() {
+                return 0;
+            }
+            if score >= beta {
+                return beta;
+            }
+        }
+
         if ply == 0 {
-            hash_move = &self.best_move;
+            hash_move = self.best_move;
         }
         let (mut move_guesses, move_count) = MoveOrderer::get_sorted_moves(
             self,
             &move_generator,
             hash_move,
-            &if (ply as usize) < self.killer_moves.len() {
+            if (ply as usize) < self.killer_moves.len() {
                 self.killer_moves[ply as usize]
             } else {
                 EncodedMove::NONE
@@ -218,21 +234,21 @@ impl<'a> Search<'a> {
                 index < 3 || (ply_remaining) < 3 || move_generator.is_in_check();
             let mut score = 0;
             if !normal_search {
-                score = -self.negamax(ply + 2, depth, should_cancel, -beta, -alpha);
+                score = -self.negamax(true, ply + 1, depth - 1, should_cancel, -beta, -alpha);
                 if score > alpha {
                     normal_search = true;
                 }
             }
 
             if normal_search {
-                score = -self.negamax(ply + 1, depth, should_cancel, -beta, -alpha);
+                score = -self.negamax(true, ply + 1, depth, should_cancel, -beta, -alpha);
             }
             self.unmake_move(&move_data);
             if should_cancel() {
                 return 0;
             }
             if score >= beta {
-                if move_data.flag == Flag::None
+                if (ply as usize) < self.killer_moves.len() && move_data.flag == Flag::None
                     && !move_generator.enemy_piece_bit_board().get(&move_data.to)
                 {
                     self.killer_moves[ply as usize] = encoded_move_data
@@ -280,7 +296,7 @@ impl<'a> Search<'a> {
         let mut depth = 0;
         loop {
             depth += 1;
-            self.negamax(0, depth, &mut || false, -i32::MAX, i32::MAX);
+            self.negamax(false, 0, depth, &mut || false, -i32::MAX, i32::MAX);
 
             if self.best_move.is_none() || self.best_score.abs() == CHECKMATE_SCORE.abs() {
                 return (depth, self.best_move, self.best_score);
@@ -300,7 +316,7 @@ impl<'a> Search<'a> {
         let mut depth = 0;
         while !should_cancel() {
             depth += 1;
-            self.negamax(0, depth, should_cancel, -i32::MAX, i32::MAX);
+            self.negamax(false, 0, depth, should_cancel, -i32::MAX, i32::MAX);
             if should_cancel() {
                 break;
             }

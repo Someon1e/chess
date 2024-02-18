@@ -6,6 +6,7 @@
 - Alpha-beta pruning
 - Move ordering
 - Killer move heuristic
+- Null move heuristic
 - Late move reduction
 - Transposition table
 - Quiescence search
@@ -16,6 +17,5 @@
 
 ### TODO:
 - Check extensions
-- Null move heuristic
 - Opening book
 - Multiple lines, so that it does not always play the same moves.

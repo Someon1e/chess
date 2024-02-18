@@ -180,8 +180,8 @@ impl MoveOrderer {
     pub fn get_sorted_moves(
         search: &Search,
         move_generator: &MoveGenerator,
-        hash_move: &EncodedMove,
-        killer_move: &EncodedMove,
+        hash_move: EncodedMove,
+        killer_move: EncodedMove,
     ) -> ([MoveGuess; MAX_LEGAL_MOVES], usize) {
         let mut move_guesses = [MoveGuess {
             move_data: EncodedMove::NONE,
@@ -193,7 +193,7 @@ impl MoveOrderer {
                 let encoded = EncodedMove::new(move_data);
                 move_guesses[index] = MoveGuess {
                     move_data: encoded,
-                    guess: if encoded == *hash_move {
+                    guess: if encoded == hash_move {
                         10000
                     } else {
                         Self::guess_move_value(
@@ -201,7 +201,7 @@ impl MoveOrderer {
                             &move_generator.enemy_pawn_attacks(),
                             &move_data,
                         )
-                    } + if encoded == *killer_move { 100 } else { 0 },
+                    } + if encoded == killer_move { 100 } else { 0 },
                 };
                 index += 1
             },
@@ -230,8 +230,8 @@ mod tests {
         let (mut move_guesses, move_count) = MoveOrderer::get_sorted_moves(
             &Search::new(&mut board),
             &move_generator,
-            &EncodedMove::NONE,
-            &EncodedMove::NONE,
+            EncodedMove::NONE,
+            EncodedMove::NONE,
         );
         let mut index = move_count;
         let mut next_move = || {
