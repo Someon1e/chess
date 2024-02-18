@@ -36,6 +36,7 @@ pub fn perft_root(board: &mut Board, depth: u16, log: fn(&str)) -> usize {
     MoveGenerator::new(board).gen(
         &mut |move_data| {
             if !cfg!(test) && depth == 1 {
+                log(&format!("{}: 1", uci::encode_move(move_data)));
                 move_count += 1;
                 return;
             }
