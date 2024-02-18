@@ -184,14 +184,12 @@ uciok",
         parameters.parse(args);
 
         let board = &mut Board::from_fen(self.fen.as_ref().unwrap());
-        self.fen = None;
 
         let mut search = Search::new(board);
 
         for uci_move in &self.moves {
             search.make_move(&decode_move(search.board(), uci_move))
         }
-        self.moves.clear();
 
         (self.out)(&search.board().to_fen());
 
