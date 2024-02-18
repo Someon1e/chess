@@ -149,12 +149,14 @@ uciok",
         (self.out)("readyok");
     }
     pub fn position(&mut self, args: &mut SplitWhitespace) {
+        self.moves.clear();
+        self.fen = None;
+
         let mut startpos = true;
         let mut building_fen = String::new();
         while let Some(label) = args.next() {
             match label {
                 "moves" => {
-                    self.moves.clear();
                     for uci_move in args.by_ref() {
                         self.moves.push(uci_move.to_owned());
                     }
@@ -188,6 +190,7 @@ uciok",
         let mut search = Search::new(board);
 
         for uci_move in &self.moves {
+            println!("{uci_move}");
             search.make_move(&decode_move(search.board(), uci_move))
         }
 
