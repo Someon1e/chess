@@ -33,6 +33,7 @@ impl Zobrist {
         self.0 ^= ZOBRIST_RANDOMS.piece_arrays[piece_index][square_index];
     }
 
+    #[cfg(test)]
     pub fn compute(board: &Board) -> Self {
         // For debugging only.
 

@@ -4,7 +4,7 @@ use crate::{
     uci,
 };
 
-fn perft(board: &mut Board, check_zobrist: bool, bulk_count: bool, depth: u16) -> usize {
+fn perft(board: &mut Board, depth: u16) -> usize {
     if depth == 0 {
         return 1;
     };
@@ -12,19 +12,18 @@ fn perft(board: &mut Board, check_zobrist: bool, bulk_count: bool, depth: u16) -
     let mut move_count = 0;
     MoveGenerator::new(board).gen(
         &mut |move_data| {
-            if !bulk_count || depth != 1 {
-                board.make_move(&move_data);
+            if !cfg!(test) && depth == 1 {
+                move_count += 1;
+                return;
             }
 
-            if check_zobrist {
-                assert!(Zobrist::compute(board) == board.zobrist_key());
-            }
+            board.make_move(&move_data);
 
-            move_count += perft(board, check_zobrist, bulk_count, depth - 1);
+            #[cfg(test)]
+            assert!(Zobrist::compute(board) == board.zobrist_key());
 
-            if !bulk_count || depth != 1 {
-                board.unmake_move(&move_data);
-            }
+            move_count += perft(board, depth - 1);
+            board.unmake_move(&move_data);
         },
         false,
     );
@@ -32,31 +31,25 @@ fn perft(board: &mut Board, check_zobrist: bool, bulk_count: bool, depth: u16) -
     move_count
 }
 
-pub fn perft_root(
-    board: &mut Board,
-    check_zobrist: bool,
-    bulk_count: bool,
-    depth: u16,
-    log: fn(&str),
-) -> usize {
+pub fn perft_root(board: &mut Board, depth: u16, log: fn(&str)) -> usize {
     let mut move_count = 0;
     MoveGenerator::new(board).gen(
         &mut |move_data| {
-            if !bulk_count || depth != 1 {
-                board.make_move(&move_data);
+            if !cfg!(test) && depth == 1 {
+                move_count += 1;
+                return;
             }
 
-            if check_zobrist {
-                assert!(Zobrist::compute(board) == board.zobrist_key());
-            }
+            board.make_move(&move_data);
 
-            let inner = perft(board, check_zobrist, bulk_count, depth - 1);
-            log(&format!("{}: {}", uci::encode_move(move_data), inner));
+            #[cfg(test)]
+            assert!(Zobrist::compute(board) == board.zobrist_key());
+
+            let inner = perft(board, depth - 1);
             move_count += inner;
+            log(&format!("{}: {}", uci::encode_move(move_data), inner));
 
-            if !bulk_count || depth != 1 {
-                board.unmake_move(&move_data);
-            }
+            board.unmake_move(&move_data);
         },
         false,
     );

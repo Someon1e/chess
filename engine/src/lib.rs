@@ -74,7 +74,7 @@ mod tests {
 
         let board = &mut Board::from_fen(fen);
 
-        let move_count = perft_root(board, true, false, depth, |out| println!("{}", out));
+        let move_count = perft_root(board, depth, |out| println!("{}", out));
 
         let seconds_elapsed = start.elapsed().as_secs_f32();
         println!(
