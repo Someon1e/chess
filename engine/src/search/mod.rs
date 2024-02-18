@@ -26,6 +26,9 @@ pub struct Search<'a> {
     killer_moves: [EncodedMove; 32],
     best_move: EncodedMove,
     best_score: i32,
+
+    #[cfg(test)]
+    times_evaluation_was_called: u32,
 }
 
 const CHECKMATE_SCORE: i32 = -i32::MAX + 1;
@@ -39,6 +42,9 @@ impl<'a> Search<'a> {
             killer_moves: [EncodedMove::NONE; 32],
             best_move: EncodedMove::NONE,
             best_score: -i32::MAX,
+
+            #[cfg(test)]
+            times_evaluation_was_called: 0,
         }
     }
 
@@ -47,7 +53,13 @@ impl<'a> Search<'a> {
     }
 
     fn quiescence_search(&mut self, mut alpha: i32, beta: i32) -> i32 {
+        #[cfg(test)]
+        {
+            self.times_evaluation_was_called += 1
+        }
+
         let stand_pat = Eval::evaluate(self);
+
         if stand_pat >= beta {
             return beta;
         }
@@ -99,7 +111,7 @@ impl<'a> Search<'a> {
             }
         }
     }
-    pub fn negamax(
+    fn negamax(
         &mut self,
         ply: u16,
         depth: u16,
@@ -255,6 +267,25 @@ impl<'a> Search<'a> {
         });
 
         alpha
+    }
+    pub fn depth_by_depth(
+        &mut self,
+        depth_completed: &mut dyn FnMut(u16, (EncodedMove, i32)) -> bool
+    ) -> (u16, EncodedMove, i32) {
+        let mut depth = 0;
+        loop {
+            depth += 1;
+            self.negamax(0, depth, &mut || false, -i32::MAX, i32::MAX);
+
+            if self.best_move.is_none() || self.best_score.abs() == CHECKMATE_SCORE.abs() {
+                return (depth, self.best_move, self.best_score);
+            }
+            let stop = depth_completed(depth, (self.best_move, self.best_score));
+            if stop {
+                break
+            }
+        }
+        (depth, self.best_move, self.best_score)
     }
     pub fn iterative_deepening(
         &mut self,
@@ -1012,17 +1043,31 @@ mod tests {
     ];
     #[test]
     fn win_at_chess() {
+        let mut failures = 0;
+        let mut successes = 0;
+        let mut total_times_evaluation_was_called = 0;
         for (position, solution) in OBVIOUS_POSITIONS {
             let mut board = Board::from_fen(position);
             let solution = uci::decode_move(&board, &solution[0..4]);
+            let mut search = Search::new(&mut board);
             let search_start = Time::now();
-            let result = Search::new(&mut board)
-                .iterative_deepening(&mut |_, _| {}, &mut || search_start.miliseconds() > 1000);
+            let result = search.depth_by_depth(&mut |depth, answer| {
+                if answer.0.decode() == solution {
+                    true
+                } else {
+                    10000 < search_start.miliseconds()
+                }
+            });
             if result.1.decode() != solution {
+                failures += 1;
                 eprintln!("Failed {position}")
             } else {
-                eprintln!("Success {position}")
+                successes += 1;
+                eprintln!("Success {position}");
+                total_times_evaluation_was_called += search.times_evaluation_was_called;
             }
+
+            println!("{total_times_evaluation_was_called} Failed {failures} Succeeded {successes}")
         }
     }
 }
