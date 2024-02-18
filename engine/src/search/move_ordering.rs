@@ -37,10 +37,6 @@ impl MoveOrderer {
         let moving_from = move_data.from;
         let moving_to = move_data.to;
 
-        if enemy_pawn_attacks.get(&moving_to) {
-            score -= 50;
-        }
-
         let moving_piece = search.board.friendly_piece_at(moving_from).unwrap();
         let (moving_from_middle_game_value, moving_from_end_game_value) = {
             if search.board.white_to_move {
@@ -61,12 +57,19 @@ impl MoveOrderer {
                     Eval::get_white_piece_value(capturing, moving_to)
                 }
             };
-
-            score += Eval::calculate_score(
+            let mut potential_middle_game_value_loss = moving_from_middle_game_value;
+            let mut potential_end_game_value_loss = moving_from_end_game_value;
+            if !enemy_pawn_attacks.get(&moving_to) {
+                potential_middle_game_value_loss /= 2;
+                potential_end_game_value_loss /= 2;
+            }
+            let score_difference = Eval::calculate_score(
                 phase,
-                capturing_middle_game_value - moving_from_middle_game_value,
-                capturing_end_game_value - moving_from_end_game_value,
+                capturing_middle_game_value - potential_middle_game_value_loss,
+                capturing_end_game_value - potential_end_game_value_loss,
             );
+
+            score += score_difference;
         } else {
             let (moving_to_middle_game_value, moving_to_end_game_value) = {
                 if search.board.white_to_move {
@@ -75,6 +78,9 @@ impl MoveOrderer {
                     Eval::get_black_piece_value(moving_piece, moving_to)
                 }
             };
+            if enemy_pawn_attacks.get(&moving_to) {
+                score -= 50;
+            }
             score += Eval::calculate_score(
                 phase,
                 moving_to_middle_game_value - moving_from_middle_game_value,

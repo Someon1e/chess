@@ -75,12 +75,13 @@ impl<'a> Search<'a> {
         }
         let mut index = move_count - 1;
         loop {
-            let move_data =
-                MoveOrderer::put_highest_guessed_move_on_top(&mut move_guesses, index).move_data;
+            let move_data = MoveOrderer::put_highest_guessed_move_on_top(&mut move_guesses, index)
+                .move_data
+                .decode();
 
-            self.board.make_move(&move_data.decode());
+            self.board.make_move(&move_data);
             let score = -self.quiescence_search(-beta, -alpha);
-            self.board.unmake_move(&move_data.decode());
+            self.board.unmake_move(&move_data);
 
             if score >= beta {
                 return beta;
@@ -131,6 +132,8 @@ impl<'a> Search<'a> {
             return 0;
         }
 
+        let ply_remaining = depth - ply;
+
         let zobrist_index = zobrist_key % self.transposition_table.len();
 
         let mut hash_move = &EncodedMove::NONE;
@@ -140,7 +143,7 @@ impl<'a> Search<'a> {
             if saved.zobrist_key != zobrist_key {
                 // eprintln!("Collision!")
             } else {
-                if saved.ply_remaining >= depth - ply {
+                if saved.ply_remaining >= ply_remaining {
                     let node_type = &saved.node_type;
                     match node_type {
                         NodeType::Exact => return saved.value,
@@ -160,11 +163,11 @@ impl<'a> Search<'a> {
             }
         }
 
-        if ply == depth {
+        if ply_remaining == 0 {
             let evaluation = self.quiescence_search(alpha, beta);
             self.transposition_table[zobrist_index] = Some(NodeValue {
                 zobrist_key,
-                ply_remaining: depth - ply,
+                ply_remaining,
                 node_type: NodeType::Exact,
                 value: evaluation,
                 best_move: EncodedMove::NONE,
@@ -205,12 +208,14 @@ impl<'a> Search<'a> {
         let mut best_move = EncodedMove::NONE;
         let mut index = move_count - 1;
         loop {
-            let move_data =
+            let encoded_move_data =
                 MoveOrderer::put_highest_guessed_move_on_top(&mut move_guesses, index).move_data;
+            let move_data = encoded_move_data.decode();
 
-            self.make_move(&move_data.decode());
+            self.make_move(&move_data);
 
-            let mut normal_search = index < 3 || (depth - ply) < 3 || move_generator.is_in_check();
+            let mut normal_search =
+                index < 3 || (ply_remaining) < 3 || move_generator.is_in_check();
             let mut score = 0;
             if !normal_search {
                 score = -self.negamax(ply + 2, depth, should_cancel, -beta, -alpha);
@@ -222,21 +227,21 @@ impl<'a> Search<'a> {
             if normal_search {
                 score = -self.negamax(ply + 1, depth, should_cancel, -beta, -alpha);
             }
-            self.unmake_move(&move_data.decode());
+            self.unmake_move(&move_data);
             if should_cancel() {
                 return 0;
             }
             if score >= beta {
-                if *move_data.flag() == Flag::None
-                    && !move_generator.enemy_piece_bit_board().get(&move_data.to())
+                if move_data.flag == Flag::None
+                    && !move_generator.enemy_piece_bit_board().get(&move_data.to)
                 {
-                    self.killer_moves[ply as usize] = move_data
+                    self.killer_moves[ply as usize] = encoded_move_data
                 }
                 node_type = NodeType::Beta;
-                best_move = move_data;
+                best_move = encoded_move_data;
                 self.transposition_table[zobrist_index] = Some(NodeValue {
                     zobrist_key,
-                    ply_remaining: depth - ply,
+                    ply_remaining: ply_remaining,
                     node_type,
                     value: score,
                     best_move,
@@ -246,7 +251,7 @@ impl<'a> Search<'a> {
             if score > alpha {
                 node_type = NodeType::Exact;
                 alpha = score;
-                best_move = move_data;
+                best_move = encoded_move_data;
 
                 if ply == 0 {
                     self.best_move = best_move;
@@ -260,7 +265,7 @@ impl<'a> Search<'a> {
         }
         self.transposition_table[zobrist_index] = Some(NodeValue {
             zobrist_key,
-            ply_remaining: depth - ply,
+            ply_remaining,
             node_type,
             value: alpha,
             best_move,
@@ -1054,13 +1059,14 @@ mod tests {
         );
         for i in 0..THREAD_COUNT {
             let sender = sender.clone();
-            threads.push(thread::spawn(move || {
-                let mut end = (i + 1) * divide;
-                if i == THREAD_COUNT - 1 {
-                    end += remainder;
-                }
-                let positions = &OBVIOUS_POSITIONS[i * divide..end];
 
+            let mut end = (i + 1) * divide;
+            if i == THREAD_COUNT - 1 {
+                end += remainder;
+            }
+            let positions = &OBVIOUS_POSITIONS[i * divide..end];
+
+            threads.push(thread::spawn(move || {
                 for (position, solution) in positions {
                     let mut board = Board::from_fen(position);
                     let solution = uci::decode_move(&board, &solution[0..4]);
@@ -1070,7 +1076,7 @@ mod tests {
                         if answer.0.decode() == solution {
                             true
                         } else {
-                            10000 < search_start.miliseconds()
+                            1000 < search_start.miliseconds()
                         }
                     });
 
@@ -1098,7 +1104,7 @@ mod tests {
                 println!("Failure #{failures} {position}");
             };
             if successes + failures == OBVIOUS_POSITIONS.len() {
-                break
+                break;
             }
         }
         println!("Successes: {successes} Failures: {failures} Times eval was called: {total_times_evaluation_was_called}")
