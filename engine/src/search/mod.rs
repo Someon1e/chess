@@ -270,7 +270,7 @@ impl<'a> Search<'a> {
     }
     pub fn depth_by_depth(
         &mut self,
-        depth_completed: &mut dyn FnMut(u16, (EncodedMove, i32)) -> bool
+        depth_completed: &mut dyn FnMut(u16, (EncodedMove, i32)) -> bool,
     ) -> (u16, EncodedMove, i32) {
         let mut depth = 0;
         loop {
@@ -282,7 +282,7 @@ impl<'a> Search<'a> {
             }
             let stop = depth_completed(depth, (self.best_move, self.best_score));
             if stop {
-                break
+                break;
             }
         }
         (depth, self.best_move, self.best_score)
@@ -311,6 +311,8 @@ impl<'a> Search<'a> {
 
 #[cfg(test)]
 mod tests {
+    use std::{sync::mpsc, thread};
+
     use crate::{
         board::Board,
         search::{eval::Eval, Search},
@@ -1043,31 +1045,62 @@ mod tests {
     ];
     #[test]
     fn win_at_chess() {
+        let (sender, receiver) = mpsc::channel();
+        let mut threads = vec![];
+        const THREAD_COUNT: usize = 8;
+        let (divide, remainder) = (
+            OBVIOUS_POSITIONS.len() / THREAD_COUNT,
+            OBVIOUS_POSITIONS.len() % THREAD_COUNT,
+        );
+        for i in 0..THREAD_COUNT {
+            let sender = sender.clone();
+            threads.push(thread::spawn(move || {
+                let mut end = (i + 1) * divide;
+                if i == THREAD_COUNT - 1 {
+                    end += remainder;
+                }
+                let positions = &OBVIOUS_POSITIONS[i * divide..end];
+
+                for (position, solution) in positions {
+                    let mut board = Board::from_fen(position);
+                    let solution = uci::decode_move(&board, &solution[0..4]);
+                    let mut search = Search::new(&mut board);
+                    let search_start = Time::now();
+                    let result = search.depth_by_depth(&mut |depth, answer| {
+                        if answer.0.decode() == solution {
+                            true
+                        } else {
+                            10000 < search_start.miliseconds()
+                        }
+                    });
+
+                    sender
+                        .send((
+                            position,
+                            result.1.decode() == solution,
+                            search.times_evaluation_was_called,
+                        ))
+                        .unwrap();
+                }
+            }));
+        }
+
         let mut failures = 0;
         let mut successes = 0;
         let mut total_times_evaluation_was_called = 0;
-        for (position, solution) in OBVIOUS_POSITIONS {
-            let mut board = Board::from_fen(position);
-            let solution = uci::decode_move(&board, &solution[0..4]);
-            let mut search = Search::new(&mut board);
-            let search_start = Time::now();
-            let result = search.depth_by_depth(&mut |depth, answer| {
-                if answer.0.decode() == solution {
-                    true
-                } else {
-                    10000 < search_start.miliseconds()
-                }
-            });
-            if result.1.decode() != solution {
-                failures += 1;
-                eprintln!("Failed {position}")
-            } else {
+        for (position, success, times_evaluation_was_called) in receiver.iter() {
+            if success {
                 successes += 1;
-                eprintln!("Success {position}");
-                total_times_evaluation_was_called += search.times_evaluation_was_called;
+                total_times_evaluation_was_called += times_evaluation_was_called;
+                println!("Success #{successes} {position}");
+            } else {
+                failures += 1;
+                println!("Failure #{failures} {position}");
+            };
+            if successes + failures == OBVIOUS_POSITIONS.len() {
+                break
             }
-
-            println!("{total_times_evaluation_was_called} Failed {failures} Succeeded {successes}")
         }
+        println!("Successes: {successes} Failures: {failures} Times eval was called: {total_times_evaluation_was_called}")
     }
 }
