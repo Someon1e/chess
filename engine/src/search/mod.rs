@@ -235,6 +235,7 @@ impl<'a> Search<'a> {
                 MoveOrderer::put_highest_guessed_move_on_top(&mut move_guesses, index).move_data;
             let move_data = encoded_move_data.decode();
 
+            let is_capture = move_generator.enemy_piece_bit_board().get(&move_data.to);
             self.make_move(&move_data);
 
             let mut normal_search =
@@ -257,7 +258,7 @@ impl<'a> Search<'a> {
             if score >= beta {
                 if (ply as usize) < self.killer_moves.len()
                     && move_data.flag == Flag::None
-                    && !move_generator.enemy_piece_bit_board().get(&move_data.to)
+                    && !is_capture
                 {
                     self.killer_moves[ply as usize] = encoded_move_data
                 }
@@ -265,7 +266,7 @@ impl<'a> Search<'a> {
                 best_move = encoded_move_data;
                 self.transposition_table[zobrist_index] = Some(NodeValue {
                     zobrist_key,
-                    ply_remaining: ply_remaining,
+                    ply_remaining,
                     node_type,
                     value: score,
                     best_move,
