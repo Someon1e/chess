@@ -183,7 +183,14 @@ impl<'a> Search<'a> {
             // TODO: thoroughly test this works
 
             self.board.make_null_move();
-            let score = -self.negamax(false, ply + 1, depth - NULL_MOVE_R + 1, should_cancel, -beta, -beta + 1);
+            let score = -self.negamax(
+                false,
+                ply + 1,
+                depth - NULL_MOVE_R + 1,
+                should_cancel,
+                -beta,
+                -beta + 1,
+            );
             self.board.unmake_null_move();
             if should_cancel() {
                 return 0;
@@ -248,7 +255,8 @@ impl<'a> Search<'a> {
                 return 0;
             }
             if score >= beta {
-                if (ply as usize) < self.killer_moves.len() && move_data.flag == Flag::None
+                if (ply as usize) < self.killer_moves.len()
+                    && move_data.flag == Flag::None
                     && !move_generator.enemy_piece_bit_board().get(&move_data.to)
                 {
                     self.killer_moves[ply as usize] = encoded_move_data
