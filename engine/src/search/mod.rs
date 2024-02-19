@@ -241,10 +241,10 @@ impl<'a> Search<'a> {
             self.make_move(&move_data);
 
             let mut normal_search =
-                index < 3 || (ply_remaining) < 3 || move_generator.is_in_check();
+                is_capture || index < 3 || (ply_remaining) < 3 || move_generator.is_in_check();
             let mut score = 0;
             if !normal_search {
-                score = -self.negamax(true, ply + 1, depth - 1, should_cancel, -beta, -alpha);
+                score = -self.negamax(true, ply + 1, depth - 1, should_cancel, -alpha - 1, -alpha);
                 if score > alpha {
                     normal_search = true;
                 }
