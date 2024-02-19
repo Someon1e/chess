@@ -19,6 +19,11 @@ use self::{
     transposition::{NodeType, NodeValue, TRANSPOSITION_CAPACITY},
 };
 
+const CHECKMATE_SCORE: i32 = -i32::MAX + 1;
+
+const NOT_LATE_MOVES: usize = 3;
+const NULL_MOVE_R: u16 = 3;
+
 pub struct Search<'a> {
     board: &'a mut Board,
     transposition_table: Vec<Option<NodeValue>>,
@@ -31,8 +36,6 @@ pub struct Search<'a> {
     #[cfg(test)]
     times_evaluation_was_called: u32,
 }
-
-const CHECKMATE_SCORE: i32 = -i32::MAX + 1;
 
 impl<'a> Search<'a> {
     pub fn new(board: &'a mut Board) -> Self {
@@ -180,7 +183,6 @@ impl<'a> Search<'a> {
 
         let move_generator = MoveGenerator::new(self.board);
 
-        const NULL_MOVE_R: u16 = 3;
         if allow_null_move && ply_remaining > NULL_MOVE_R && !move_generator.is_in_check() {
             // TODO: thoroughly test this works
 
@@ -241,7 +243,7 @@ impl<'a> Search<'a> {
             self.make_move(&move_data);
 
             let mut normal_search =
-                is_capture || index < 3 || (ply_remaining) < 3 || move_generator.is_in_check();
+                is_capture || index < NOT_LATE_MOVES || (ply_remaining) < 3 || move_generator.is_in_check();
             let mut score = 0;
             if !normal_search {
                 score = -self.negamax(true, ply + 1, depth - 1, should_cancel, -alpha - 1, -alpha);
