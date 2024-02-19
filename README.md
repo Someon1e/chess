@@ -6,6 +6,7 @@
 - Alpha-beta pruning
 - Move ordering
 - Killer move heuristic
+- History heuristic
 - Null move heuristic
 - Late move reduction
 - Transposition table

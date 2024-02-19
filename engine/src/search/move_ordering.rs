@@ -17,25 +17,47 @@ pub struct MoveGuess {
 const MAX_LEGAL_MOVES: usize = 218;
 const MAX_CAPTURES: usize = 74;
 
+/*
+    PV-move of the principal variation from the previous iteration of an iterative deepening framework for the leftmost path, often implicitly done by 2.
+    Hash move from hash tables
+    Winning captures/promotions
+    Equal captures/promotions
+    Killer moves (non capture), often with mate killers first
+    Non-captures sorted by history heuristic and that like
+    Losing captures (* but see below
+*/
+const HASH_MOVE_BONUS: i32 = 100000;
+const WINNING_CAPTURE_BONUS: i32 = 2000;
+const PROMOTION_BONUS: i32 = 2000;
+const EQUAL_CAPTURE_BONUS: i32 = 1000;
+const KILLER_MOVE_BONUS: i32 = 500;
+const LOSING_CAPTURE_BONUS: i32 = 50;
+
 pub struct MoveOrderer {}
 impl MoveOrderer {
     fn guess_move_value(search: &Search, enemy_pawn_attacks: &BitBoard, move_data: &Move) -> i32 {
+        let moving_from = move_data.from;
+        let moving_to = move_data.to;
+
         let mut score = 0;
         match move_data.flag {
-            Flag::EnPassant => return 0,
-            Flag::PawnTwoUp => return 5,
-            Flag::Castle => return 20,
+            Flag::EnPassant => {
+                return search.history_heuristic[search.board.white_to_move as usize]
+                    [moving_from.usize()][moving_to.usize()] as i32
+            }
+            Flag::PawnTwoUp => {}
+            Flag::Castle => {
+                return search.history_heuristic[search.board.white_to_move as usize]
+                    [moving_from.usize()][moving_to.usize()] as i32
+            }
 
-            Flag::BishopPromotion => score += 300,
-            Flag::KnightPromotion => score += 400,
-            Flag::RookPromotion => score += 300,
-            Flag::QueenPromotion => score += 800,
+            Flag::BishopPromotion => return PROMOTION_BONUS + 300,
+            Flag::KnightPromotion => return PROMOTION_BONUS + 400,
+            Flag::RookPromotion => return PROMOTION_BONUS + 300,
+            Flag::QueenPromotion => return PROMOTION_BONUS + 800,
 
             Flag::None => {}
         }
-
-        let moving_from = move_data.from;
-        let moving_to = move_data.to;
 
         let moving_piece = search.board.friendly_piece_at(moving_from).unwrap();
         let (moving_from_middle_game_value, moving_from_end_game_value) = {
@@ -68,9 +90,18 @@ impl MoveOrderer {
                 capturing_middle_game_value - potential_middle_game_value_loss,
                 capturing_end_game_value - potential_end_game_value_loss,
             );
-
             score += score_difference;
+            if score_difference.is_positive() {
+                score += WINNING_CAPTURE_BONUS
+            } else if score_difference.is_negative() {
+                score += LOSING_CAPTURE_BONUS;
+            } else {
+                score += EQUAL_CAPTURE_BONUS;
+            }
         } else {
+            score += search.history_heuristic[search.board.white_to_move as usize]
+                [moving_from.usize()][moving_to.usize()] as i32;
+
             let (moving_to_middle_game_value, moving_to_end_game_value) = {
                 if search.board.white_to_move {
                     Eval::get_white_piece_value(moving_piece, moving_to)
@@ -194,14 +225,18 @@ impl MoveOrderer {
                 move_guesses[index] = MoveGuess {
                     move_data: encoded,
                     guess: if encoded == hash_move {
-                        10000
+                        HASH_MOVE_BONUS
                     } else {
                         Self::guess_move_value(
                             search,
                             &move_generator.enemy_pawn_attacks(),
                             &move_data,
                         )
-                    } + if encoded == killer_move { 100 } else { 0 },
+                    } + if encoded == killer_move {
+                        KILLER_MOVE_BONUS
+                    } else {
+                        0
+                    },
                 };
                 index += 1
             },

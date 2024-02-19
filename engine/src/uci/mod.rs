@@ -190,7 +190,6 @@ uciok",
         let mut search = Search::new(board);
 
         for uci_move in &self.moves {
-            println!("{uci_move}");
             search.make_move(&decode_move(search.board(), uci_move))
         }
 

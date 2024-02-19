@@ -24,6 +24,7 @@ pub struct Search<'a> {
     transposition_table: Vec<Option<NodeValue>>,
     repetition_table: Vec<Zobrist>,
     killer_moves: [EncodedMove; 32],
+    history_heuristic: [[[u16; 64]; 64]; 2],
     best_move: EncodedMove,
     best_score: i32,
 
@@ -40,6 +41,7 @@ impl<'a> Search<'a> {
             transposition_table: vec![None; TRANSPOSITION_CAPACITY],
             repetition_table: Vec::with_capacity(5),
             killer_moves: [EncodedMove::NONE; 32],
+            history_heuristic: [[[0; 64]; 64]; 2],
             best_move: EncodedMove::NONE,
             best_score: -i32::MAX,
 
@@ -256,11 +258,14 @@ impl<'a> Search<'a> {
                 return 0;
             }
             if score >= beta {
-                if (ply as usize) < self.killer_moves.len()
-                    && move_data.flag == Flag::None
-                    && !is_capture
-                {
-                    self.killer_moves[ply as usize] = encoded_move_data
+                if !is_capture {
+                    if move_data.flag == Flag::None && (ply as usize) < self.killer_moves.len() {
+                        self.killer_moves[ply as usize] = encoded_move_data
+                    }
+
+                    self.history_heuristic[self.board.white_to_move as usize]
+                        [move_data.from.usize()][move_data.to.usize()] +=
+                        ply_remaining * ply_remaining;
                 }
                 node_type = NodeType::Beta;
                 best_move = encoded_move_data;
