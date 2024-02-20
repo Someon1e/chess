@@ -33,6 +33,8 @@ const EQUAL_CAPTURE_BONUS: i32 = 1000;
 const KILLER_MOVE_BONUS: i32 = 500;
 const LOSING_CAPTURE_BONUS: i32 = 50;
 
+const PIECE_VALUES: [i32; 12] = [100, 300, 320, 500, 900, 0, 100, 300, 320, 500, 900, 0];
+
 pub struct MoveOrderer {}
 impl MoveOrderer {
     fn guess_move_value(search: &Search, enemy_pawn_attacks: &BitBoard, move_data: &Move) -> i32 {
@@ -63,34 +65,11 @@ impl MoveOrderer {
 
         // This won't take into account en passant
         if let Some(capturing) = search.board.enemy_piece_at(moving_to) {
-            let (moving_from_middle_game_value, moving_from_end_game_value) = {
-                if search.board.white_to_move {
-                    Eval::get_white_piece_value(moving_piece, moving_from)
-                } else {
-                    Eval::get_black_piece_value(moving_piece, moving_from)
-                }
-            };
-
-            let phase = Eval::get_phase(search);
-
-            let (capturing_middle_game_value, capturing_end_game_value) = {
-                if search.board.white_to_move {
-                    Eval::get_black_piece_value(capturing, moving_to)
-                } else {
-                    Eval::get_white_piece_value(capturing, moving_to)
-                }
-            };
-            let mut potential_middle_game_value_loss = moving_from_middle_game_value;
-            let mut potential_end_game_value_loss = moving_from_end_game_value;
+            let mut potential_value_loss = PIECE_VALUES[moving_piece as usize];
             if !enemy_pawn_attacks.get(&moving_to) {
-                potential_middle_game_value_loss /= 2;
-                potential_end_game_value_loss /= 2;
+                potential_value_loss /= 2;
             }
-            let score_difference = Eval::calculate_score(
-                phase,
-                capturing_middle_game_value - potential_middle_game_value_loss,
-                capturing_end_game_value - potential_end_game_value_loss,
-            );
+            let score_difference = PIECE_VALUES[capturing as usize] - potential_value_loss;
             score += score_difference;
             if score_difference.is_positive() {
                 score += WINNING_CAPTURE_BONUS
@@ -130,13 +109,13 @@ impl MoveOrderer {
     }
 
     fn guess_capture_value(search: &Search, move_data: &Move) -> i32 {
-        let flag_score = match move_data.flag {
+        let mut score = match move_data.flag {
             Flag::EnPassant => return 0,
 
-            Flag::BishopPromotion => 400,
-            Flag::KnightPromotion => 500,
-            Flag::RookPromotion => 400,
-            Flag::QueenPromotion => 900,
+            Flag::BishopPromotion => 1400,
+            Flag::KnightPromotion => 1500,
+            Flag::RookPromotion => 1400,
+            Flag::QueenPromotion => 1900,
 
             Flag::None => 0,
 
@@ -147,30 +126,11 @@ impl MoveOrderer {
         let moving_to = move_data.to;
 
         let moving_piece = search.board.friendly_piece_at(moving_from).unwrap();
-        let (moving_from_middle_game_value, moving_from_end_game_value) = {
-            if search.board.white_to_move {
-                Eval::get_white_piece_value(moving_piece, moving_from)
-            } else {
-                Eval::get_black_piece_value(moving_piece, moving_from)
-            }
-        };
-
         let capturing = search.board.enemy_piece_at(moving_to).unwrap();
 
-        let (capturing_middle_game_value, capturing_end_game_value) = {
-            if search.board.white_to_move {
-                Eval::get_black_piece_value(capturing, moving_to)
-            } else {
-                Eval::get_white_piece_value(capturing, moving_to)
-            }
-        };
+        score += PIECE_VALUES[capturing as usize] - PIECE_VALUES[moving_piece as usize];
 
-        flag_score
-            + Eval::calculate_score(
-                Eval::get_phase(search),
-                capturing_middle_game_value - moving_from_middle_game_value,
-                capturing_end_game_value - moving_from_end_game_value,
-            )
+        score
     }
 
     pub fn get_sorted_moves_captures_only(
