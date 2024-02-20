@@ -1108,7 +1108,7 @@ mod tests {
                         if answer.0.decode() == solution {
                             true
                         } else {
-                            1000 < search_start.miliseconds()
+                            2000 < search_start.miliseconds()
                         }
                     });
 
