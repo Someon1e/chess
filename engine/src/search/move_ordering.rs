@@ -60,18 +60,19 @@ impl MoveOrderer {
         }
 
         let moving_piece = search.board.friendly_piece_at(moving_from).unwrap();
-        let (moving_from_middle_game_value, moving_from_end_game_value) = {
-            if search.board.white_to_move {
-                Eval::get_white_piece_value(moving_piece, moving_from)
-            } else {
-                Eval::get_black_piece_value(moving_piece, moving_from)
-            }
-        };
-
-        let phase = Eval::get_phase(search);
 
         // This won't take into account en passant
         if let Some(capturing) = search.board.enemy_piece_at(moving_to) {
+            let (moving_from_middle_game_value, moving_from_end_game_value) = {
+                if search.board.white_to_move {
+                    Eval::get_white_piece_value(moving_piece, moving_from)
+                } else {
+                    Eval::get_black_piece_value(moving_piece, moving_from)
+                }
+            };
+
+            let phase = Eval::get_phase(search);
+
             let (capturing_middle_game_value, capturing_end_game_value) = {
                 if search.board.white_to_move {
                     Eval::get_black_piece_value(capturing, moving_to)
@@ -102,21 +103,9 @@ impl MoveOrderer {
             score += search.history_heuristic[search.board.white_to_move as usize]
                 [moving_from.usize()][moving_to.usize()] as i32;
 
-            let (moving_to_middle_game_value, moving_to_end_game_value) = {
-                if search.board.white_to_move {
-                    Eval::get_white_piece_value(moving_piece, moving_to)
-                } else {
-                    Eval::get_black_piece_value(moving_piece, moving_to)
-                }
-            };
             if enemy_pawn_attacks.get(&moving_to) {
                 score -= 50;
             }
-            score += Eval::calculate_score(
-                phase,
-                moving_to_middle_game_value - moving_from_middle_game_value,
-                moving_to_end_game_value - moving_from_end_game_value,
-            );
         }
         score
     }
