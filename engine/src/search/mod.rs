@@ -242,8 +242,10 @@ impl<'a> Search<'a> {
             let is_capture = move_generator.enemy_piece_bit_board().get(&move_data.to);
             self.make_move(&move_data);
 
-            let mut normal_search =
-                is_capture || index < NOT_LATE_MOVES || (ply_remaining) < 3 || move_generator.is_in_check();
+            let mut normal_search = is_capture
+                || index < NOT_LATE_MOVES
+                || (ply_remaining) < 3
+                || move_generator.is_in_check();
             let mut score = 0;
             if !normal_search {
                 score = -self.negamax(true, ply + 1, depth - 1, should_cancel, -alpha - 1, -alpha);
