@@ -604,7 +604,6 @@ impl MoveGenerator {
         let empty_squares = !occupied_squares;
 
         let mut king_danger_bit_board = BitBoard::EMPTY;
-        let mut enemy_pawn_attacks = BitBoard::EMPTY;
 
         let friendly_king_square = friendly_king.first_square();
 
@@ -626,13 +625,29 @@ impl MoveGenerator {
 
         let mut push_mask = BitBoard::EMPTY;
 
+        let enemy_pawn_attacks;
         {
-            let mut enemy_pawns = enemy_pawns;
-            while enemy_pawns.is_not_empty() {
-                let from = enemy_pawns.pop_square();
-                let pawn_attacks = Self::pawn_attack_bit_board(from, !white_to_move);
-                enemy_pawn_attacks |= pawn_attacks;
-            }
+            let not_on_the_right_edge = if white_to_move {
+                BitBoard::NOT_A_FILE
+            } else {
+                BitBoard::NOT_H_FILE
+            };
+            let not_on_the_left_edge = if white_to_move {
+                BitBoard::NOT_H_FILE
+            } else {
+                BitBoard::NOT_A_FILE
+            };
+
+            enemy_pawn_attacks = if board.white_to_move {
+                (enemy_pawns & not_on_the_right_edge) >> 9
+            } else {
+                (enemy_pawns & not_on_the_right_edge) << 9
+            } | if white_to_move {
+                (enemy_pawns & not_on_the_left_edge) >> 7
+            } else {
+                (enemy_pawns & not_on_the_left_edge) << 7
+            };
+
             king_danger_bit_board |= enemy_pawn_attacks
         }
         {
