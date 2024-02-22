@@ -9,6 +9,7 @@
 - History heuristic
 - Null move heuristic
 - Late move reduction
+- Check extensions
 - Transposition table
 - Quiescence search
 - Iterative deepening
@@ -17,6 +18,5 @@
 - Repetition detection
 
 ### TODO:
-- Check extensions
 - Opening book
 - Multiple lines, so that it does not always play the same moves.

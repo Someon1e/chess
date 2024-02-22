@@ -242,10 +242,10 @@ impl<'a> Search<'a> {
             let is_capture = move_generator.enemy_piece_bit_board().get(&move_data.to);
             self.make_move(&move_data);
 
-            let mut normal_search = is_capture
-                || index < NOT_LATE_MOVES
-                || (ply_remaining) < 3
-                || move_generator.is_in_check();
+            let check_extension = MoveGenerator::calculate_is_in_check(self.board);
+
+            let mut normal_search =
+                check_extension || is_capture || index < NOT_LATE_MOVES || (ply_remaining) < 3;
             let mut score = 0;
             if !normal_search {
                 score = -self.negamax(true, ply + 1, depth - 1, should_cancel, -alpha - 1, -alpha);
@@ -255,7 +255,14 @@ impl<'a> Search<'a> {
             }
 
             if normal_search {
-                score = -self.negamax(true, ply + 1, depth, should_cancel, -beta, -alpha);
+                score = -self.negamax(
+                    true,
+                    ply + 1,
+                    depth + (check_extension as u16),
+                    should_cancel,
+                    -beta,
+                    -alpha,
+                );
             }
             self.unmake_move(&move_data);
             if should_cancel() {
