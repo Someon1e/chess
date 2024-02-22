@@ -49,7 +49,7 @@ pub struct MoveGenerator {
     diagonal_pin_rays: BitBoard,
     orthogonal_pin_rays: BitBoard,
 
-    capture_mask: BitBoard,
+    check_mask: BitBoard,
     push_mask: BitBoard,
 
     enemy_pawn_attacks: BitBoard,
@@ -97,7 +97,7 @@ impl MoveGenerator {
             let capture_right_offset = if self.white_to_move { -9 } else { 9 };
             let capture_left_offset = if self.white_to_move { -7 } else { 7 };
 
-            let can_capture = self.enemy_piece_bit_board & self.capture_mask;
+            let can_capture = self.enemy_piece_bit_board & self.check_mask;
             let mut capture_right = if self.white_to_move {
                 (non_orthogonally_pinned_pawns & not_on_the_right_edge) << 9
             } else {
@@ -142,7 +142,7 @@ impl MoveGenerator {
             // En passant
 
             let capture_position = en_passant_square.down(if self.white_to_move { 1 } else { -1 });
-            if self.capture_mask.get(&capture_position) {
+            if self.check_mask.get(&capture_position) {
                 let mut pawns_able_to_en_passant = self.friendly_pawns
                     & {
                         // Generate attacks for an imaginary enemy pawn at the en passant square
@@ -264,7 +264,7 @@ impl MoveGenerator {
         let mut non_pinned_knights =
             self.friendly_knights & !(self.diagonal_pin_rays | self.orthogonal_pin_rays);
 
-        let mut mask = (self.capture_mask | self.push_mask) & !self.friendly_piece_bit_board;
+        let mut mask = (self.check_mask | self.push_mask) & !self.friendly_piece_bit_board;
         if captures_only {
             mask &= self.enemy_piece_bit_board
         }
@@ -289,7 +289,7 @@ impl MoveGenerator {
         let blockers = self.occupied_squares & relevant_bishop_blockers()[from.usize()];
         let possible_moves = get_bishop_moves(from, blockers);
         let mut legal_moves =
-            possible_moves & !self.friendly_piece_bit_board & (self.capture_mask | self.push_mask);
+            possible_moves & !self.friendly_piece_bit_board & (self.check_mask | self.push_mask);
         if captures_only {
             legal_moves &= self.enemy_piece_bit_board;
         }
@@ -310,7 +310,7 @@ impl MoveGenerator {
         let blockers = self.occupied_squares & relevant_rook_blockers()[from.usize()];
         let possible_moves = get_rook_moves(from, blockers);
         let mut legal_moves =
-            possible_moves & !self.friendly_piece_bit_board & (self.capture_mask | self.push_mask);
+            possible_moves & !self.friendly_piece_bit_board & (self.check_mask | self.push_mask);
         if captures_only {
             legal_moves &= self.enemy_piece_bit_board;
         }
@@ -330,30 +330,62 @@ impl MoveGenerator {
 }
 
 impl MoveGenerator {
+    fn calculate_check(
+        white_to_move: bool,
+        king_square: Square,
+        enemy_pawns: BitBoard,
+        enemy_knights: BitBoard,
+        enemy_diagonal: BitBoard,
+        enemy_orthogonal: BitBoard,
+        occupied_squares: BitBoard,
+    ) -> BitBoard {
+        let mut check_mask = BitBoard::EMPTY;
+
+        let diagonal_blockers = occupied_squares & relevant_bishop_blockers()[king_square.usize()];
+        let diagonal_attacks = get_bishop_moves(king_square, diagonal_blockers);
+        let diagonal_attacker = diagonal_attacks & enemy_diagonal;
+        if diagonal_attacker.is_not_empty() {
+            check_mask |= diagonal_attacker
+        }
+
+        let orthogonal_blockers = occupied_squares & relevant_rook_blockers()[king_square.usize()];
+        let orthogonal_attacks = get_rook_moves(king_square, orthogonal_blockers);
+        let orthogonal_attacker = orthogonal_attacks & enemy_orthogonal;
+        if orthogonal_attacker.is_not_empty() {
+            check_mask |= orthogonal_attacker
+        }
+
+        let pawn_check = Self::pawn_attack_bit_board(king_square, white_to_move);
+        let pawn_attacker = pawn_check & enemy_pawns;
+        if pawn_attacker.is_not_empty() {
+            check_mask |= pawn_attacker
+        }
+
+        let knight_check = Self::knight_attack_bit_board(king_square);
+        let knight_attacker = knight_check & enemy_knights;
+        if knight_attacker.is_not_empty() {
+            check_mask |= knight_attacker
+        }
+
+        check_mask
+    }
+}
+
+impl MoveGenerator {
     fn calculate_enemy_rook(
         from: Square,
         king_square: Square,
 
-        capture_mask: &mut BitBoard,
         push_mask: &mut BitBoard,
 
         king_bit_board: &BitBoard,
         occupied_squares: &BitBoard,
-
-        is_in_check: &mut bool,
-        is_in_double_check: &mut bool,
     ) -> BitBoard {
         let rook_blockers_excluding_king =
             (*occupied_squares & !*king_bit_board) & relevant_rook_blockers()[from.usize()];
         let rook_attacks = get_rook_moves(from, rook_blockers_excluding_king);
         if rook_attacks.overlaps(king_bit_board) {
             // This piece is checking the king
-            capture_mask.set(&from);
-
-            if *is_in_check {
-                *is_in_double_check = true;
-            }
-            *is_in_check = true;
 
             let ray = get_rook_moves(
                 from,
@@ -372,26 +404,16 @@ impl MoveGenerator {
         from: Square,
         king_square: Square,
 
-        capture_mask: &mut BitBoard,
         push_mask: &mut BitBoard,
 
         king_bit_board: &BitBoard,
         occupied_squares: &BitBoard,
-
-        is_in_check: &mut bool,
-        is_in_double_check: &mut bool,
     ) -> BitBoard {
         let bishop_blockers_excluding_king =
             (*occupied_squares & !*king_bit_board) & relevant_bishop_blockers()[from.usize()];
         let bishop_attacks = get_bishop_moves(from, bishop_blockers_excluding_king);
         if bishop_attacks.overlaps(king_bit_board) {
             // This piece is checking the king
-            capture_mask.set(&from);
-
-            if *is_in_check {
-                *is_in_double_check = true;
-            }
-            *is_in_check = true;
 
             let ray = get_bishop_moves(
                 from,
@@ -583,27 +605,32 @@ impl MoveGenerator {
 
         let mut king_danger_bit_board = BitBoard::EMPTY;
         let mut enemy_pawn_attacks = BitBoard::EMPTY;
-        let mut is_in_check = false;
-        let mut is_in_double_check = false;
-
-        let mut capture_mask = BitBoard::EMPTY;
-        let mut push_mask = BitBoard::EMPTY;
 
         let friendly_king_square = friendly_king.first_square();
+
+        let enemy_diagonal = enemy_bishops | enemy_queens;
+        let enemy_orthogonal = enemy_rooks | enemy_queens;
+        let mut check_mask = Self::calculate_check(
+            white_to_move,
+            friendly_king_square,
+            enemy_pawns,
+            enemy_knights,
+            enemy_diagonal,
+            enemy_orthogonal,
+            occupied_squares,
+        );
+
+        let check_count = check_mask.count();
+        let is_in_check = check_count > 0;
+        let is_in_double_check = check_count > 1;
+
+        let mut push_mask = BitBoard::EMPTY;
 
         {
             let mut enemy_pawns = enemy_pawns;
             while enemy_pawns.is_not_empty() {
                 let from = enemy_pawns.pop_square();
                 let pawn_attacks = Self::pawn_attack_bit_board(from, !white_to_move);
-                if pawn_attacks.overlaps(&friendly_king) {
-                    // Pawn is checking the king
-                    if is_in_check {
-                        is_in_double_check = true;
-                    }
-                    is_in_check = true;
-                    capture_mask.set(&from)
-                };
                 enemy_pawn_attacks |= pawn_attacks;
             }
             king_danger_bit_board |= enemy_pawn_attacks
@@ -613,18 +640,9 @@ impl MoveGenerator {
             while enemy_knights.is_not_empty() {
                 let from = enemy_knights.pop_square();
                 let knight_attacks = Self::knight_attack_bit_board(from);
-                if knight_attacks.overlaps(&friendly_king) {
-                    // Knight is checking the king
-                    if is_in_check {
-                        is_in_double_check = true;
-                    }
-                    is_in_check = true;
-                    capture_mask.set(&from)
-                };
                 king_danger_bit_board |= knight_attacks
             }
         }
-        let enemy_diagonal = enemy_bishops | enemy_queens;
         {
             let mut enemy_diagonal = enemy_diagonal;
             while enemy_diagonal.is_not_empty() {
@@ -632,17 +650,13 @@ impl MoveGenerator {
                 let dangerous = Self::calculate_enemy_bishop(
                     from,
                     friendly_king_square,
-                    &mut capture_mask,
                     &mut push_mask,
                     &friendly_king,
                     &occupied_squares,
-                    &mut is_in_check,
-                    &mut is_in_double_check,
                 );
                 king_danger_bit_board |= dangerous
             }
         }
-        let enemy_orthogonal = enemy_rooks | enemy_queens;
         {
             let mut enemy_orthogonal = enemy_orthogonal;
             while enemy_orthogonal.is_not_empty() {
@@ -650,12 +664,9 @@ impl MoveGenerator {
                 let dangerous = Self::calculate_enemy_rook(
                     from,
                     friendly_king_square,
-                    &mut capture_mask,
                     &mut push_mask,
                     &friendly_king,
                     &occupied_squares,
-                    &mut is_in_check,
-                    &mut is_in_double_check,
                 );
                 king_danger_bit_board |= dangerous
             }
@@ -669,7 +680,7 @@ impl MoveGenerator {
         }
 
         if !is_in_check {
-            capture_mask = BitBoard::FULL;
+            check_mask = BitBoard::FULL;
             push_mask = BitBoard::FULL;
         }
 
@@ -701,7 +712,7 @@ impl MoveGenerator {
             is_in_double_check,
             diagonal_pin_rays,
             orthogonal_pin_rays,
-            capture_mask,
+            check_mask,
             push_mask,
             enemy_pawn_attacks,
         }
