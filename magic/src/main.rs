@@ -33,31 +33,35 @@ fn fill_magic_table(
     Ok(table)
 }
 
-fn find_rook_magics() {
-    let mut random = rand_chacha::ChaCha20Rng::seed_from_u64(1);
+fn find_magics(relevant_blockers: [BitBoard; 64], direction_offset: usize) {
+    let mut random = rand_chacha::ChaCha20Rng::seed_from_u64(420);
 
-    let mut length = 0;
-
+    let mut best_magics = [0; 64];
+    let mut best_index_bits = [0; 64];
     let mut keys = [Key {
         magic: 0,
         shift: 0,
         offset: 0,
     }; 64];
+    let mut length = 0;
 
     for square_index in 0..64 {
-        let square = Square::from_index(square_index);
+        let square = Square::from_index(square_index as i8);
 
-        let blockers = relevant_rook_blockers()[square_index as usize];
+        let blockers = relevant_blockers[square_index];
         let index_bits = blockers.count() as u64;
+        best_index_bits[square_index] = index_bits;
+
         loop {
             let magic = random.next_u64() & random.next_u64() & random.next_u64();
-            let filled = fill_magic_table(square, blockers, magic, index_bits, 0);
+            let filled = fill_magic_table(square, blockers, magic, index_bits, direction_offset);
             if let Ok(filled) = filled {
-                keys[square_index as usize] = Key {
-                    magic: magic,
+                keys[square_index] = Key {
+                    magic,
                     shift: 64 - index_bits,
                     offset: length,
                 };
+                best_magics[square_index] = magic;
 
                 length += filled.len();
                 break;
@@ -65,42 +69,49 @@ fn find_rook_magics() {
         }
     }
     println!("{keys:?} {length}");
-}
 
-fn find_bishop_magics() {
-    let mut random = rand_chacha::ChaCha20Rng::seed_from_u64(1);
+    loop {
+        let mut did_improve = false;
 
-    let mut length = 0;
+        length = 0;
 
-    let mut keys = [Key {
-        magic: 0,
-        shift: 0,
-        offset: 0,
-    }; 64];
+        for square_index in 0..64 {
+            let square = Square::from_index(square_index as i8);
 
-    for square_index in 0..64 {
-        let square = Square::from_index(square_index);
-        let blockers = relevant_bishop_blockers()[square_index as usize];
-        let index_bits = blockers.count() as u64;
-        loop {
+            let blockers = relevant_blockers[square_index];
+            let previous_index_bits = best_index_bits[square_index];
+            let index_bits = previous_index_bits - 1;
+
             let magic = random.next_u64() & random.next_u64() & random.next_u64();
-            let filled = fill_magic_table(square, blockers, magic, index_bits, 4);
+            let filled = fill_magic_table(square, blockers, magic, index_bits, direction_offset);
             if let Ok(filled) = filled {
-                keys[square_index as usize] = Key {
-                    magic: magic,
+                did_improve = true;
+
+                keys[square_index] = Key {
+                    magic,
                     shift: 64 - index_bits,
                     offset: length,
                 };
+                best_magics[square_index] = magic;
+                best_index_bits[square_index] = index_bits;
 
                 length += filled.len();
-                break;
+                continue;
             }
+
+            keys[square_index].offset = length;
+            length += 1 << previous_index_bits
+        }
+        if did_improve {
+            println!("{keys:?} {length}");
         }
     }
-    println!("{keys:?} {length}");
 }
 
 fn main() {
-    find_rook_magics();
-    find_bishop_magics();
+    if true {
+        find_magics(*relevant_rook_blockers(), 0);
+    } else {
+        find_magics(*relevant_bishop_blockers(), 4);
+    }
 }
