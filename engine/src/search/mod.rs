@@ -5,7 +5,7 @@ mod move_ordering;
 mod transposition;
 
 use crate::{
-    board::{zobrist::Zobrist, Board},
+    board::{piece::Piece, zobrist::Zobrist, Board},
     move_generator::{
         move_data::{Flag, Move},
         MoveGenerator,
@@ -22,7 +22,6 @@ use self::{
 const CHECKMATE_SCORE: i32 = -i32::MAX + 1;
 
 const NOT_LATE_MOVES: usize = 3;
-const NULL_MOVE_R: u16 = 3;
 
 pub struct Search<'a> {
     board: &'a mut Board,
@@ -120,9 +119,9 @@ impl<'a> Search<'a> {
     fn negamax(
         &mut self,
 
+        ply_remaining: u16,
+        ply_from_root: u16,
         allow_null_move: bool,
-        ply: u16,
-        depth: u16,
 
         should_cancel: &mut dyn FnMut() -> bool,
 
@@ -135,11 +134,9 @@ impl<'a> Search<'a> {
 
         let zobrist_key = self.board.zobrist_key();
 
-        if ply != 0 && self.repetition_table.contains(&zobrist_key) {
+        if ply_from_root != 0 && self.repetition_table.contains(&zobrist_key) {
             return 0;
         }
-
-        let ply_remaining = depth - ply;
 
         let zobrist_index = zobrist_key % self.transposition_table.len();
 
@@ -183,14 +180,20 @@ impl<'a> Search<'a> {
 
         let move_generator = MoveGenerator::new(self.board);
 
-        if allow_null_move && ply_remaining > NULL_MOVE_R && !move_generator.is_in_check() {
+        if allow_null_move
+            && ply_remaining > 2
+            && !move_generator.is_in_check()
+            && move_generator.friendly_pawns().count() + 1
+                != move_generator.friendly_pieces().count()
+        {
             // TODO: thoroughly test this works
 
             self.board.make_null_move();
+
             let score = -self.negamax(
+                ply_remaining - 2,
+                ply_from_root + 1,
                 false,
-                ply + 1,
-                depth - NULL_MOVE_R + 1,
                 should_cancel,
                 -beta,
                 -beta + 1,
@@ -204,15 +207,15 @@ impl<'a> Search<'a> {
             }
         }
 
-        if ply == 0 {
+        if ply_from_root == 0 {
             hash_move = self.best_move;
         }
         let (mut move_guesses, move_count) = MoveOrderer::get_sorted_moves(
             self,
             &move_generator,
             hash_move,
-            if (ply as usize) < self.killer_moves.len() {
-                self.killer_moves[ply as usize]
+            if (ply_from_root as usize) < self.killer_moves.len() {
+                self.killer_moves[ply_from_root as usize]
             } else {
                 EncodedMove::NONE
             },
@@ -220,12 +223,12 @@ impl<'a> Search<'a> {
 
         if move_count == 0 {
             if move_generator.is_in_check() {
-                if ply == 0 {
+                if ply_from_root == 0 {
                     self.best_score = CHECKMATE_SCORE;
                 }
                 return CHECKMATE_SCORE;
             }
-            if ply == 0 {
+            if ply_from_root == 0 {
                 self.best_score = 0
             }
             return 0;
@@ -248,7 +251,14 @@ impl<'a> Search<'a> {
                 check_extension || is_capture || index < NOT_LATE_MOVES || (ply_remaining) < 3;
             let mut score = 0;
             if !normal_search {
-                score = -self.negamax(true, ply + 1, depth - 1, should_cancel, -alpha - 1, -alpha);
+                score = -self.negamax(
+                    ply_remaining - 2,
+                    ply_from_root + 1,
+                    true,
+                    should_cancel,
+                    -alpha - 1,
+                    -alpha,
+                );
                 if score > alpha {
                     normal_search = true;
                 }
@@ -256,9 +266,9 @@ impl<'a> Search<'a> {
 
             if normal_search {
                 score = -self.negamax(
+                    ply_remaining - 1 + check_extension as u16,
+                    ply_from_root + 1,
                     true,
-                    ply + 1,
-                    depth + (check_extension as u16),
                     should_cancel,
                     -beta,
                     -alpha,
@@ -270,8 +280,10 @@ impl<'a> Search<'a> {
             }
             if score >= beta {
                 if !is_capture {
-                    if move_data.flag == Flag::None && (ply as usize) < self.killer_moves.len() {
-                        self.killer_moves[ply as usize] = encoded_move_data
+                    if move_data.flag == Flag::None
+                        && (ply_from_root as usize) < self.killer_moves.len()
+                    {
+                        self.killer_moves[ply_from_root as usize] = encoded_move_data
                     }
 
                     self.history_heuristic[self.board.white_to_move as usize]
@@ -294,7 +306,7 @@ impl<'a> Search<'a> {
                 alpha = score;
                 best_move = encoded_move_data;
 
-                if ply == 0 {
+                if ply_from_root == 0 {
                     self.best_move = best_move;
                     self.best_score = score;
                 }
@@ -321,7 +333,7 @@ impl<'a> Search<'a> {
         let mut depth = 0;
         loop {
             depth += 1;
-            self.negamax(false, 0, depth, &mut || false, -i32::MAX, i32::MAX);
+            self.negamax(depth, 0, false, &mut || false, -i32::MAX, i32::MAX);
 
             if self.best_move.is_none() || self.best_score.abs() == CHECKMATE_SCORE.abs() {
                 return (depth, self.best_move, self.best_score);
@@ -341,7 +353,7 @@ impl<'a> Search<'a> {
         let mut depth = 0;
         while !should_cancel() {
             depth += 1;
-            self.negamax(false, 0, depth, should_cancel, -i32::MAX, i32::MAX);
+            self.negamax(depth, 0, false, should_cancel, -i32::MAX, i32::MAX);
             if should_cancel() {
                 break;
             }

@@ -831,4 +831,10 @@ impl MoveGenerator {
     pub fn enemy_piece_bit_board(&self) -> BitBoard {
         self.enemy_piece_bit_board
     }
+    pub fn friendly_pawns(&self) -> BitBoard {
+        self.friendly_pawns
+    }
+    pub fn friendly_pieces(&self) -> BitBoard {
+        self.friendly_piece_bit_board
+    }
 }
