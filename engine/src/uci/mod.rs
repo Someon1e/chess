@@ -193,8 +193,6 @@ uciok",
             search.make_move(&decode_move(search.board(), uci_move))
         }
 
-        (self.out)(&search.board().to_fen());
-
         if parameters.perft {
             (self.out)(&format!(
                 "Nodes searched: {}",
