@@ -62,23 +62,20 @@ impl<'a> Search<'a> {
             self.times_evaluation_was_called += 1
         }
 
-        let stand_pat = Eval::evaluate(self);
-
-        if stand_pat >= beta {
-            return beta;
+        let mut best_score = Eval::evaluate(self);
+        if best_score > alpha {
+            alpha = best_score;
         }
-        if alpha < stand_pat {
-            alpha = stand_pat;
+        if alpha >= beta {
+            return best_score;
         }
 
         let move_generator = MoveGenerator::new(self.board);
-        let (mut move_guesses, move_count) =
+        let (mut move_guesses, mut index) =
             MoveOrderer::get_sorted_moves_captures_only(self, &move_generator);
-        if move_count == 0 {
-            return alpha;
-        }
-        let mut index = move_count - 1;
-        loop {
+        while index != 0 {
+            index -= 1;
+
             let move_data = MoveOrderer::put_highest_guessed_move_on_top(&mut move_guesses, index)
                 .move_data
                 .decode();
@@ -87,19 +84,17 @@ impl<'a> Search<'a> {
             let score = -self.quiescence_search(-beta, -alpha);
             self.board.unmake_move(&move_data);
 
-            if score >= beta {
-                return beta;
+            if score > best_score {
+                best_score = score;
+                if score > alpha {
+                    alpha = score;
+                }
             }
-            if score > alpha {
-                alpha = score;
-            }
-
-            if index == 0 {
+            if alpha >= beta {
                 break;
             }
-            index -= 1;
         }
-        alpha
+        best_score
     }
     pub fn make_move(&mut self, move_data: &Move) {
         self.repetition_table.push(self.board.zobrist_key());
@@ -126,7 +121,7 @@ impl<'a> Search<'a> {
         should_cancel: &mut dyn FnMut() -> bool,
 
         mut alpha: i32,
-        beta: i32,
+        mut beta: i32,
     ) -> i32 {
         if should_cancel() {
             return 0;
@@ -150,19 +145,15 @@ impl<'a> Search<'a> {
                     let node_type = &saved.node_type;
                     match node_type {
                         NodeType::Exact => return saved.value,
-                        NodeType::Beta => {
-                            if saved.value >= beta {
-                                return saved.value;
-                            }
-                        }
-                        NodeType::Alpha => {
-                            if saved.value <= alpha {
-                                return saved.value;
-                            }
-                        }
+                        NodeType::Beta => alpha = alpha.max(saved.value),
+                        NodeType::Alpha => beta = beta.min(saved.value),
+                    }
+
+                    if alpha >= beta {
+                        return saved.value;
                     }
                 }
-                hash_move = saved.best_move
+                hash_move = saved.transposition_move
             }
         }
 
@@ -173,7 +164,7 @@ impl<'a> Search<'a> {
                 ply_remaining,
                 node_type: NodeType::Exact,
                 value: evaluation,
-                best_move: EncodedMove::NONE,
+                transposition_move: EncodedMove::NONE,
             });
             return evaluation;
         };
@@ -235,7 +226,8 @@ impl<'a> Search<'a> {
         }
 
         let mut node_type = NodeType::Alpha;
-        let mut best_move = EncodedMove::NONE;
+        let (mut transposition_move, mut best_score) = (EncodedMove::NONE, -i32::MAX);
+
         let mut index = move_count - 1;
         loop {
             let encoded_move_data =
@@ -278,37 +270,32 @@ impl<'a> Search<'a> {
             if should_cancel() {
                 return 0;
             }
-            if score >= beta {
-                if !is_capture {
-                    if move_data.flag == Flag::None
-                        && (ply_from_root as usize) < self.killer_moves.len()
-                    {
-                        self.killer_moves[ply_from_root as usize] = encoded_move_data
+            if score > best_score {
+                best_score = score;
+                if score > alpha {
+                    if ply_from_root == 0 {
+                        self.best_move = encoded_move_data;
+                        self.best_score = best_score
                     }
+                    transposition_move = encoded_move_data;
+                    node_type = NodeType::Exact;
+                    alpha = score;
 
-                    self.history_heuristic[self.board.white_to_move as usize]
-                        [move_data.from.usize()][move_data.to.usize()] +=
-                        ply_remaining * ply_remaining;
-                }
-                node_type = NodeType::Beta;
-                best_move = encoded_move_data;
-                self.transposition_table[zobrist_index] = Some(NodeValue {
-                    zobrist_key,
-                    ply_remaining,
-                    node_type,
-                    value: score,
-                    best_move,
-                });
-                return beta;
-            }
-            if score > alpha {
-                node_type = NodeType::Exact;
-                alpha = score;
-                best_move = encoded_move_data;
+                    if score >= beta {
+                        if !is_capture {
+                            if move_data.flag == Flag::None
+                                && (ply_from_root as usize) < self.killer_moves.len()
+                            {
+                                self.killer_moves[ply_from_root as usize] = encoded_move_data
+                            }
 
-                if ply_from_root == 0 {
-                    self.best_move = best_move;
-                    self.best_score = score;
+                            self.history_heuristic[self.board.white_to_move as usize]
+                                [move_data.from.usize()][move_data.to.usize()] +=
+                                ply_remaining * ply_remaining;
+                        }
+                        node_type = NodeType::Beta;
+                        break;
+                    }
                 }
             }
             if index == 0 {
@@ -320,11 +307,11 @@ impl<'a> Search<'a> {
             zobrist_key,
             ply_remaining,
             node_type,
-            value: alpha,
-            best_move,
+            value: best_score,
+            transposition_move,
         });
 
-        alpha
+        best_score
     }
     pub fn depth_by_depth(
         &mut self,
@@ -1129,7 +1116,7 @@ mod tests {
                         if answer.0.decode() == solution {
                             true
                         } else {
-                            2000 < search_start.miliseconds()
+                            1000 < search_start.miliseconds()
                         }
                     });
 
