@@ -8,3 +8,7 @@ edition = "2021"
 [dependencies]
 engine = { path = "../engine" }
 rand_chacha = "0.3.1"
+
+[profile.release]
+lto = true
+codegen-units = 1
