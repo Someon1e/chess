@@ -3,7 +3,7 @@
 ### Features:
 - UCI
 - Legal move generator
-- Alpha-beta pruning
+- Fail-soft alpha-beta pruning
 - Move ordering
 - Killer move heuristic
 - History heuristic
@@ -18,5 +18,6 @@
 - Repetition detection
 
 ### TODO:
+- Principal Variation Search
+- Futility Pruning
 - Opening book
-- Multiple lines, so that it does not always play the same moves.
