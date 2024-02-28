@@ -1,5 +1,4 @@
 use engine::board::piece::Piece;
-use rand_chacha;
 use rand_chacha::rand_core::{RngCore, SeedableRng};
 use rand_chacha::ChaCha20Rng;
 
