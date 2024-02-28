@@ -86,7 +86,7 @@ impl Square {
         let rank = self.rank();
         let file_char = (b'a' + file as u8) as char;
         let rank_number = rank + 1;
-        format!("{}{}", file_char, rank_number)
+        format!("{file_char}{rank_number}")
     }
     #[must_use]
     pub fn from_notation(notation: &str) -> Square {
