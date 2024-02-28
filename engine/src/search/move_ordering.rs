@@ -44,13 +44,17 @@ impl MoveOrderer {
         let mut score = 0;
         match move_data.flag {
             Flag::EnPassant => {
-                return search.history_heuristic[search.board.white_to_move as usize]
-                    [moving_from.usize()][moving_to.usize()] as i32
+                return i32::from(
+                    search.history_heuristic[usize::from(search.board.white_to_move)]
+                        [moving_from.usize()][moving_to.usize()],
+                )
             }
             Flag::PawnTwoUp => {}
             Flag::Castle => {
-                return search.history_heuristic[search.board.white_to_move as usize]
-                    [moving_from.usize()][moving_to.usize()] as i32
+                return i32::from(
+                    search.history_heuristic[usize::from(search.board.white_to_move)]
+                        [moving_from.usize()][moving_to.usize()],
+                )
             }
 
             Flag::BishopPromotion => return PROMOTION_BONUS + 300,
@@ -79,8 +83,10 @@ impl MoveOrderer {
                 score += EQUAL_CAPTURE_BONUS;
             }
         } else {
-            score += search.history_heuristic[search.board.white_to_move as usize]
-                [moving_from.usize()][moving_to.usize()] as i32;
+            score += i32::from(
+                search.history_heuristic[usize::from(search.board.white_to_move)]
+                    [moving_from.usize()][moving_to.usize()],
+            );
 
             if enemy_pawn_attacks.get(&moving_to) {
                 score -= 50;

@@ -261,7 +261,7 @@ impl<'a> Search<'a> {
 
             if normal_search {
                 score = -self.negamax(
-                    ply_remaining - 1 + check_extension as u16,
+                    ply_remaining - 1 + u16::from(check_extension),
                     ply_from_root + 1,
                     true,
                     should_cancel,
@@ -289,10 +289,10 @@ impl<'a> Search<'a> {
                             if move_data.flag == Flag::None
                                 && (ply_from_root as usize) < self.killer_moves.len()
                             {
-                                self.killer_moves[ply_from_root as usize] = encoded_move_data;
+                                self.killer_moves[usize::from(ply_from_root)] = encoded_move_data;
                             }
 
-                            self.history_heuristic[self.board.white_to_move as usize]
+                            self.history_heuristic[usize::from(self.board.white_to_move)]
                                 [move_data.from.usize()][move_data.to.usize()] +=
                                 ply_remaining * ply_remaining;
                         }
