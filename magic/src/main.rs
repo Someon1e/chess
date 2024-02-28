@@ -33,7 +33,7 @@ fn fill_magic_table(
     Ok(table)
 }
 
-fn find_magics(relevant_blockers: [BitBoard; 64], direction_offset: usize) {
+fn find_magics(relevant_blockers: &[BitBoard; 64], direction_offset: usize) {
     let mut random = rand_chacha::ChaCha20Rng::seed_from_u64(420);
 
     let mut best_magics = [0; 64];
@@ -110,8 +110,8 @@ fn find_magics(relevant_blockers: [BitBoard; 64], direction_offset: usize) {
 
 fn main() {
     if true {
-        find_magics(*relevant_rook_blockers(), 0);
+        find_magics(relevant_rook_blockers(), 0);
     } else {
-        find_magics(*relevant_bishop_blockers(), 4);
+        find_magics(relevant_bishop_blockers(), 4);
     }
 }
