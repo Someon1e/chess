@@ -131,8 +131,8 @@ pub fn relevant_bishop_blockers() -> &'static [BitBoard; 64] {
 
 fn init_lookup(
     size: usize,
-    keys: [Key; 64],
-    blockers: [BitBoard; 64],
+    keys: &[Key; 64],
+    blockers: &[BitBoard; 64],
     direction_offset: usize,
 ) -> Vec<BitBoard> {
     let mut lookup = vec![BitBoard::EMPTY; size];
@@ -153,7 +153,7 @@ fn init_lookup(
 fn rook_lookup() -> &'static Vec<BitBoard> {
     static COMPUTATION: OnceLock<Vec<BitBoard>> = OnceLock::new();
     COMPUTATION
-        .get_or_init(|| init_lookup(ROOK_TABLE_SIZE, ROOK_KEYS, *relevant_rook_blockers(), 0))
+        .get_or_init(|| init_lookup(ROOK_TABLE_SIZE, &ROOK_KEYS, relevant_rook_blockers(), 0))
 }
 
 #[must_use]
@@ -168,8 +168,8 @@ fn bishop_lookup() -> &'static Vec<BitBoard> {
     COMPUTATION.get_or_init(|| {
         init_lookup(
             BISHOP_TABLE_SIZE,
-            BISHOP_KEYS,
-            *relevant_bishop_blockers(),
+            &BISHOP_KEYS,
+            relevant_bishop_blockers(),
             4,
         )
     })

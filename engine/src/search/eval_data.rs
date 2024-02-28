@@ -163,7 +163,7 @@ const END_GAME_PIECE_SQUARE_TABLES: [[i32; 64]; 6] = [
     END_GAME_KING,
 ];
 
-const fn merge(piece_values: [i32; 6], piece_square_table: [[i32; 64]; 6]) -> [[i32; 64]; 6] {
+const fn merge(piece_values: [i32; 6], piece_square_table: &[[i32; 64]; 6]) -> [[i32; 64]; 6] {
     let mut merged = [[0; 64]; 6];
     let mut piece_index = 0;
     while piece_index < 6 {
@@ -180,9 +180,9 @@ const fn merge(piece_values: [i32; 6], piece_square_table: [[i32; 64]; 6]) -> [[
 }
 
 pub const MIDDLE_GAME_PIECE_VALUES_WITH_SQUARE: [[i32; 64]; 6] =
-    merge(MIDDLE_GAME_PIECE_VALUES, MIDDLE_GAME_PIECE_SQUARE_TABLES);
+    merge(MIDDLE_GAME_PIECE_VALUES, &MIDDLE_GAME_PIECE_SQUARE_TABLES);
 pub const END_GAME_PIECE_VALUES_WITH_SQUARE: [[i32; 64]; 6] =
-    merge(END_GAME_PIECE_VALUES, END_GAME_PIECE_SQUARE_TABLES);
+    merge(END_GAME_PIECE_VALUES, &END_GAME_PIECE_SQUARE_TABLES);
 
 pub const PIECE_PHASES: [i32; 12] = [
     0, // Pawn
