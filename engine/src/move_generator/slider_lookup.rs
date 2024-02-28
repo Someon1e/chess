@@ -25,7 +25,7 @@ fn calculate_all_rays() -> [[BitBoard; 8]; 65] {
             let ray = &mut rays[square_index][direction_index];
             for count in 1..=distance_from_edge {
                 let move_to = from.offset(direction * count);
-                ray.set(&move_to)
+                ray.set(&move_to);
             }
         }
     }
@@ -42,7 +42,7 @@ pub fn iterate_combinations(squares: BitBoard) -> impl core::iter::Iterator<Item
         let result = next;
         next = Some(next?.carry_rippler(squares));
         if next.unwrap() == BitBoard::EMPTY {
-            next = None
+            next = None;
         }
         result
     })
@@ -113,7 +113,7 @@ fn calculate_blockers_for_each_square(direction_offset: usize) -> [BitBoard; 64]
     let mut blockers = [BitBoard::EMPTY; 64];
     for square_index in 0..64 {
         blockers[square_index as usize] =
-            rook_or_bishop_blockers(Square::from_index(square_index), direction_offset)
+            rook_or_bishop_blockers(Square::from_index(square_index), direction_offset);
     }
     blockers
 }

@@ -72,7 +72,7 @@ impl MoveOrderer {
             let score_difference = PIECE_VALUES[capturing as usize] - potential_value_loss;
             score += score_difference;
             if score_difference.is_positive() {
-                score += WINNING_CAPTURE_BONUS
+                score += WINNING_CAPTURE_BONUS;
             } else if score_difference.is_negative() {
                 score += LOSING_CAPTURE_BONUS;
             } else {
@@ -187,7 +187,7 @@ impl MoveOrderer {
                         0
                     },
                 };
-                index += 1
+                index += 1;
             },
             false,
         );

@@ -60,7 +60,7 @@ fn calculate_knight_moves_at_square() -> [BitBoard; 64] {
                     .max(square.rank().abs_diff(move_to.rank()))
                     == 2
             {
-                knight_moves.set(&move_to)
+                knight_moves.set(&move_to);
             }
         }
     }

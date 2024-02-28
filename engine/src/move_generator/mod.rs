@@ -135,7 +135,7 @@ impl MoveGenerator {
             }
 
             captures!(capture_right, capture_right_offset);
-            captures!(capture_left, capture_left_offset)
+            captures!(capture_left, capture_left_offset);
         }
 
         if let Some(en_passant_square) = self.en_passant_square {
@@ -220,7 +220,7 @@ impl MoveGenerator {
                 let move_to = push_promotions.pop_square();
                 let from = move_to.offset(one_down_offset);
                 if !self.orthogonal_pin_rays.get(&from) || self.orthogonal_pin_rays.get(&move_to) {
-                    Self::gen_promotions(add_move, from, move_to)
+                    Self::gen_promotions(add_move, from, move_to);
                 }
             }
         }
@@ -248,7 +248,7 @@ impl MoveGenerator {
                         from,
                         to: move_to,
                         flag: Flag::PawnTwoUp,
-                    })
+                    });
                 }
             }
         }
@@ -266,7 +266,7 @@ impl MoveGenerator {
 
         let mut mask = (self.check_mask | self.push_mask) & !self.friendly_piece_bit_board;
         if captures_only {
-            mask &= self.enemy_piece_bit_board
+            mask &= self.enemy_piece_bit_board;
         }
 
         while non_pinned_knights.is_not_empty() {
@@ -278,7 +278,7 @@ impl MoveGenerator {
                     from,
                     to: move_to,
                     flag: Flag::None,
-                })
+                });
             }
         }
     }
@@ -303,7 +303,7 @@ impl MoveGenerator {
                 from,
                 to: move_to,
                 flag: Flag::None,
-            })
+            });
         }
     }
     fn gen_rook(&self, from: Square, add_move: &mut dyn FnMut(Move), captures_only: bool) {
@@ -324,7 +324,7 @@ impl MoveGenerator {
                 from,
                 to: move_to,
                 flag: Flag::None,
-            })
+            });
         }
     }
 }
@@ -345,26 +345,26 @@ impl MoveGenerator {
         let diagonal_attacks = get_bishop_moves(king_square, diagonal_blockers);
         let diagonal_attacker = diagonal_attacks & enemy_diagonal;
         if diagonal_attacker.is_not_empty() {
-            check_mask |= diagonal_attacker
+            check_mask |= diagonal_attacker;
         }
 
         let orthogonal_blockers = occupied_squares & relevant_rook_blockers()[king_square.usize()];
         let orthogonal_attacks = get_rook_moves(king_square, orthogonal_blockers);
         let orthogonal_attacker = orthogonal_attacks & enemy_orthogonal;
         if orthogonal_attacker.is_not_empty() {
-            check_mask |= orthogonal_attacker
+            check_mask |= orthogonal_attacker;
         }
 
         let pawn_check = Self::pawn_attack_bit_board(king_square, white_to_move);
         let pawn_attacker = pawn_check & enemy_pawns;
         if pawn_attacker.is_not_empty() {
-            check_mask |= pawn_attacker
+            check_mask |= pawn_attacker;
         }
 
         let knight_check = Self::knight_attack_bit_board(king_square);
         let knight_attacker = knight_check & enemy_knights;
         if knight_attacker.is_not_empty() {
-            check_mask |= knight_attacker
+            check_mask |= knight_attacker;
         }
 
         check_mask
@@ -437,7 +437,7 @@ impl MoveGenerator {
             & !self.friendly_piece_bit_board
             & !self.king_danger_bit_board;
         if captures_only {
-            king_moves &= self.enemy_piece_bit_board
+            king_moves &= self.enemy_piece_bit_board;
         }
         while king_moves.is_not_empty() {
             let move_to = king_moves.pop_square();
@@ -466,7 +466,7 @@ impl MoveGenerator {
                     from: self.friendly_king_square,
                     to: move_to,
                     flag: Flag::Castle,
-                })
+                });
             }
         }
         if self.queen_side {
@@ -488,7 +488,7 @@ impl MoveGenerator {
                         from: self.friendly_king_square,
                         to: move_to,
                         flag: Flag::Castle,
-                    })
+                    });
                 }
             }
         }
@@ -540,9 +540,9 @@ impl MoveGenerator {
                     if is_friendly_piece_on_ray {
                         // Friendly piece is blocking check, it is pinned
                         if is_rook_movement {
-                            orthogonal_pin_rays |= ray
+                            orthogonal_pin_rays |= ray;
                         } else {
-                            diagonal_pin_rays |= ray
+                            diagonal_pin_rays |= ray;
                         }
                     }
                 }
@@ -649,7 +649,7 @@ impl MoveGenerator {
                 (enemy_pawns & not_on_the_left_edge) << 7
             };
 
-            king_danger_bit_board |= enemy_pawn_attacks
+            king_danger_bit_board |= enemy_pawn_attacks;
         }
         {
             let mut enemy_knights = enemy_knights;
@@ -670,7 +670,7 @@ impl MoveGenerator {
                     &friendly_king,
                     &occupied_squares,
                 );
-                king_danger_bit_board |= dangerous
+                king_danger_bit_board |= dangerous;
             }
         }
         {
@@ -684,14 +684,14 @@ impl MoveGenerator {
                     &friendly_king,
                     &occupied_squares,
                 );
-                king_danger_bit_board |= dangerous
+                king_danger_bit_board |= dangerous;
             }
         }
         {
             let mut enemy_king = enemy_king;
             while enemy_king.is_not_empty() {
                 let from = enemy_king.pop_square();
-                king_danger_bit_board |= Self::king_attack_bit_board(from)
+                king_danger_bit_board |= Self::king_attack_bit_board(from);
             }
         }
 
@@ -745,12 +745,12 @@ impl MoveGenerator {
         let mut friendly_diagonal = (self.friendly_diagonal) & !self.orthogonal_pin_rays;
         while friendly_diagonal.is_not_empty() {
             let from = friendly_diagonal.pop_square();
-            self.gen_bishop(from, add_move, captures_only)
+            self.gen_bishop(from, add_move, captures_only);
         }
         let mut friendly_orthogonal = (self.friendly_orthogonal) & !self.diagonal_pin_rays;
         while friendly_orthogonal.is_not_empty() {
             let from = friendly_orthogonal.pop_square();
-            self.gen_rook(from, add_move, captures_only)
+            self.gen_rook(from, add_move, captures_only);
         }
     }
 

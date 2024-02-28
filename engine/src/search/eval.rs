@@ -9,7 +9,7 @@ impl Eval {
         for piece in Piece::ALL_PIECES {
             let bit_board = *search.board.get_bit_board(piece);
             let piece_index = piece as usize;
-            phase += bit_board.count() as i32 * eval_data::PIECE_PHASES[piece_index]
+            phase += bit_board.count() as i32 * eval_data::PIECE_PHASES[piece_index];
         }
         phase
     }

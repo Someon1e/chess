@@ -275,7 +275,7 @@ impl<'a> Search<'a> {
                 if score > alpha {
                     if ply_from_root == 0 {
                         self.best_move = encoded_move_data;
-                        self.best_score = best_score
+                        self.best_score = best_score;
                     }
                     transposition_move = encoded_move_data;
                     node_type = NodeType::Exact;
