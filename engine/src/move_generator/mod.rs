@@ -14,7 +14,7 @@ use self::precomputed::{
     king_moves_at_square, knight_moves_at_square, pawn_attacks, SQUARES_FROM_EDGE,
 };
 use self::slider_lookup::{
-    all_rays, get_bishop_moves, get_rook_moves, relevant_bishop_blockers, relevant_rook_blockers,
+    get_bishop_moves, get_rook_moves, relevant_bishop_blockers, relevant_rook_blockers,
 };
 
 pub struct MoveGenerator {
@@ -162,18 +162,16 @@ impl MoveGenerator {
                     if self.friendly_king_square.rank() == from.rank() {
                         // Check if en passant will reveal a check
                         // Not covered by pin rays because enemy pawn was blocking
-                        // Check by scanning left and right from the pawn to find enemy queens/rooks that are not obstructed
-                        let right = all_rays()[from.usize()][0];
-                        let blocker =
-                            right & (self.occupied_squares & !capture_position.bit_board());
-                        if blocker.overlaps(&self.enemy_rooks_and_queens_bit_board) {
-                            continue 'en_passant_check;
-                        }
+                        // Check by pretending the king is a rook to find enemy queens/rooks that are not obstructed
+                        let unblocked = get_rook_moves(
+                            self.friendly_king_square,
+                            (self.occupied_squares
+                                ^ from.bit_board()
+                                ^ capture_position.bit_board())
+                                & relevant_rook_blockers()[self.friendly_king_square.usize()],
+                        );
 
-                        let left = all_rays()[from.usize()][2];
-                        let blocker =
-                            left & (self.occupied_squares & !capture_position.bit_board());
-                        if blocker.overlaps(&self.enemy_rooks_and_queens_bit_board) {
+                        if unblocked.overlaps(&self.enemy_rooks_and_queens_bit_board) {
                             continue 'en_passant_check;
                         }
                     }
