@@ -100,7 +100,7 @@ fn find_magics(relevant_blockers: [BitBoard; 64], direction_offset: usize) {
             }
 
             keys[square_index].offset = length;
-            length += 1 << previous_index_bits
+            length += 1 << previous_index_bits;
         }
         if did_improve {
             println!("{keys:?} {length}");
