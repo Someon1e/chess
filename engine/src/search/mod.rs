@@ -141,9 +141,7 @@ impl<'a> Search<'a> {
         let mut hash_move = EncodedMove::NONE;
 
         if let Some(saved) = self.transposition_table[zobrist_index] {
-            if saved.zobrist_key != zobrist_key {
-                // eprintln!("Collision!")
-            } else {
+            if saved.zobrist_key == zobrist_key {
                 if saved.ply_remaining >= ply_remaining {
                     let node_type = &saved.node_type;
                     match node_type {
@@ -157,6 +155,8 @@ impl<'a> Search<'a> {
                     }
                 }
                 hash_move = saved.transposition_move;
+            } else {
+                // eprintln!("Collision!")
             }
         }
 
