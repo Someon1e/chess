@@ -48,6 +48,7 @@ pub fn iterate_combinations(squares: BitBoard) -> impl core::iter::Iterator<Item
     })
 }
 
+#[must_use]
 pub fn rook_or_bishop_blockers(from: Square, direction_offset: usize) -> BitBoard {
     let square_index = from.usize();
     let squares_from_edge = SQUARES_FROM_EDGE[square_index];
@@ -81,6 +82,7 @@ pub fn rook_or_bishop_blockers(from: Square, direction_offset: usize) -> BitBoar
     moves
 }
 
+#[must_use]
 pub fn gen_rook_or_bishop(from: Square, blockers: &BitBoard, direction_offset: usize) -> BitBoard {
     let mut moves = BitBoard::EMPTY;
 
@@ -147,17 +149,20 @@ fn init_lookup(
     lookup
 }
 
+#[must_use]
 fn rook_lookup() -> &'static Vec<BitBoard> {
     static COMPUTATION: OnceLock<Vec<BitBoard>> = OnceLock::new();
     COMPUTATION
         .get_or_init(|| init_lookup(ROOK_TABLE_SIZE, ROOK_KEYS, *relevant_rook_blockers(), 0))
 }
 
+#[must_use]
 pub fn get_rook_moves(square: Square, relevant_blockers: BitBoard) -> BitBoard {
     let key = ROOK_KEYS[square.usize()];
     rook_lookup()[key.offset + relevant_blockers.magic_index(key.magic, key.shift)]
 }
 
+#[must_use]
 fn bishop_lookup() -> &'static Vec<BitBoard> {
     static COMPUTATION: OnceLock<Vec<BitBoard>> = OnceLock::new();
     COMPUTATION.get_or_init(|| {
@@ -170,6 +175,7 @@ fn bishop_lookup() -> &'static Vec<BitBoard> {
     })
 }
 
+#[must_use]
 pub fn get_bishop_moves(square: Square, relevant_blockers: BitBoard) -> BitBoard {
     let key = BISHOP_KEYS[square.usize()];
     bishop_lookup()[key.offset + relevant_blockers.magic_index(key.magic, key.shift)]

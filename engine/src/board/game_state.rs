@@ -4,6 +4,7 @@ use super::{piece::Piece, zobrist::Zobrist};
 
 macro_rules! define_castling_rights {
     ($getter:ident, $setter:ident, $unsetter:ident, $offset:expr) => {
+        #[must_use]
         pub fn $getter(&self) -> bool {
             self.0 & (1 << $offset) != 0
         }
@@ -45,6 +46,7 @@ impl CastlingRights {
         3
     );
 
+    #[must_use]
     pub fn new(
         white_can_castle_king_side: bool,
         white_can_castle_queen_side: bool,
@@ -67,6 +69,7 @@ impl CastlingRights {
         };
         data
     }
+    #[must_use]
     pub fn from_fen_section(castling_rights: &str) -> Self {
         if castling_rights == "-" {
             Self::new(false, false, false, false)
@@ -79,9 +82,11 @@ impl CastlingRights {
             )
         }
     }
+    #[must_use]
     pub fn none(&self) -> bool {
         self.0 == 0
     }
+    #[must_use]
     pub fn internal_value(&self) -> u8 {
         self.0
     }

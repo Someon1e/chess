@@ -46,6 +46,7 @@ impl Piece {
         Piece::BlackKing,
     ];
 
+    #[must_use]
     pub fn to_fen_char(self) -> char {
         match self {
             Piece::WhitePawn => 'P',
@@ -63,6 +64,7 @@ impl Piece {
             Piece::BlackKing => 'k',
         }
     }
+
     pub fn from_fen_char(character: &char) -> Result<Piece, &str> {
         match character {
             'P' => Ok(Piece::WhitePawn),

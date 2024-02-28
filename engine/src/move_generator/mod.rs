@@ -550,6 +550,7 @@ impl MoveGenerator {
         }
         (orthogonal_pin_rays, diagonal_pin_rays)
     }
+    #[must_use]
     pub fn new(board: &Board) -> Self {
         let white_to_move = board.white_to_move;
 
@@ -753,7 +754,7 @@ impl MoveGenerator {
             self.gen_rook(from, add_move, captures_only);
         }
     }
-
+    #[must_use]
     pub fn calculate_is_in_check(board: &Board) -> bool {
         let (friendly_pieces, enemy_pieces) = if board.white_to_move {
             (Piece::WHITE_PIECES, Piece::BLACK_PIECES)
@@ -821,19 +822,23 @@ impl MoveGenerator {
 
         false
     }
-
+    #[must_use]
     pub fn is_in_check(&self) -> bool {
         self.is_in_check
     }
+    #[must_use]
     pub fn enemy_pawn_attacks(&self) -> BitBoard {
         self.enemy_pawn_attacks
     }
+    #[must_use]
     pub fn enemy_piece_bit_board(&self) -> BitBoard {
         self.enemy_piece_bit_board
     }
+    #[must_use]
     pub fn friendly_pawns(&self) -> BitBoard {
         self.friendly_pawns
     }
+    #[must_use]
     pub fn friendly_pieces(&self) -> BitBoard {
         self.friendly_piece_bit_board
     }

@@ -32,6 +32,7 @@ impl Board {
     pub const START_POSITION_FEN: &'static str =
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
+    #[must_use]
     pub fn piece_at(&self, square: Square) -> Option<Piece> {
         let square_bit_board = square.bit_board();
         for piece in Piece::ALL_PIECES {
@@ -42,6 +43,7 @@ impl Board {
         }
         None
     }
+    #[must_use]
     pub fn white_piece_at(&self, square: Square) -> Option<Piece> {
         let square_bit_board = square.bit_board();
         for piece in Piece::WHITE_PIECES {
@@ -52,6 +54,7 @@ impl Board {
         }
         None
     }
+    #[must_use]
     pub fn black_piece_at(&self, square: Square) -> Option<Piece> {
         let square_bit_board = square.bit_board();
         for piece in Piece::BLACK_PIECES {
@@ -62,6 +65,7 @@ impl Board {
         }
         None
     }
+    #[must_use]
     pub fn friendly_piece_at(&self, square: Square) -> Option<Piece> {
         if self.white_to_move {
             self.white_piece_at(square)
@@ -69,6 +73,7 @@ impl Board {
             self.black_piece_at(square)
         }
     }
+    #[must_use]
     pub fn enemy_piece_at(&self, square: Square) -> Option<Piece> {
         if self.white_to_move {
             self.black_piece_at(square)
@@ -76,12 +81,15 @@ impl Board {
             self.white_piece_at(square)
         }
     }
+    #[must_use]
     pub fn zobrist_key(&self) -> Zobrist {
         self.game_state.zobrist_key
     }
+    #[must_use]
     pub fn get_bit_board(&self, piece: Piece) -> &BitBoard {
         &self.bit_boards[piece as usize]
     }
+    #[must_use]
     pub fn get_bit_board_mut(&mut self, piece: Piece) -> &mut BitBoard {
         &mut self.bit_boards[piece as usize]
     }
