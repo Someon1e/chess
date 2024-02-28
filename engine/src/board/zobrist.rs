@@ -21,7 +21,7 @@ impl Zobrist {
     pub const EMPTY: Self = Self(0);
 
     pub fn xor_en_passant(&mut self, en_passant_square: &Square) {
-        self.0 ^= ZOBRIST_RANDOMS.en_passant_square_file[en_passant_square.file() as usize]
+        self.0 ^= ZOBRIST_RANDOMS.en_passant_square_file[en_passant_square.file() as usize];
     }
 
     pub fn xor_castling_rights(&mut self, castling_rights: &CastlingRights) {
