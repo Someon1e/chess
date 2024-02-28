@@ -37,6 +37,13 @@ impl Zobrist {
     }
 }
 
+impl Rem<usize> for Zobrist {
+    type Output = usize;
+    fn rem(self, rhs: usize) -> Self::Output {
+        self.0 as usize % rhs
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::board::Board;
@@ -51,28 +58,21 @@ mod tests {
                 let mut bit_board = *bit_board;
                 while bit_board.is_not_empty() {
                     let square = bit_board.pop_square();
-                    key.xor_piece(piece, square.usize())
+                    key.xor_piece(piece, square.usize());
                 }
             }
 
             if !board.white_to_move {
-                key.flip_side_to_move()
+                key.flip_side_to_move();
             }
 
             if let Some(en_passant_square) = board.game_state.en_passant_square {
-                key.xor_en_passant(&en_passant_square)
+                key.xor_en_passant(&en_passant_square);
             }
 
             key.xor_castling_rights(&board.game_state.castling_rights);
 
             key
         }
-    }
-}
-
-impl Rem<usize> for Zobrist {
-    type Output = usize;
-    fn rem(self, rhs: usize) -> Self::Output {
-        self.0 as usize % rhs
     }
 }

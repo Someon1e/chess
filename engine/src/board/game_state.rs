@@ -56,16 +56,16 @@ impl CastlingRights {
     ) -> Self {
         let mut data = Self(0);
         if white_can_castle_king_side {
-            data.set_white_king_side()
+            data.set_white_king_side();
         };
         if white_can_castle_queen_side {
-            data.set_white_queen_side()
+            data.set_white_queen_side();
         };
         if black_can_castle_king_side {
-            data.set_black_king_side()
+            data.set_black_king_side();
         };
         if black_can_castle_queen_side {
-            data.set_black_queen_side()
+            data.set_black_queen_side();
         };
         data
     }

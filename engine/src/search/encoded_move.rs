@@ -45,6 +45,18 @@ impl EncodedMove {
     }
 }
 
+impl fmt::Display for EncodedMove {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "From {} to {}, Flag {:?}",
+            self.from(),
+            self.to(),
+            self.flag()
+        )
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::EncodedMove;
@@ -75,17 +87,5 @@ mod tests {
             assert_eq!(encoded.to(), to);
             assert_eq!(*encoded.flag(), flag);
         }
-    }
-}
-
-impl fmt::Display for EncodedMove {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "From {} to {}, Flag {:?}",
-            self.from(),
-            self.to(),
-            self.flag()
-        )
     }
 }

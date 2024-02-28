@@ -110,7 +110,7 @@ impl Board {
                     }
                     fen.push(piece.to_fen_char());
                 } else {
-                    empty += 1
+                    empty += 1;
                 }
             }
             if empty != 0 {
@@ -118,38 +118,38 @@ impl Board {
                 empty = 0;
             }
             if rank != 0 {
-                fen.push('/')
+                fen.push('/');
             }
         }
 
         if self.white_to_move {
-            fen.push_str(" w ")
+            fen.push_str(" w ");
         } else {
-            fen.push_str(" b ")
+            fen.push_str(" b ");
         }
 
         if self.game_state.castling_rights.none() {
-            fen.push('-')
+            fen.push('-');
         } else {
             if self.game_state.castling_rights.get_white_king_side() {
-                fen.push('K')
+                fen.push('K');
             }
             if self.game_state.castling_rights.get_white_queen_side() {
-                fen.push('Q')
+                fen.push('Q');
             }
             if self.game_state.castling_rights.get_black_king_side() {
-                fen.push('k')
+                fen.push('k');
             }
             if self.game_state.castling_rights.get_black_queen_side() {
-                fen.push('q')
+                fen.push('q');
             }
         };
         fen.push(' ');
 
         if let Some(en_passant_square) = &self.game_state.en_passant_square {
-            fen.push_str(&en_passant_square.to_notation())
+            fen.push_str(&en_passant_square.to_notation());
         } else {
-            fen.push('-')
+            fen.push('-');
         }
 
         fen.push(' ');
