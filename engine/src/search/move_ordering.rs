@@ -37,7 +37,7 @@ const PIECE_VALUES: [i32; 12] = [100, 300, 320, 500, 900, 0, 100, 300, 320, 500,
 
 pub struct MoveOrderer {}
 impl MoveOrderer {
-    fn guess_move_value(search: &Search, enemy_pawn_attacks: &BitBoard, move_data: &Move) -> i32 {
+    fn guess_move_value(search: &Search, enemy_pawn_attacks: BitBoard, move_data: Move) -> i32 {
         let moving_from = move_data.from;
         let moving_to = move_data.to;
 
@@ -108,7 +108,7 @@ impl MoveOrderer {
         move_guesses[last_unsorted_index]
     }
 
-    fn guess_capture_value(search: &Search, move_data: &Move) -> i32 {
+    fn guess_capture_value(search: &Search, move_data: Move) -> i32 {
         let mut score = match move_data.flag {
             Flag::EnPassant => return 0,
 
@@ -147,7 +147,7 @@ impl MoveOrderer {
                 let encoded = EncodedMove::new(move_data);
                 move_guesses[index] = MoveGuess {
                     move_data: encoded,
-                    guess: Self::guess_capture_value(search, &move_data),
+                    guess: Self::guess_capture_value(search, move_data),
                 };
                 index += 1;
             },
@@ -178,8 +178,8 @@ impl MoveOrderer {
                     } else {
                         Self::guess_move_value(
                             search,
-                            &move_generator.enemy_pawn_attacks(),
-                            &move_data,
+                            move_generator.enemy_pawn_attacks(),
+                            move_data,
                         )
                     } + if encoded == killer_move {
                         KILLER_MOVE_BONUS

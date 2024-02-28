@@ -378,19 +378,19 @@ impl MoveGenerator {
 
         push_mask: &mut BitBoard,
 
-        king_bit_board: &BitBoard,
-        occupied_squares: &BitBoard,
+        king_bit_board: BitBoard,
+        occupied_squares: BitBoard,
     ) -> BitBoard {
         let rook_blockers_excluding_king =
-            (*occupied_squares & !*king_bit_board) & relevant_rook_blockers()[from.usize()];
+            (occupied_squares & !king_bit_board) & relevant_rook_blockers()[from.usize()];
         let rook_attacks = get_rook_moves(from, rook_blockers_excluding_king);
-        if rook_attacks.overlaps(king_bit_board) {
+        if rook_attacks.overlaps(&king_bit_board) {
             // This piece is checking the king
 
             let ray = get_rook_moves(
                 from,
-                *occupied_squares & relevant_rook_blockers()[from.usize()],
-            ) & !*king_bit_board
+                occupied_squares & relevant_rook_blockers()[from.usize()],
+            ) & !king_bit_board
                 & get_rook_moves(
                     king_square,
                     from.bit_board() & relevant_rook_blockers()[king_square.usize()],
@@ -406,19 +406,19 @@ impl MoveGenerator {
 
         push_mask: &mut BitBoard,
 
-        king_bit_board: &BitBoard,
-        occupied_squares: &BitBoard,
+        king_bit_board: BitBoard,
+        occupied_squares: BitBoard,
     ) -> BitBoard {
         let bishop_blockers_excluding_king =
-            (*occupied_squares & !*king_bit_board) & relevant_bishop_blockers()[from.usize()];
+            (occupied_squares & !king_bit_board) & relevant_bishop_blockers()[from.usize()];
         let bishop_attacks = get_bishop_moves(from, bishop_blockers_excluding_king);
-        if bishop_attacks.overlaps(king_bit_board) {
+        if bishop_attacks.overlaps(&king_bit_board) {
             // This piece is checking the king
 
             let ray = get_bishop_moves(
                 from,
-                *occupied_squares & relevant_bishop_blockers()[from.usize()],
-            ) & !*king_bit_board
+                occupied_squares & relevant_bishop_blockers()[from.usize()],
+            ) & !king_bit_board
                 & get_bishop_moves(
                     king_square,
                     from.bit_board() & relevant_bishop_blockers()[king_square.usize()],
@@ -497,12 +497,12 @@ impl MoveGenerator {
 
 impl MoveGenerator {
     fn calculate_pin_rays(
-        friendly_piece_bit_board: &BitBoard,
-        friendly_king_square: &Square,
+        friendly_piece_bit_board: BitBoard,
+        friendly_king_square: Square,
 
         enemy_orthogonal: BitBoard,
-        enemy_diagonal: &BitBoard,
-        enemy_piece_bit_board: &BitBoard,
+        enemy_diagonal: BitBoard,
+        enemy_piece_bit_board: BitBoard,
     ) -> (BitBoard, BitBoard) {
         let mut orthogonal_pin_rays = BitBoard::EMPTY;
         let mut diagonal_pin_rays = BitBoard::EMPTY;
@@ -668,8 +668,8 @@ impl MoveGenerator {
                     from,
                     friendly_king_square,
                     &mut push_mask,
-                    &friendly_king,
-                    &occupied_squares,
+                    friendly_king,
+                    occupied_squares,
                 );
                 king_danger_bit_board |= dangerous;
             }
@@ -682,8 +682,8 @@ impl MoveGenerator {
                     from,
                     friendly_king_square,
                     &mut push_mask,
-                    &friendly_king,
-                    &occupied_squares,
+                    friendly_king,
+                    occupied_squares,
                 );
                 king_danger_bit_board |= dangerous;
             }
@@ -702,11 +702,11 @@ impl MoveGenerator {
         }
 
         let (orthogonal_pin_rays, diagonal_pin_rays) = Self::calculate_pin_rays(
-            &friendly_piece_bit_board,
-            &friendly_king_square,
+            friendly_piece_bit_board,
+            friendly_king_square,
             enemy_orthogonal,
-            &enemy_diagonal,
-            &enemy_piece_bit_board,
+            enemy_diagonal,
+            enemy_piece_bit_board,
         );
 
         Self {

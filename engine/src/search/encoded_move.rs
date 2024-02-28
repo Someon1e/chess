@@ -22,17 +22,17 @@ impl EncodedMove {
 
     pub const NONE: Self = Self(0);
 
-    pub fn is_none(&self) -> bool {
-        *self == Self::NONE
+    pub fn is_none(self) -> bool {
+        self == Self::NONE
     }
 
-    pub fn from(&self) -> Square {
+    pub fn from(self) -> Square {
         Square::from_index((self.0 & 0b111111) as i8)
     }
-    pub fn to(&self) -> Square {
+    pub fn to(self) -> Square {
         Square::from_index(((self.0 >> 6) & 0b111111) as i8)
     }
-    pub fn decode(&self) -> Move {
+    pub fn decode(self) -> Move {
         Move {
             from: self.from(),
             to: self.to(),
