@@ -1,8 +1,7 @@
-use crate::{
-    board::{zobrist::Zobrist, Board},
-    move_generator::MoveGenerator,
-    uci,
-};
+use crate::{board::Board, move_generator::MoveGenerator, uci};
+
+#[cfg(test)]
+use crate::board::zobrist::Zobrist;
 
 fn perft(board: &mut Board, depth: u16) -> usize {
     if depth == 0 {

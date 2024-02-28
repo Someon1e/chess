@@ -6,7 +6,7 @@ use crate::{
     },
 };
 
-use super::{encoded_move::EncodedMove, eval::Eval, Search};
+use super::{encoded_move::EncodedMove, Search};
 
 #[derive(Clone, Copy)]
 pub struct MoveGuess {
@@ -95,8 +95,8 @@ impl MoveOrderer {
     ) -> MoveGuess {
         let (mut index_of_highest_move, mut highest_guess) =
             (last_unsorted_index, move_guesses[last_unsorted_index].guess);
-        for index in 0..last_unsorted_index {
-            let guess = move_guesses[index].guess;
+        for (index, item) in move_guesses.iter().enumerate().take(last_unsorted_index) {
+            let guess = item.guess;
             if guess > highest_guess {
                 highest_guess = guess;
                 index_of_highest_move = index;
@@ -149,7 +149,7 @@ impl MoveOrderer {
                     move_data: encoded,
                     guess: Self::guess_capture_value(search, &move_data),
                 };
-                index += 1
+                index += 1;
             },
             true,
         );

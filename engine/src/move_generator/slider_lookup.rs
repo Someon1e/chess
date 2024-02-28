@@ -33,7 +33,7 @@ fn calculate_all_rays() -> [[BitBoard; 8]; 65] {
 }
 pub fn all_rays() -> &'static [[BitBoard; 8]; 65] {
     static COMPUTATION: OnceLock<[[BitBoard; 8]; 65]> = OnceLock::new();
-    COMPUTATION.get_or_init(|| calculate_all_rays())
+    COMPUTATION.get_or_init(calculate_all_rays)
 }
 
 pub fn iterate_combinations(squares: BitBoard) -> impl core::iter::Iterator<Item = BitBoard> {
@@ -141,7 +141,7 @@ fn init_lookup(
         let blockers = blockers[square_index as usize];
         for blocker_combination in iterate_combinations(blockers) {
             let moves = gen_rook_or_bishop(square, &blocker_combination, direction_offset);
-            lookup[key.offset + &blocker_combination.magic_index(key.magic, key.shift)] = moves;
+            lookup[key.offset + blocker_combination.magic_index(key.magic, key.shift)] = moves;
         }
     }
     lookup

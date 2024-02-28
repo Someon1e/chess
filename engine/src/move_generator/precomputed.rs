@@ -49,9 +49,8 @@ pub const SQUARES_FROM_EDGE: [[i8; 8]; 64] = {
 fn calculate_knight_moves_at_square() -> [BitBoard; 64] {
     let mut knight_moves_at_square = [BitBoard::EMPTY; 64];
 
-    for index in 0..64 {
+    for (index, knight_moves) in knight_moves_at_square.iter_mut().enumerate() {
         let square = Square::from_index(index as i8);
-        let knight_moves = &mut knight_moves_at_square[index];
         for knight_jump_offset in [15, 17, -17, -15, 10, -6, 6, -10] {
             let move_to = square.offset(knight_jump_offset);
             if move_to.within_bounds()

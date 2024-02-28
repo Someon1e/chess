@@ -5,7 +5,7 @@ use crate::{
     move_generator::move_data::{Flag, Move},
     perft::perft_root,
     search::Search,
-    timer::timer::Time,
+    timer::inner::Time,
 };
 
 pub fn encode_move(move_data: Move) -> String {
@@ -30,9 +30,9 @@ pub fn decode_move(board: &Board, uci_move: &str) -> Move {
     let mut flag = Flag::None;
     if piece == Piece::WhitePawn || piece == Piece::BlackPawn {
         if from.rank().abs_diff(to.rank()) == 2 {
-            flag = Flag::PawnTwoUp
+            flag = Flag::PawnTwoUp;
         } else if board.game_state.en_passant_square == Some(to) {
-            flag = Flag::EnPassant
+            flag = Flag::EnPassant;
         } else if let Some(promotion) = uci_move.chars().nth(4) {
             flag = match promotion {
                 'q' => Flag::QueenPromotion,
@@ -47,7 +47,7 @@ pub fn decode_move(board: &Board, uci_move: &str) -> Move {
     } else if (piece == Piece::BlackKing || piece == Piece::WhiteKing)
         && from.file().abs_diff(to.file()) > 1
     {
-        flag = Flag::Castle
+        flag = Flag::Castle;
     }
 
     Move { from, to, flag }
@@ -170,7 +170,7 @@ uciok",
                 _ => {
                     if !startpos {
                         building_fen.push_str(label);
-                        building_fen.push(' ')
+                        building_fen.push(' ');
                     }
                 }
             }
@@ -178,7 +178,7 @@ uciok",
         if startpos {
             self.fen = Some(Board::START_POSITION_FEN.to_owned());
         } else {
-            self.fen = Some(building_fen)
+            self.fen = Some(building_fen);
         }
     }
     pub fn go(&mut self, args: &mut SplitWhitespace) {
@@ -190,7 +190,7 @@ uciok",
         let mut search = Search::new(board);
 
         for uci_move in &self.moves {
-            search.make_move(&decode_move(search.board(), uci_move))
+            search.make_move(&decode_move(search.board(), uci_move));
         }
 
         if parameters.perft {
@@ -228,7 +228,7 @@ uciok",
                     "info depth {depth} score cp {evaluation} time {} pv {}",
                     search_start.miliseconds(),
                     encode_move(best_move.decode())
-                ))
+                ));
                 // TODO: fix crash when depth goes very high
             },
             &mut || search_start.miliseconds() > think_time,

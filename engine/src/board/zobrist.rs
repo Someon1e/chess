@@ -1,6 +1,5 @@
 use super::game_state::CastlingRights;
 use super::square::Square;
-use super::Board;
 
 use core::ops::Rem;
 
@@ -33,34 +32,41 @@ impl Zobrist {
         self.0 ^= ZOBRIST_RANDOMS.piece_arrays[piece_index][square_index];
     }
 
-    #[cfg(test)]
-    pub fn compute(board: &Board) -> Self {
-        // For debugging only.
-
-        let mut key = Self::EMPTY;
-
-        for (piece, bit_board) in board.bit_boards.iter().enumerate() {
-            let mut bit_board = *bit_board;
-            while bit_board.is_not_empty() {
-                let square = bit_board.pop_square();
-                key.xor_piece(piece, square.usize())
-            }
-        }
-
-        if !board.white_to_move {
-            key.flip_side_to_move()
-        }
-
-        if let Some(en_passant_square) = board.game_state.en_passant_square {
-            key.xor_en_passant(&en_passant_square)
-        }
-
-        key.xor_castling_rights(&board.game_state.castling_rights);
-
-        key
-    }
     pub fn flip_side_to_move(&mut self) {
         self.0 ^= ZOBRIST_RANDOMS.side_to_move;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::board::Board;
+
+    impl crate::board::Zobrist {
+        pub fn compute(board: &Board) -> Self {
+            // For debugging only.
+
+            let mut key = Self::EMPTY;
+
+            for (piece, bit_board) in board.bit_boards.iter().enumerate() {
+                let mut bit_board = *bit_board;
+                while bit_board.is_not_empty() {
+                    let square = bit_board.pop_square();
+                    key.xor_piece(piece, square.usize())
+                }
+            }
+
+            if !board.white_to_move {
+                key.flip_side_to_move()
+            }
+
+            if let Some(en_passant_square) = board.game_state.en_passant_square {
+                key.xor_en_passant(&en_passant_square)
+            }
+
+            key.xor_castling_rights(&board.game_state.castling_rights);
+
+            key
+        }
     }
 }
 

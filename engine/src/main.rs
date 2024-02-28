@@ -30,7 +30,7 @@ thread_local! {
             print(output);
 
             #[cfg(not(target_arch = "wasm32"))]
-            println!("{}", output)
+            println!("{output}");
         }
     });
 
@@ -74,6 +74,6 @@ fn main() {
         let mut input = String::new();
         stdin.read_line(&mut input).unwrap();
 
-        process_input(&input)
+        process_input(&input);
     }
 }
