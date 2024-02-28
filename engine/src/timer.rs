@@ -1,5 +1,5 @@
 #[cfg(target_arch = "wasm32")]
-pub mod timer {
+pub mod inner {
     pub struct Time {
         start: f64,
     }
@@ -22,7 +22,7 @@ pub mod timer {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-pub mod timer {
+pub mod inner {
     use std::time::Instant;
 
     pub struct Time {

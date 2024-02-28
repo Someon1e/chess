@@ -5,7 +5,7 @@ mod move_ordering;
 mod transposition;
 
 use crate::{
-    board::{piece::Piece, zobrist::Zobrist, Board},
+    board::{zobrist::Zobrist, Board},
     move_generator::{
         move_data::{Flag, Move},
         MoveGenerator,
@@ -153,7 +153,7 @@ impl<'a> Search<'a> {
                         return saved.value;
                     }
                 }
-                hash_move = saved.transposition_move
+                hash_move = saved.transposition_move;
             }
         }
 
@@ -220,7 +220,7 @@ impl<'a> Search<'a> {
                 return CHECKMATE_SCORE;
             }
             if ply_from_root == 0 {
-                self.best_score = 0
+                self.best_score = 0;
             }
             return 0;
         }
@@ -286,7 +286,7 @@ impl<'a> Search<'a> {
                             if move_data.flag == Flag::None
                                 && (ply_from_root as usize) < self.killer_moves.len()
                             {
-                                self.killer_moves[ply_from_root as usize] = encoded_move_data
+                                self.killer_moves[ply_from_root as usize] = encoded_move_data;
                             }
 
                             self.history_heuristic[self.board.white_to_move as usize]
@@ -361,7 +361,7 @@ mod tests {
     use crate::{
         board::Board,
         search::{eval::Eval, Search},
-        timer::timer::Time,
+        timer::inner::Time,
         uci,
     };
 

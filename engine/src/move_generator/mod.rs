@@ -500,7 +500,7 @@ impl MoveGenerator {
         friendly_piece_bit_board: &BitBoard,
         friendly_king_square: &Square,
 
-        enemy_orthogonal: &BitBoard,
+        enemy_orthogonal: BitBoard,
         enemy_diagonal: &BitBoard,
         enemy_piece_bit_board: &BitBoard,
     ) -> (BitBoard, BitBoard) {
@@ -656,7 +656,7 @@ impl MoveGenerator {
             while enemy_knights.is_not_empty() {
                 let from = enemy_knights.pop_square();
                 let knight_attacks = Self::knight_attack_bit_board(from);
-                king_danger_bit_board |= knight_attacks
+                king_danger_bit_board |= knight_attacks;
             }
         }
         {
@@ -703,7 +703,7 @@ impl MoveGenerator {
         let (orthogonal_pin_rays, diagonal_pin_rays) = Self::calculate_pin_rays(
             &friendly_piece_bit_board,
             &friendly_king_square,
-            &enemy_orthogonal,
+            enemy_orthogonal,
             &enemy_diagonal,
             &enemy_piece_bit_board,
         );
