@@ -62,7 +62,7 @@ impl<'a> Search<'a> {
     fn quiescence_search(&mut self, mut alpha: i32, beta: i32) -> i32 {
         #[cfg(test)]
         {
-            self.times_evaluation_was_called += 1
+            self.times_evaluation_was_called += 1;
         }
 
         let mut best_score = Eval::evaluate(self);
@@ -379,7 +379,7 @@ mod tests {
         assert_eq!(
             Search::new(&mut board).quiescence_search(-i32::MAX, i32::MAX),
             Eval::evaluate(&Search::new(&mut quiet))
-        )
+        );
     }
 
     #[test]
@@ -389,7 +389,7 @@ mod tests {
         assert!(
             Eval::evaluate(&Search::new(&mut one_step_from_promoting_pawn))
                 > Eval::evaluate(&Search::new(&mut starting_rank_pawn))
-        )
+        );
     }
 
     const OBVIOUS_POSITIONS: [(&str, &str); 201] = [
@@ -1117,7 +1117,7 @@ mod tests {
                     let solution = uci::decode_move(&board, &solution[0..4]);
                     let mut search = Search::new(&mut board);
                     let search_start = Time::now();
-                    let result = search.depth_by_depth(&mut |depth, answer| {
+                    let result = search.depth_by_depth(&mut |_depth, answer| {
                         if answer.0.decode() == solution {
                             true
                         } else {
@@ -1152,6 +1152,6 @@ mod tests {
                 break;
             }
         }
-        println!("Successes: {successes} Failures: {failures} Times eval was called: {total_times_evaluation_was_called}")
+        println!("Successes: {successes} Failures: {failures} Times eval was called: {total_times_evaluation_was_called}");
     }
 }

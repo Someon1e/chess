@@ -10,15 +10,15 @@ impl fmt::Display for BitBoard {
         for rank in (0..8).rev() {
             for file in 0..8 {
                 if !self.get(&Square::from_coords(rank, file)) {
-                    write!(f, "0")?
+                    write!(f, "0")?;
                 } else {
-                    write!(f, "1")?
+                    write!(f, "1")?;
                 }
                 if file != 7 {
-                    write!(f, " ")?
+                    write!(f, " ")?;
                 }
             }
-            writeln!(f)?
+            writeln!(f)?;
         }
         Ok(())
     }
@@ -57,7 +57,7 @@ impl BitBoard {
         Self(1 << square.index())
     }
     pub fn set(&mut self, square: &Square) {
-        self.0 |= square.bit_board().0
+        self.0 |= square.bit_board().0;
     }
     pub fn unset(&mut self, square: &Square) {
         self.0 &= !(square.bit_board().0);

@@ -203,7 +203,7 @@ mod tests {
         for _ in iterate_combinations(blockers) {
             number_of_combinations += 1;
         }
-        assert_eq!(number_of_combinations, expected_number_of_combinations)
+        assert_eq!(number_of_combinations, expected_number_of_combinations);
     }
     #[test]
     fn move_lookup_slow() {
@@ -228,6 +228,6 @@ mod tests {
 
         let legal_moves = rook_moves | bishop_moves;
         println!("{}", legal_moves);
-        assert_eq!(legal_moves.count(), 25)
+        assert_eq!(legal_moves.count(), 25);
     }
 }
