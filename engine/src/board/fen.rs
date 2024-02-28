@@ -8,6 +8,7 @@ use super::{
 };
 
 impl Board {
+    #[must_use]
     pub fn from_fen(fen: &str) -> Self {
         let mut bit_boards = [BitBoard::EMPTY; 12];
         let mut zobrist_key = Zobrist::EMPTY;
@@ -95,6 +96,7 @@ impl Board {
             history: Vec::new(),
         }
     }
+    #[must_use]
     pub fn to_fen(&self) -> String {
         let mut fen = String::with_capacity(87);
 

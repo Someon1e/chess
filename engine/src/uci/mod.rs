@@ -8,6 +8,7 @@ use crate::{
     timer::inner::Time,
 };
 
+#[must_use]
 pub fn encode_move(move_data: Move) -> String {
     let mut encoded = String::with_capacity(4);
     encoded.push_str(&move_data.from.to_notation());
@@ -22,6 +23,8 @@ pub fn encode_move(move_data: Move) -> String {
     };
     encoded
 }
+
+#[must_use]
 pub fn decode_move(board: &Board, uci_move: &str) -> Move {
     let (from, to) = (&uci_move[0..2], &uci_move[2..4]);
     let (from, to) = (Square::from_notation(from), Square::from_notation(to));
@@ -68,6 +71,7 @@ pub struct GoParameters {
     pub move_time_in_ms: Option<u128>,
 }
 impl GoParameters {
+    #[must_use]
     pub fn empty() -> Self {
         Self {
             white_time: None,

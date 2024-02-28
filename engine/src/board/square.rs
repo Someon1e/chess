@@ -28,53 +28,59 @@ pub const DIRECTIONS: [Direction; 8] = [
 ];
 
 impl Square {
+    #[must_use]
     pub const fn from_index(index: i8) -> Self {
         Self(index)
     }
+    #[must_use]
     pub const fn from_coords(rank: i8, file: i8) -> Self {
         Self(rank * 8 + file)
     }
-
+    #[must_use]
     pub fn up(&self, number: i8) -> Self {
         self.offset(UP_OFFSET * number)
     }
+    #[must_use]
     pub fn down(&self, number: i8) -> Self {
         self.offset(DOWN_OFFSET * number)
     }
-
+    #[must_use]
     pub fn left(&self, number: i8) -> Self {
         self.offset(LEFT_OFFSET * number)
     }
+    #[must_use]
     pub fn right(&self, number: i8) -> Self {
         self.offset(RIGHT_OFFSET * number)
     }
-
+    #[must_use]
     pub fn within_bounds(&self) -> bool {
         self.index() >= 0 && self.index() < 64
     }
-
+    #[must_use]
     pub fn offset(&self, offset: i8) -> Self {
         Self(self.index() + offset)
     }
-
+    #[must_use]
     pub const fn index(&self) -> i8 {
         self.0
     }
+    #[must_use]
     pub const fn usize(&self) -> usize {
         self.0 as usize
     }
-
+    #[must_use]
     pub fn flip(&self) -> Self {
         Self(self.index() ^ 56)
     }
-
+    #[must_use]
     pub const fn file(&self) -> i8 {
         self.index() & 0b111
     }
+    #[must_use]
     pub const fn rank(&self) -> i8 {
         self.index() >> 3
     }
-
+    #[must_use]
     pub fn to_notation(self) -> String {
         let file = self.file();
         let rank = self.rank();
@@ -82,7 +88,7 @@ impl Square {
         let rank_number = rank + 1;
         format!("{}{}", file_char, rank_number)
     }
-
+    #[must_use]
     pub fn from_notation(notation: &str) -> Square {
         let file = notation.as_bytes().first().expect("Invalid notation") - b'a';
         let rank = notation
@@ -94,6 +100,7 @@ impl Square {
             - 1;
         Square::from_coords(rank as i8, file as i8)
     }
+    #[must_use]
     pub fn bit_board(&self) -> BitBoard {
         BitBoard::from_square(self)
     }

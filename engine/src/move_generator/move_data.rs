@@ -35,6 +35,7 @@ impl Flag {
         Self::KnightPromotion,
     ];
 
+    #[must_use]
     pub fn get_promotion_piece(&self, white: bool) -> Option<Piece> {
         match self {
             Self::QueenPromotion => Some({

@@ -37,6 +37,7 @@ pub struct Search<'a> {
 }
 
 impl<'a> Search<'a> {
+    #[must_use]
     pub fn new(board: &'a mut Board) -> Self {
         Self {
             board,
@@ -52,10 +53,12 @@ impl<'a> Search<'a> {
         }
     }
 
+    #[must_use]
     pub fn board(&self) -> &Board {
         self.board
     }
 
+    #[must_use]
     fn quiescence_search(&mut self, mut alpha: i32, beta: i32) -> i32 {
         #[cfg(test)]
         {
@@ -313,6 +316,7 @@ impl<'a> Search<'a> {
 
         best_score
     }
+    #[must_use]
     pub fn depth_by_depth(
         &mut self,
         depth_completed: &mut dyn FnMut(u16, (EncodedMove, i32)) -> bool,
@@ -332,6 +336,7 @@ impl<'a> Search<'a> {
         }
         (depth, self.best_move, self.best_score)
     }
+    #[must_use]
     pub fn iterative_deepening(
         &mut self,
         depth_completed: &mut dyn FnMut(u16, (EncodedMove, i32)),
