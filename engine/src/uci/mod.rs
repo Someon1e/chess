@@ -191,18 +191,20 @@ uciok",
 
         let board = &mut Board::from_fen(self.fen.as_ref().unwrap());
 
-        let mut search = Search::new(board);
-
-        for uci_move in &self.moves {
-            search.make_move(&decode_move(search.board(), uci_move));
-        }
-
         if parameters.perft {
+            for uci_move in &self.moves {
+                board.make_move(&decode_move(board, uci_move));
+            }
             (self.out)(&format!(
                 "Nodes searched: {}",
                 perft_root(board, parameters.depth.unwrap(), self.out)
             ));
             return;
+        }
+
+        let mut search = Search::new(board);
+        for uci_move in &self.moves {
+            search.make_move(&decode_move(search.board(), uci_move));
         }
 
         let think_time = if parameters.infinite {
