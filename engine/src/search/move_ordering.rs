@@ -95,23 +95,24 @@ impl MoveOrderer {
         score
     }
 
-    pub fn put_highest_guessed_move_on_top(
+    pub fn put_highest_guessed_move(
         move_guesses: &mut [MoveGuess],
-        last_unsorted_index: usize,
+        unsorted_index: usize,
+        move_count: usize
     ) -> MoveGuess {
         let (mut index_of_highest_move, mut highest_guess) =
-            (last_unsorted_index, move_guesses[last_unsorted_index].guess);
-        for (index, item) in move_guesses.iter().enumerate().take(last_unsorted_index) {
-            let guess = item.guess;
+            (unsorted_index, move_guesses[unsorted_index].guess);
+        for index in unsorted_index..move_count {
+            let guess = move_guesses[index].guess;
             if guess > highest_guess {
                 highest_guess = guess;
                 index_of_highest_move = index;
             }
         }
-        if index_of_highest_move != last_unsorted_index {
-            move_guesses.swap(index_of_highest_move, last_unsorted_index);
+        if index_of_highest_move != unsorted_index {
+            move_guesses.swap(index_of_highest_move, unsorted_index);
         }
-        move_guesses[last_unsorted_index]
+        move_guesses[unsorted_index]
     }
 
     fn guess_capture_value(search: &Search, move_data: Move) -> i32 {
@@ -223,12 +224,12 @@ mod tests {
             EncodedMove::NONE,
             EncodedMove::NONE,
         );
-        let mut index = move_count;
+        let mut index = 0;
         let mut next_move = || {
-            index -= 1;
-            let move_guess = MoveOrderer::put_highest_guessed_move_on_top(&mut move_guesses, index);
-            println!("{} {}", move_guess.move_data, move_guess.guess);
-            (move_guess.move_data, index != 0)
+            let move_guess = MoveOrderer::put_highest_guessed_move(&mut move_guesses, index, move_count);
+            println!("{index} {} {}", move_guess.move_data, move_guess.guess);
+            index += 1;
+            (move_guess.move_data, index != move_count)
         };
         assert!(
             next_move().0.decode()

@@ -74,12 +74,11 @@ impl<'a> Search<'a> {
         }
 
         let move_generator = MoveGenerator::new(self.board);
-        let (mut move_guesses, mut index) =
+        let (mut move_guesses, move_count) =
             MoveOrderer::get_sorted_moves_captures_only(self, &move_generator);
-        while index != 0 {
-            index -= 1;
-
-            let move_data = MoveOrderer::put_highest_guessed_move_on_top(&mut move_guesses, index)
+        let mut index = 0;
+        while index != move_count {
+            let move_data = MoveOrderer::put_highest_guessed_move(&mut move_guesses, index, move_count)
                 .move_data
                 .decode();
 
@@ -96,6 +95,8 @@ impl<'a> Search<'a> {
             if alpha >= beta {
                 break;
             }
+
+            index += 1;
         }
         best_score
     }
@@ -225,10 +226,10 @@ impl<'a> Search<'a> {
         let mut node_type = NodeType::Alpha;
         let (mut transposition_move, mut best_score) = (EncodedMove::NONE, -i32::MAX);
 
-        let mut index = move_count - 1;
+        let mut index = 0;
         loop {
             let encoded_move_data =
-                MoveOrderer::put_highest_guessed_move_on_top(&mut move_guesses, index).move_data;
+                MoveOrderer::put_highest_guessed_move(&mut move_guesses, index, move_count).move_data;
             let move_data = encoded_move_data.decode();
 
             let is_capture = move_generator.enemy_piece_bit_board().get(&move_data.to);
@@ -295,10 +296,11 @@ impl<'a> Search<'a> {
                     }
                 }
             }
-            if index == 0 {
+
+            index += 1;
+            if index == move_count {
                 break;
             }
-            index -= 1;
         }
         self.transposition_table[zobrist_index] = Some(NodeValue {
             zobrist_key,
