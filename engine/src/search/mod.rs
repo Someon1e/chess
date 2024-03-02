@@ -78,9 +78,10 @@ impl<'a> Search<'a> {
             MoveOrderer::get_sorted_moves_captures_only(self, &move_generator);
         let mut index = 0;
         while index != move_count {
-            let move_data = MoveOrderer::put_highest_guessed_move(&mut move_guesses, index, move_count)
-                .move_data
-                .decode();
+            let move_data =
+                MoveOrderer::put_highest_guessed_move(&mut move_guesses, index, move_count)
+                    .move_data
+                    .decode();
 
             self.board.make_move(&move_data);
             let score = -self.quiescence_search(-beta, -alpha);
@@ -229,7 +230,8 @@ impl<'a> Search<'a> {
         let mut index = 0;
         loop {
             let encoded_move_data =
-                MoveOrderer::put_highest_guessed_move(&mut move_guesses, index, move_count).move_data;
+                MoveOrderer::put_highest_guessed_move(&mut move_guesses, index, move_count)
+                    .move_data;
             let move_data = encoded_move_data.decode();
 
             let is_capture = move_generator.enemy_piece_bit_board().get(&move_data.to);
@@ -603,7 +605,7 @@ mod tests {
         ), // "WAC.073"
         (
             "r3r1k1/pppq1ppp/8/8/1Q4n1/7P/PPP2PP1/RNB1R1K1 b - - 0 1",
-            "b4d6",
+            "d7d6",
         ), // "WAC.075"
         (
             "r1b1qrk1/2p2ppp/pb1pnn2/1p2pNB1/3PP3/1BP5/PP2QPPP/RN1R2K1 w - - 0 1",
@@ -1092,7 +1094,6 @@ mod tests {
     #[test]
     fn win_at_chess() {
         let (sender, receiver) = mpsc::channel();
-        let mut threads = vec![];
         const THREAD_COUNT: usize = 8;
         let (divide, remainder) = (
             OBVIOUS_POSITIONS.len() / THREAD_COUNT,
@@ -1107,7 +1108,7 @@ mod tests {
             }
             let positions = &OBVIOUS_POSITIONS[i * divide..end];
 
-            threads.push(thread::spawn(move || {
+            thread::spawn(move || {
                 for (position, solution) in positions {
                     let mut board = Board::from_fen(position);
                     let solution = uci::decode_move(&board, &solution[0..4]);
@@ -1129,7 +1130,7 @@ mod tests {
                         ))
                         .unwrap();
                 }
-            }));
+            });
         }
 
         let mut failures = 0;
