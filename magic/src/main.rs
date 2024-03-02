@@ -63,7 +63,7 @@ fn find_magics(relevant_blockers: &[BitBoard; 64], direction_offset: usize) {
                 };
                 best_magics[square_index] = magic;
 
-                length += filled.len();
+                length += filled.len() as u32;
                 break;
             }
         }
@@ -95,7 +95,7 @@ fn find_magics(relevant_blockers: &[BitBoard; 64], direction_offset: usize) {
                 best_magics[square_index] = magic;
                 best_index_bits[square_index] = index_bits;
 
-                length += filled.len();
+                length += filled.len() as u32;
                 continue;
             }
 

@@ -2,7 +2,7 @@
 pub struct Key {
     pub magic: u64,
     pub shift: u8,
-    pub offset: usize,
+    pub offset: u32,
 }
 
 pub const ROOK_KEYS: [Key; 64] = [
