@@ -126,10 +126,6 @@ impl<'a> Search<'a> {
         mut alpha: i32,
         mut beta: i32,
     ) -> i32 {
-        if should_cancel() {
-            return 0;
-        }
-
         let zobrist_key = self.board.zobrist_key();
 
         if ply_from_root != 0 && self.repetition_table.contains(&zobrist_key) {
@@ -193,9 +189,7 @@ impl<'a> Search<'a> {
                 -beta + 1,
             );
             self.board.unmake_null_move();
-            if should_cancel() {
-                return 0;
-            }
+
             if score >= beta {
                 return beta;
             }
