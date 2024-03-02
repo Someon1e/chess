@@ -1094,16 +1094,16 @@ mod tests {
     #[test]
     fn win_at_chess() {
         let (sender, receiver) = mpsc::channel();
-        const THREAD_COUNT: usize = 8;
+        let thread_count = thread::available_parallelism().unwrap().get();
         let (divide, remainder) = (
-            OBVIOUS_POSITIONS.len() / THREAD_COUNT,
-            OBVIOUS_POSITIONS.len() % THREAD_COUNT,
+            OBVIOUS_POSITIONS.len() / thread_count,
+            OBVIOUS_POSITIONS.len() % thread_count,
         );
-        for i in 0..THREAD_COUNT {
+        for i in 0..thread_count {
             let sender = sender.clone();
 
             let mut end = (i + 1) * divide;
-            if i == THREAD_COUNT - 1 {
+            if i == thread_count - 1 {
                 end += remainder;
             }
             let positions = &OBVIOUS_POSITIONS[i * divide..end];
