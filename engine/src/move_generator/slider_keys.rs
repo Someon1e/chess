@@ -1,7 +1,7 @@
 #[derive(Debug, Clone, Copy)]
 pub struct Key {
     pub magic: u64,
-    pub shift: u64,
+    pub shift: u8,
     pub offset: usize,
 }
 

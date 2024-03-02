@@ -96,7 +96,7 @@ impl BitBoard {
         BitBoard::new(self.0.wrapping_sub(d.0) & d.0)
     }
     #[must_use]
-    pub fn magic_index(&self, magic: u64, shift: u64) -> usize {
+    pub fn magic_index(&self, magic: u64, shift: u8) -> usize {
         let hash = self.0.wrapping_mul(magic);
         (hash >> shift) as usize
     }

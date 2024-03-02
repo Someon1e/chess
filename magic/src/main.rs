@@ -17,7 +17,7 @@ fn fill_magic_table(
     square: Square,
     blockers: BitBoard,
     magic: u64,
-    index_bits: u64,
+    index_bits: u8,
     direction_offset: usize,
 ) -> Result<Vec<BitBoard>, TableFillError> {
     let mut table = vec![BitBoard::EMPTY; 1 << index_bits];
@@ -49,7 +49,7 @@ fn find_magics(relevant_blockers: &[BitBoard; 64], direction_offset: usize) {
         let square = Square::from_index(square_index as i8);
 
         let blockers = relevant_blockers[square_index];
-        let index_bits = blockers.count() as u64;
+        let index_bits = blockers.count() as u8;
         best_index_bits[square_index] = index_bits;
 
         loop {
