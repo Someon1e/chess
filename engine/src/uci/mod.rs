@@ -185,6 +185,7 @@ uciok",
             self.fen = Some(building_fen);
         }
     }
+
     pub fn go(&mut self, args: &mut SplitWhitespace) {
         let mut parameters = GoParameters::empty();
         parameters.parse(args);

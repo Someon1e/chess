@@ -143,7 +143,8 @@ fn init_lookup(
         let blockers = blockers[square_index as usize];
         for blocker_combination in iterate_combinations(blockers) {
             let moves = gen_rook_or_bishop(square, &blocker_combination, direction_offset);
-            lookup[key.offset + blocker_combination.magic_index(key.magic, key.shift)] = moves;
+            lookup[key.offset as usize + blocker_combination.magic_index(key.magic, key.shift)] =
+                moves;
         }
     }
     lookup
@@ -159,7 +160,7 @@ fn rook_lookup() -> &'static Vec<BitBoard> {
 #[must_use]
 pub fn get_rook_moves(square: Square, relevant_blockers: BitBoard) -> BitBoard {
     let key = ROOK_KEYS[square.usize()];
-    rook_lookup()[key.offset + relevant_blockers.magic_index(key.magic, key.shift)]
+    rook_lookup()[key.offset as usize + relevant_blockers.magic_index(key.magic, key.shift)]
 }
 
 #[must_use]
@@ -178,7 +179,7 @@ fn bishop_lookup() -> &'static Vec<BitBoard> {
 #[must_use]
 pub fn get_bishop_moves(square: Square, relevant_blockers: BitBoard) -> BitBoard {
     let key = BISHOP_KEYS[square.usize()];
-    bishop_lookup()[key.offset + relevant_blockers.magic_index(key.magic, key.shift)]
+    bishop_lookup()[key.offset as usize + relevant_blockers.magic_index(key.magic, key.shift)]
 }
 
 #[cfg(test)]
