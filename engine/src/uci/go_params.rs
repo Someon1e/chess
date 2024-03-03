@@ -41,33 +41,15 @@ impl GoParameters {
             match label {
                 "searchmoves" => {}
                 "ponder" => {}
-                "wtime" => {
-                    self.white_time = parse_number!()
-                }
-                "btime" => {
-                    self.black_time = parse_number!()
-                }
-                "winc" => {
-                    self.white_increment = parse_number!()
-                }
-                "binc" => {
-                    self.black_increment = parse_number!()
-                }
-                "movestogo" => {
-                    self.moves_to_go = parse_number!()
-                }
-                "depth" => {
-                    self.depth = parse_number!()
-                }
-                "nodes" => {
-                    self.nodes = parse_number!()
-                }
-                "mate" => {
-                    self.find_mate = parse_number!()
-                }
-                "movetime" => {
-                    self.move_time_in_ms = parse_number!()
-                }
+                "wtime" => self.white_time = parse_number!(),
+                "btime" => self.black_time = parse_number!(),
+                "winc" => self.white_increment = parse_number!(),
+                "binc" => self.black_increment = parse_number!(),
+                "movestogo" => self.moves_to_go = parse_number!(),
+                "depth" => self.depth = parse_number!(),
+                "nodes" => self.nodes = parse_number!(),
+                "mate" => self.find_mate = parse_number!(),
+                "movetime" => self.move_time_in_ms = parse_number!(),
                 "perft" => {
                     self.perft = true;
                     self.depth = parse_number!()

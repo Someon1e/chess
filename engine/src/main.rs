@@ -54,7 +54,7 @@ pub extern "C" fn send_input(input: u8) {
 
 fn process_input(input: &str) {
     let mut args = input.split_whitespace();
-    UCI_PROCESSOR.with(|uci_processor| match args.next().unwrap() {
+    UCI_PROCESSOR.with(|uci_processor| match args.next().expect("Empty input") {
         "quit" => std::process::exit(0),
 
         "uci" => uci_processor.borrow().uci(),
@@ -63,7 +63,7 @@ fn process_input(input: &str) {
         "ucinewgame" => uci_processor.borrow().ucinewgame(),
         "go" => uci_processor.borrow_mut().go(&mut args),
         "stop" => uci_processor.borrow().stop(),
-        _ => unimplemented!(),
+        _ => panic!("Unrecognised command"),
     });
 }
 
