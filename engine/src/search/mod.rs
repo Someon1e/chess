@@ -372,8 +372,7 @@ mod tests {
     fn quiescence_search_works() {
         let mut board =
             Board::from_fen("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
-        let quiet =
-            Board::from_fen("rnb1kbnr/ppp1pppp/8/3q4/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
+        let quiet = Board::from_fen("rnb1kbnr/ppp1pppp/8/3q4/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
         assert_eq!(
             Search::new(&mut board).quiescence_search(-i32::MAX, i32::MAX),
             Eval::evaluate(&quiet)
