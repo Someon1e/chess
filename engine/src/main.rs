@@ -55,7 +55,7 @@ pub extern "C" fn send_input(input: u8) {
 fn process_input(input: &str) {
     let mut args = input.split_whitespace();
     UCI_PROCESSOR.with(|uci_processor| match args.next().unwrap() {
-        "quit" => panic!(),
+        "quit" => std::process::exit(0),
 
         "uci" => uci_processor.borrow().uci(),
         "isready" => uci_processor.borrow().isready(),
