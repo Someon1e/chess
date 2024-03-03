@@ -57,9 +57,9 @@ impl MoveOrderer {
                 )
             }
 
-            Flag::BishopPromotion => return PROMOTION_BONUS + 300,
-            Flag::KnightPromotion => return PROMOTION_BONUS + 400,
-            Flag::RookPromotion => return PROMOTION_BONUS + 300,
+            Flag::BishopPromotion => return PROMOTION_BONUS + 200,
+            Flag::KnightPromotion => return PROMOTION_BONUS + 600,
+            Flag::RookPromotion => return PROMOTION_BONUS + 400,
             Flag::QueenPromotion => return PROMOTION_BONUS + 800,
 
             Flag::None => {}
@@ -119,9 +119,9 @@ impl MoveOrderer {
         let mut score = match move_data.flag {
             Flag::EnPassant => return 0,
 
-            Flag::BishopPromotion => 1400,
-            Flag::KnightPromotion => 1500,
-            Flag::RookPromotion => 1400,
+            Flag::BishopPromotion => 1300,
+            Flag::KnightPromotion => 1700,
+            Flag::RookPromotion => 1500,
             Flag::QueenPromotion => 1900,
 
             Flag::None => 0,
