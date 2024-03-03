@@ -33,39 +33,44 @@ impl GoParameters {
     }
     pub fn parse(&mut self, args: &mut SplitWhitespace) {
         while let Some(label) = args.next() {
+            macro_rules! parse_number {
+                () => {
+                    Some(args.next().unwrap().parse().unwrap())
+                };
+            }
             match label {
                 "searchmoves" => {}
                 "ponder" => {}
                 "wtime" => {
-                    self.white_time = Some(args.next().unwrap().parse().unwrap());
+                    self.white_time = parse_number!()
                 }
                 "btime" => {
-                    self.black_time = Some(args.next().unwrap().parse().unwrap());
+                    self.black_time = parse_number!()
                 }
                 "winc" => {
-                    self.white_increment = Some(args.next().unwrap().parse().unwrap());
+                    self.white_increment = parse_number!()
                 }
                 "binc" => {
-                    self.black_increment = Some(args.next().unwrap().parse().unwrap());
+                    self.black_increment = parse_number!()
                 }
                 "movestogo" => {
-                    self.moves_to_go = Some(args.next().unwrap().parse().unwrap());
+                    self.moves_to_go = parse_number!()
                 }
                 "depth" => {
-                    self.depth = Some(args.next().unwrap().parse().unwrap());
+                    self.depth = parse_number!()
                 }
                 "nodes" => {
-                    self.nodes = Some(args.next().unwrap().parse().unwrap());
+                    self.nodes = parse_number!()
                 }
                 "mate" => {
-                    self.find_mate = Some(args.next().unwrap().parse().unwrap());
+                    self.find_mate = parse_number!()
                 }
                 "movetime" => {
-                    self.move_time_in_ms = Some(args.next().unwrap().parse().unwrap());
+                    self.move_time_in_ms = parse_number!()
                 }
                 "perft" => {
                     self.perft = true;
-                    self.depth = Some(args.next().unwrap().parse().unwrap());
+                    self.depth = parse_number!()
                 }
                 "infinite" => {
                     self.infinite = true;
