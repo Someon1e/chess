@@ -98,7 +98,7 @@ impl MoveOrderer {
     pub fn put_highest_guessed_move(
         move_guesses: &mut [MoveGuess],
         unsorted_index: usize,
-        move_count: usize
+        move_count: usize,
     ) -> MoveGuess {
         let (mut index_of_highest_move, mut highest_guess) =
             (unsorted_index, move_guesses[unsorted_index].guess);
@@ -226,7 +226,8 @@ mod tests {
         );
         let mut index = 0;
         let mut next_move = || {
-            let move_guess = MoveOrderer::put_highest_guessed_move(&mut move_guesses, index, move_count);
+            let move_guess =
+                MoveOrderer::put_highest_guessed_move(&mut move_guesses, index, move_count);
             println!("{index} {} {}", move_guess.move_data, move_guess.guess);
             index += 1;
             (move_guess.move_data, index != move_count)
