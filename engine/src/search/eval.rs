@@ -8,12 +8,20 @@ impl Eval {
         let mut phase = 0;
         for piece in Piece::ALL_PIECES {
             match piece {
-                Piece::WhitePawn | Piece::BlackPawn => {},
-                Piece::WhiteKnight | Piece::BlackKnight => phase += 1 * search.board.get_bit_board(piece).count() as i32,
-                Piece::WhiteBishop | Piece::BlackBishop => phase += 1 * search.board.get_bit_board(piece).count() as i32,
-                Piece::WhiteRook | Piece::BlackRook => phase += 2 * search.board.get_bit_board(piece).count() as i32,
-                Piece::WhiteQueen | Piece::BlackQueen => phase += 4 * search.board.get_bit_board(piece).count() as i32,
-                Piece::WhiteKing | Piece::BlackKing => {},
+                Piece::WhitePawn | Piece::BlackPawn => {}
+                Piece::WhiteKnight | Piece::BlackKnight => {
+                    phase += 1 * search.board.get_bit_board(piece).count() as i32
+                }
+                Piece::WhiteBishop | Piece::BlackBishop => {
+                    phase += 1 * search.board.get_bit_board(piece).count() as i32
+                }
+                Piece::WhiteRook | Piece::BlackRook => {
+                    phase += 2 * search.board.get_bit_board(piece).count() as i32
+                }
+                Piece::WhiteQueen | Piece::BlackQueen => {
+                    phase += 4 * search.board.get_bit_board(piece).count() as i32
+                }
+                Piece::WhiteKing | Piece::BlackKing => {}
             }
         }
         phase
@@ -79,5 +87,20 @@ impl Eval {
             middle_game_score_white - middle_game_score_black,
             end_game_score_white - end_game_score_black,
         ) * if search.board.white_to_move { 1 } else { -1 }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{board::Board, search::{eval::Eval, Search}};
+
+    #[test]
+    fn test_evaluation() {
+        let mut starting_rank_pawn = Board::from_fen("8/8/8/8/8/8/4P3/8 w - - 0 1");
+        let mut one_step_from_promoting_pawn = Board::from_fen("8/4P3/8/8/8/8/8/8 w - - 0 1");
+        assert!(
+            Eval::evaluate(&Search::new(&mut one_step_from_promoting_pawn))
+                > Eval::evaluate(&Search::new(&mut starting_rank_pawn))
+        );
     }
 }

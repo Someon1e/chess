@@ -380,15 +380,6 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_evaluation() {
-        let mut starting_rank_pawn = Board::from_fen("8/8/8/8/8/8/4P3/8 w - - 0 1");
-        let mut one_step_from_promoting_pawn = Board::from_fen("8/4P3/8/8/8/8/8/8 w - - 0 1");
-        assert!(
-            Eval::evaluate(&Search::new(&mut one_step_from_promoting_pawn))
-                > Eval::evaluate(&Search::new(&mut starting_rank_pawn))
-        );
-    }
     const OBVIOUS_POSITIONS_RANDOMISED: [(&str, &str); 201] = {
         let mut obvious_positions: [(&str, &str); 201] = [
             (
