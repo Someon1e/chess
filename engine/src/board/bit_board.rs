@@ -9,10 +9,10 @@ impl fmt::Display for BitBoard {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for rank in (0..8).rev() {
             for file in 0..8 {
-                if !self.get(&Square::from_coords(rank, file)) {
-                    write!(f, "0")?;
-                } else {
+                if self.get(&Square::from_coords(rank, file)) {
                     write!(f, "1")?;
+                } else {
+                    write!(f, "0")?;
                 }
                 if file != 7 {
                     write!(f, " ")?;
