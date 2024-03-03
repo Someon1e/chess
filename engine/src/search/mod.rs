@@ -75,7 +75,7 @@ impl<'a> Search<'a> {
 
         let move_generator = MoveGenerator::new(self.board);
         let (mut move_guesses, move_count) =
-            MoveOrderer::get_sorted_moves_captures_only(self, &move_generator);
+            MoveOrderer::get_move_guesses_captures_only(self, &move_generator);
         let mut index = 0;
         while index != move_count {
             let move_data =
@@ -200,7 +200,7 @@ impl<'a> Search<'a> {
         if ply_from_root == 0 {
             hash_move = self.best_move;
         }
-        let (mut move_guesses, move_count) = MoveOrderer::get_sorted_moves(
+        let (mut move_guesses, move_count) = MoveOrderer::get_move_guesses(
             self,
             &move_generator,
             hash_move,
