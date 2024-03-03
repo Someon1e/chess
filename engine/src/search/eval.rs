@@ -10,21 +10,21 @@ impl Eval {
             match piece {
                 Piece::WhitePawn | Piece::BlackPawn => {}
                 Piece::WhiteKnight | Piece::BlackKnight => {
-                    phase += 1 * board.get_bit_board(piece).count() as i32
+                    phase += 1 * board.get_bit_board(piece).count();
                 }
                 Piece::WhiteBishop | Piece::BlackBishop => {
-                    phase += 1 * board.get_bit_board(piece).count() as i32
+                    phase += 1 * board.get_bit_board(piece).count();
                 }
                 Piece::WhiteRook | Piece::BlackRook => {
-                    phase += 2 * board.get_bit_board(piece).count() as i32
+                    phase += 2 * board.get_bit_board(piece).count();
                 }
                 Piece::WhiteQueen | Piece::BlackQueen => {
-                    phase += 4 * board.get_bit_board(piece).count() as i32
+                    phase += 4 * board.get_bit_board(piece).count();
                 }
                 Piece::WhiteKing | Piece::BlackKing => {}
             }
         }
-        phase
+        phase as i32
     }
 
     fn get_piece_value(piece_index: usize, square_index: usize) -> (i32, i32) {
