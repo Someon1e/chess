@@ -7,9 +7,14 @@ impl Eval {
     pub fn get_phase(search: &Search) -> i32 {
         let mut phase = 0;
         for piece in Piece::ALL_PIECES {
-            let bit_board = *search.board.get_bit_board(piece);
-            let piece_index = piece as usize;
-            phase += bit_board.count() as i32 * eval_data::PIECE_PHASES[piece_index];
+            match piece {
+                Piece::WhitePawn | Piece::BlackPawn => {},
+                Piece::WhiteKnight | Piece::BlackKnight => phase += 1 * search.board.get_bit_board(piece).count() as i32,
+                Piece::WhiteBishop | Piece::BlackBishop => phase += 1 * search.board.get_bit_board(piece).count() as i32,
+                Piece::WhiteRook | Piece::BlackRook => phase += 2 * search.board.get_bit_board(piece).count() as i32,
+                Piece::WhiteQueen | Piece::BlackQueen => phase += 4 * search.board.get_bit_board(piece).count() as i32,
+                Piece::WhiteKing | Piece::BlackKing => {},
+            }
         }
         phase
     }

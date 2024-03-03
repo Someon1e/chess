@@ -183,18 +183,3 @@ pub const MIDDLE_GAME_PIECE_VALUES_WITH_SQUARE: [[i32; 64]; 6] =
     merge(MIDDLE_GAME_PIECE_VALUES, &MIDDLE_GAME_PIECE_SQUARE_TABLES);
 pub const END_GAME_PIECE_VALUES_WITH_SQUARE: [[i32; 64]; 6] =
     merge(END_GAME_PIECE_VALUES, &END_GAME_PIECE_SQUARE_TABLES);
-
-pub const PIECE_PHASES: [i32; 12] = [
-    0, // Pawn
-    1, // Knight
-    1, // Bishop
-    2, // Rook
-    4, // Queen
-    0, // King
-    0, // Pawn
-    1, // Knight
-    1, // Bishop
-    2, // Rook
-    4, // Queen
-    0, // King
-];
