@@ -102,4 +102,11 @@ mod tests {
             Eval::evaluate(&one_step_from_promoting_pawn) > Eval::evaluate(&starting_rank_pawn)
         );
     }
+
+    #[test]
+    fn centralised_knight_worth_more() {
+        let centralised_knight = Board::from_fen("7k/8/8/4n3/8/8/8/K7 b - - 0 1");
+        let knight_on_the_edge = Board::from_fen("7k/8/8/8/7n/8/8/K7 b - - 0 1");
+        assert!(Eval::evaluate(&centralised_knight) > Eval::evaluate(&knight_on_the_edge));
+    }
 }
