@@ -5,7 +5,7 @@ use crate::board::{
     square::{Square, DIRECTIONS},
 };
 
-pub struct PrecomputedPawnAttacks {
+pub struct PawnAttacks {
     pub white_pawn_attacks_at_square: [BitBoard; 64],
     pub black_pawn_attacks_at_square: [BitBoard; 64],
 }
@@ -92,7 +92,7 @@ pub fn king_moves_at_square() -> &'static [BitBoard; 64] {
     COMPUTATION.get_or_init(calculate_king_moves_at_square)
 }
 
-fn calculate_pawn_attacks() -> PrecomputedPawnAttacks {
+fn calculate_pawn_attacks() -> PawnAttacks {
     let mut white_pawn_attacks_at_square = [BitBoard::EMPTY; 64];
     let mut black_pawn_attacks_at_square = [BitBoard::EMPTY; 64];
 
@@ -120,13 +120,13 @@ fn calculate_pawn_attacks() -> PrecomputedPawnAttacks {
         }
     }
 
-    PrecomputedPawnAttacks {
+    PawnAttacks {
         white_pawn_attacks_at_square,
         black_pawn_attacks_at_square,
     }
 }
 
-pub fn pawn_attacks() -> &'static PrecomputedPawnAttacks {
-    static COMPUTATION: OnceLock<PrecomputedPawnAttacks> = OnceLock::new();
+pub fn pawn_attacks() -> &'static PawnAttacks {
+    static COMPUTATION: OnceLock<PawnAttacks> = OnceLock::new();
     COMPUTATION.get_or_init(calculate_pawn_attacks)
 }
