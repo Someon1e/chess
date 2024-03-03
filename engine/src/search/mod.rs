@@ -65,7 +65,7 @@ impl<'a> Search<'a> {
             self.times_evaluation_was_called += 1;
         }
 
-        let mut best_score = Eval::evaluate(self);
+        let mut best_score = Eval::evaluate(self.board);
         if best_score > alpha {
             alpha = best_score;
         }
@@ -372,11 +372,11 @@ mod tests {
     fn quiescence_search_works() {
         let mut board =
             Board::from_fen("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
-        let mut quiet =
+        let quiet =
             Board::from_fen("rnb1kbnr/ppp1pppp/8/3q4/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
         assert_eq!(
             Search::new(&mut board).quiescence_search(-i32::MAX, i32::MAX),
-            Eval::evaluate(&Search::new(&mut quiet))
+            Eval::evaluate(&quiet)
         );
     }
 
