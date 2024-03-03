@@ -140,7 +140,7 @@ impl MoveOrderer {
         score
     }
 
-    pub fn get_sorted_moves_captures_only(
+    pub fn get_move_guesses_captures_only(
         search: &Search,
         move_generator: &MoveGenerator,
     ) -> ([MoveGuess; MAX_CAPTURES], usize) {
@@ -164,7 +164,7 @@ impl MoveOrderer {
         (move_guesses, index)
     }
 
-    pub fn get_sorted_moves(
+    pub fn get_move_guesses(
         search: &Search,
         move_generator: &MoveGenerator,
         hash_move: EncodedMove,
@@ -218,7 +218,7 @@ mod tests {
     fn move_ordering_works() {
         let mut board = Board::from_fen("8/P6p/6r1/1q1n4/2P3R1/8/2K2k2/8 w - - 0 1");
         let move_generator = MoveGenerator::new(&board);
-        let (mut move_guesses, move_count) = MoveOrderer::get_sorted_moves(
+        let (mut move_guesses, move_count) = MoveOrderer::get_move_guesses(
             &Search::new(&mut board),
             &move_generator,
             EncodedMove::NONE,
