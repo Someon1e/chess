@@ -95,9 +95,9 @@ mod tests {
     use crate::{board::Board, search::eval::Eval};
 
     #[test]
-    fn test_evaluation() {
-        let starting_rank_pawn = Board::from_fen("8/8/8/8/8/8/4P3/8 w - - 0 1");
-        let one_step_from_promoting_pawn = Board::from_fen("8/4P3/8/8/8/8/8/8 w - - 0 1");
+    fn advanced_pawn_worth_more() {
+        let starting_rank_pawn = Board::from_fen("7k/8/8/8/8/8/4P3/K7 w - - 0 1");
+        let one_step_from_promoting_pawn = Board::from_fen("7k/4P3/8/8/8/8/8/K7 w - - 0 1");
         assert!(
             Eval::evaluate(&one_step_from_promoting_pawn) > Eval::evaluate(&starting_rank_pawn)
         );
