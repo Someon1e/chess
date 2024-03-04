@@ -190,7 +190,7 @@ impl<'a> Search<'a> {
             self.board.make_null_move();
 
             let score = -self.negamax(
-                ply_remaining - 2,
+                ply_remaining - 3,
                 ply_from_root + 1,
                 false,
                 should_cancel,
