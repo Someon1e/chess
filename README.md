@@ -10,6 +10,7 @@
 - History heuristic
 - Null move heuristic
 - Late move reduction
+- Internal iterative reduction
 - Check extensions
 - Transposition table
 - Quiescence search
