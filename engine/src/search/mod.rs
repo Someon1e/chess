@@ -307,9 +307,7 @@ impl<'a> Search<'a> {
 
                     if score >= beta {
                         if !is_capture {
-                            if move_data.flag == Flag::None
-                                && (ply_from_root as usize) < self.killer_moves.len()
-                            {
+                            if (ply_from_root as usize) < self.killer_moves.len() {
                                 self.killer_moves[usize::from(ply_from_root)] = encoded_move_data;
                             }
 
