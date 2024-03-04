@@ -17,21 +17,10 @@ pub struct MoveGuess {
 const MAX_LEGAL_MOVES: usize = 218;
 const MAX_CAPTURES: usize = 74;
 
-/*
-    PV-move of the principal variation from the previous iteration of an iterative deepening framework for the leftmost path, often implicitly done by 2.
-    Hash move from hash tables
-    Winning captures/promotions
-    Equal captures/promotions
-    Killer moves (non capture), often with mate killers first
-    Non-captures sorted by history heuristic and that like
-    Losing captures (* but see below
-*/
 const HASH_MOVE_BONUS: i32 = 100000;
-const WINNING_CAPTURE_BONUS: i32 = 2000;
 const PROMOTION_BONUS: i32 = 2000;
-const EQUAL_CAPTURE_BONUS: i32 = 1000;
+const CAPTURE_BONUS: i32 = 2000;
 const KILLER_MOVE_BONUS: i32 = 500;
-const LOSING_CAPTURE_BONUS: i32 = 50;
 
 const PIECE_VALUES: [i32; 12] = [100, 300, 320, 500, 900, 0, 100, 300, 320, 500, 900, 0];
 
@@ -74,14 +63,7 @@ impl MoveOrderer {
                 potential_value_loss /= 2;
             }
             let score_difference = PIECE_VALUES[capturing as usize] - potential_value_loss;
-            score += score_difference;
-            if score_difference.is_positive() {
-                score += WINNING_CAPTURE_BONUS;
-            } else if score_difference.is_negative() {
-                score += LOSING_CAPTURE_BONUS;
-            } else {
-                score += EQUAL_CAPTURE_BONUS;
-            }
+            score += CAPTURE_BONUS + score_difference;
         } else {
             score += i32::from(
                 search.history_heuristic[usize::from(search.board.white_to_move)]
@@ -187,11 +169,11 @@ impl MoveOrderer {
                             search,
                             move_generator.enemy_pawn_attacks(),
                             move_data,
-                        )
-                    } + if encoded == killer_move {
-                        KILLER_MOVE_BONUS
-                    } else {
-                        0
+                        ) + if encoded == killer_move {
+                            KILLER_MOVE_BONUS
+                        } else {
+                            0
+                        }
                     },
                 };
                 index += 1;
