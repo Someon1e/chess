@@ -4,6 +4,7 @@
 - UCI
 - Legal move generator
 - Fail-soft alpha-beta pruning
+- Principal Variation Search
 - Move ordering
 - Killer move heuristic
 - History heuristic
@@ -18,6 +19,5 @@
 - Repetition detection
 
 ### TODO:
-- Principal Variation Search
 - Futility Pruning
 - Opening book

@@ -138,12 +138,18 @@ impl<'a> Search<'a> {
 
         let mut hash_move = EncodedMove::NONE;
 
+        let is_not_pv_node = alpha + 1 == beta;
+
         if let Some(saved) = self.transposition_table[zobrist_index] {
             if saved.zobrist_key == zobrist_key {
                 if saved.ply_remaining >= ply_remaining {
                     let node_type = &saved.node_type;
                     match node_type {
-                        NodeType::Exact => return saved.value,
+                        NodeType::Exact => {
+                            if is_not_pv_node {
+                                return saved.value;
+                            }
+                        }
                         NodeType::Beta => alpha = alpha.max(saved.value),
                         NodeType::Alpha => beta = beta.min(saved.value),
                     }
@@ -172,7 +178,8 @@ impl<'a> Search<'a> {
 
         let move_generator = MoveGenerator::new(self.board);
 
-        if allow_null_move
+        if is_not_pv_node
+            && allow_null_move
             && ply_remaining > 2
             && !move_generator.is_in_check()
             && move_generator.friendly_pawns().count() + 1
@@ -242,6 +249,7 @@ impl<'a> Search<'a> {
             let mut normal_search =
                 check_extension || is_capture || index < NOT_LATE_MOVES || (ply_remaining) < 3;
             let mut score = 0;
+
             if !normal_search {
                 score = -self.negamax(
                     ply_remaining - 2,
@@ -256,6 +264,21 @@ impl<'a> Search<'a> {
                 }
             }
 
+            if normal_search && index != 0 {
+                score = -self.negamax(
+                    ply_remaining - 1 + u16::from(check_extension),
+                    ply_from_root + 1,
+                    true,
+                    should_cancel,
+                    -alpha - 1,
+                    -alpha,
+                );
+                if alpha < score && score < beta {
+                    normal_search = true;
+                } else {
+                    normal_search = false;
+                }
+            }
             if normal_search {
                 score = -self.negamax(
                     ply_remaining - 1 + u16::from(check_extension),
@@ -266,6 +289,7 @@ impl<'a> Search<'a> {
                     -alpha,
                 );
             }
+
             self.unmake_move(&move_data);
             if should_cancel() {
                 return 0;
