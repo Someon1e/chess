@@ -119,7 +119,7 @@ impl<'a> Search<'a> {
     fn negamax(
         &mut self,
 
-        ply_remaining: u16,
+        mut ply_remaining: u16,
         ply_from_root: u16,
         allow_null_move: bool,
 
@@ -159,9 +159,13 @@ impl<'a> Search<'a> {
                     }
                 }
                 hash_move = saved.transposition_move;
-            } else {
-                // eprintln!("Collision!")
             }
+        }
+        if ply_from_root == 0 {
+            hash_move = self.best_move;
+        }
+        if hash_move.is_none() && ply_remaining > 3 {
+            ply_remaining -= 1;
         }
 
         if ply_remaining == 0 {
@@ -204,9 +208,6 @@ impl<'a> Search<'a> {
             }
         }
 
-        if ply_from_root == 0 {
-            hash_move = self.best_move;
-        }
         let (mut move_guesses, move_count) = MoveOrderer::get_move_guesses(
             self,
             &move_generator,
