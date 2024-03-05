@@ -128,20 +128,28 @@ impl<'a> Search<'a> {
         mut alpha: i32,
         mut beta: i32,
     ) -> i32 {
+        // Get the zobrist key
         let zobrist_key = self.board.zobrist_key();
 
+        // Check for repetition
         if ply_from_root != 0 && self.repetition_table.contains(&zobrist_key) {
             return 0;
         }
 
+        // Turn zobrist key into an index into the transposition table
         let zobrist_index = zobrist_key % self.transposition_table.len();
 
+        // This is the best move in this position according to previous searches
         let mut hash_move = EncodedMove::NONE;
 
+        // Check if this is a pv node
         let is_not_pv_node = alpha + 1 == beta;
 
+        // Get value from transposition table
         if let Some(saved) = self.transposition_table[zobrist_index] {
+            // Check if it's actually the same position
             if saved.zobrist_key == zobrist_key {
+                // Check if the saved depth is as high as the depth now
                 if saved.ply_remaining >= ply_remaining {
                     let node_type = &saved.node_type;
                     match node_type {
@@ -158,17 +166,21 @@ impl<'a> Search<'a> {
                         return saved.value;
                     }
                 }
+
                 hash_move = saved.transposition_move;
             }
         }
         if ply_from_root == 0 {
+            // Use iterative deepening move as hash move
             hash_move = self.best_move;
         }
         if hash_move.is_none() && ply_remaining > 3 {
+            // Internal iterative reduction
             ply_remaining -= 1;
         }
 
         if ply_remaining == 0 {
+            // Enter quiescence search
             let evaluation = self.quiescence_search(alpha, beta);
             self.transposition_table[zobrist_index] = Some(NodeValue {
                 zobrist_key,
@@ -182,15 +194,18 @@ impl<'a> Search<'a> {
 
         let move_generator = MoveGenerator::new(self.board);
 
+        // Null move pruning
         if is_not_pv_node
             && allow_null_move
             && ply_remaining > 2
+
+            // Do not do it if we are in check, they would capture our king
             && !move_generator.is_in_check()
+
+            // Do not do it if we only have pawns and a king
             && move_generator.friendly_pawns().count() + 1
                 != move_generator.friendly_pieces().count()
         {
-            // TODO: thoroughly test this works
-
             self.board.make_null_move();
 
             let score = -self.negamax(
@@ -208,6 +223,7 @@ impl<'a> Search<'a> {
             }
         }
 
+        // Get legal moves and their estimated value
         let (mut move_guesses, move_count) = MoveOrderer::get_move_guesses(
             self,
             &move_generator,
@@ -220,12 +236,15 @@ impl<'a> Search<'a> {
         );
 
         if move_count == 0 {
+            // No moves
             if move_generator.is_in_check() {
+                // Checkmate
                 if ply_from_root == 0 {
                     self.best_score = CHECKMATE_SCORE;
                 }
                 return CHECKMATE_SCORE;
             }
+            // Stalemate
             if ply_from_root == 0 {
                 self.best_score = 0;
             }
@@ -245,13 +264,17 @@ impl<'a> Search<'a> {
             let is_capture = move_generator.enemy_piece_bit_board().get(&move_data.to);
             self.make_move(&move_data);
 
+            // Search deeper when in check
             let check_extension = MoveGenerator::calculate_is_in_check(self.board);
 
-            let mut normal_search =
-                check_extension || is_capture || index < NOT_LATE_MOVES || (ply_remaining) < 3;
+            let mut normal_search = check_extension // Do not reduce if extending
+                || is_capture // Do not reduce if it's a capture
+                || index < NOT_LATE_MOVES // Do not reduce if it's not a late move
+                || (ply_remaining) < 3; // Do not reduce if there is little depth remaining
             let mut score = 0;
 
             if !normal_search {
+                // Late move reduction
                 score = -self.negamax(
                     ply_remaining - 2,
                     ply_from_root + 1,
@@ -261,6 +284,7 @@ impl<'a> Search<'a> {
                     -alpha,
                 );
                 if score > alpha {
+                    // Need to search again without reduction
                     normal_search = true;
                 }
             }
@@ -308,6 +332,8 @@ impl<'a> Search<'a> {
 
                     if score >= beta {
                         if !is_capture {
+                            // Not a capture but still caused beta cutoff, sort this higher later
+
                             if (ply_from_root as usize) < self.killer_moves.len() {
                                 self.killer_moves[usize::from(ply_from_root)] = encoded_move_data;
                             }
@@ -327,6 +353,8 @@ impl<'a> Search<'a> {
                 break;
             }
         }
+
+        // Save in transposition table
         self.transposition_table[zobrist_index] = Some(NodeValue {
             zobrist_key,
             ply_remaining,
