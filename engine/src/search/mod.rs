@@ -209,7 +209,7 @@ impl<'a> Search<'a> {
             self.board.make_null_move();
 
             let score = -self.negamax(
-                ply_remaining - 3,
+                ply_remaining - (3 + ply_remaining / 6),
                 ply_from_root + 1,
                 false,
                 should_cancel,
@@ -219,7 +219,7 @@ impl<'a> Search<'a> {
             self.board.unmake_null_move();
 
             if score >= beta {
-                return beta;
+                return score;
             }
         }
 
