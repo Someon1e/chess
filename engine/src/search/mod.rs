@@ -275,8 +275,9 @@ impl<'a> Search<'a> {
 
             if !normal_search {
                 // Late move reduction
+                let r = 2 + ply_remaining / 9 + index as u16 / 15;
                 score = -self.negamax(
-                    ply_remaining - 2,
+                    ply_remaining.saturating_sub(r),
                     ply_from_root + 1,
                     true,
                     should_cancel,
