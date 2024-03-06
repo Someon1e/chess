@@ -117,12 +117,12 @@ impl<'a> Search<'a> {
     }
     fn negamax(
         &mut self,
+        should_cancel: &mut dyn FnMut() -> bool,
 
         mut ply_remaining: u16,
         ply_from_root: u16,
-        allow_null_move: bool,
 
-        should_cancel: &mut dyn FnMut() -> bool,
+        allow_null_move: bool,
 
         mut alpha: EvalNumber,
         mut beta: EvalNumber,
@@ -208,10 +208,10 @@ impl<'a> Search<'a> {
             self.board.make_null_move();
 
             let score = -self.negamax(
+                should_cancel,
                 ply_remaining - (3 + ply_remaining / 6),
                 ply_from_root + 1,
                 false,
-                should_cancel,
                 -beta,
                 -beta + 1,
             );
@@ -276,10 +276,10 @@ impl<'a> Search<'a> {
                 // Late move reduction
                 let r = 2 + ply_remaining / 9 + index as u16 / 15;
                 score = -self.negamax(
+                    should_cancel,
                     ply_remaining.saturating_sub(r),
                     ply_from_root + 1,
                     true,
-                    should_cancel,
                     -alpha - 1,
                     -alpha,
                 );
@@ -291,10 +291,10 @@ impl<'a> Search<'a> {
 
             if normal_search && index != 0 {
                 score = -self.negamax(
+                    should_cancel,
                     ply_remaining - 1 + u16::from(check_extension),
                     ply_from_root + 1,
                     true,
-                    should_cancel,
                     -alpha - 1,
                     -alpha,
                 );
@@ -306,10 +306,10 @@ impl<'a> Search<'a> {
             }
             if normal_search {
                 score = -self.negamax(
+                    should_cancel,
                     ply_remaining - 1 + u16::from(check_extension),
                     ply_from_root + 1,
                     true,
-                    should_cancel,
                     -beta,
                     -alpha,
                 );
@@ -374,10 +374,10 @@ impl<'a> Search<'a> {
         loop {
             depth += 1;
             self.negamax(
+                &mut || false,
                 depth,
                 0,
                 false,
-                &mut || false,
                 -EvalNumber::MAX,
                 EvalNumber::MAX,
             );
@@ -402,10 +402,10 @@ impl<'a> Search<'a> {
         while !should_cancel() {
             depth += 1;
             self.negamax(
+                should_cancel,
                 depth,
                 0,
                 false,
-                should_cancel,
                 -EvalNumber::MAX,
                 EvalNumber::MAX,
             );
