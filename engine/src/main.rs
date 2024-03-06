@@ -23,6 +23,8 @@ thread_local! {
     static UCI_PROCESSOR: RefCell<UCIProcessor> = RefCell::new(UCIProcessor {
         moves: Vec::new(),
         fen: None,
+
+        search: None,
         max_thinking_time: MAX_TIME,
 
         out: |output: &str| {
@@ -60,7 +62,7 @@ fn process_input(input: &str) {
         "uci" => uci_processor.borrow().uci(),
         "isready" => uci_processor.borrow().isready(),
         "position" => uci_processor.borrow_mut().position(&mut args),
-        "ucinewgame" => uci_processor.borrow().ucinewgame(),
+        "ucinewgame" => uci_processor.borrow_mut().ucinewgame(),
         "go" => uci_processor.borrow_mut().go(&mut args),
         "stop" => uci_processor.borrow().stop(),
         _ => panic!("Unrecognised command"),
