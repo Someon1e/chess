@@ -22,8 +22,8 @@ const CHECKMATE_SCORE: EvalNumber = IMMEDIATE_CHECKMATE_SCORE.abs() - (u16::MAX 
 
 const NOT_LATE_MOVES: usize = 3;
 
-pub struct Search<'a> {
-    board: &'a mut Board,
+pub struct Search {
+    board: Board,
     transposition_table: Vec<Option<NodeValue>>,
     repetition_table: Vec<Zobrist>,
     killer_moves: [EncodedMove; 32],
@@ -35,9 +35,9 @@ pub struct Search<'a> {
     times_evaluation_was_called: u32,
 }
 
-impl<'a> Search<'a> {
+impl Search {
     #[must_use]
-    pub fn new(board: &'a mut Board) -> Self {
+    pub fn new(board: Board) -> Self {
         Self {
             board,
             transposition_table: vec![None; TRANSPOSITION_CAPACITY],
@@ -54,7 +54,7 @@ impl<'a> Search<'a> {
 
     #[must_use]
     pub fn board(&self) -> &Board {
-        self.board
+        &self.board
     }
 
     #[must_use]
@@ -64,7 +64,7 @@ impl<'a> Search<'a> {
             self.times_evaluation_was_called += 1;
         }
 
-        let mut best_score = Eval::evaluate(self.board);
+        let mut best_score = Eval::evaluate(&self.board);
         if best_score > alpha {
             alpha = best_score;
         }
@@ -72,7 +72,7 @@ impl<'a> Search<'a> {
             return best_score;
         }
 
-        let move_generator = MoveGenerator::new(self.board);
+        let move_generator = MoveGenerator::new(&self.board);
         let (mut move_guesses, move_count) =
             MoveOrderer::get_move_guesses_captures_only(self, &move_generator);
         let mut index = 0;
@@ -191,7 +191,7 @@ impl<'a> Search<'a> {
             return evaluation;
         };
 
-        let move_generator = MoveGenerator::new(self.board);
+        let move_generator = MoveGenerator::new(&self.board);
 
         // Null move pruning
         if is_not_pv_node
@@ -264,7 +264,7 @@ impl<'a> Search<'a> {
             self.make_move(&move_data);
 
             // Search deeper when in check
-            let check_extension = MoveGenerator::calculate_is_in_check(self.board);
+            let check_extension = MoveGenerator::calculate_is_in_check(&self.board);
 
             let mut normal_search = check_extension // Do not reduce if extending
                 || is_capture // Do not reduce if it's a capture
@@ -440,7 +440,7 @@ mod tests {
             Board::from_fen("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
         let quiet = Board::from_fen("rnb1kbnr/ppp1pppp/8/3q4/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
         assert_eq!(
-            Search::new(&mut board).quiescence_search(-EvalNumber::MAX, EvalNumber::MAX),
+            Search::new(board).quiescence_search(-EvalNumber::MAX, EvalNumber::MAX),
             Eval::evaluate(&quiet)
         );
     }
@@ -1190,7 +1190,7 @@ mod tests {
                 for (position, solution) in positions {
                     let mut board = Board::from_fen(position);
                     let solution = uci::decode_move(&board, &solution[0..4]);
-                    let mut search = Search::new(&mut board);
+                    let mut search = Search::new(board);
                     let search_start = Time::now();
                     let result = search.depth_by_depth(&mut |_depth, answer| {
                         if answer.0.decode() == solution {
