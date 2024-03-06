@@ -16,7 +16,8 @@ use self::{
     transposition::{NodeType, NodeValue, TRANSPOSITION_CAPACITY},
 };
 
-const CHECKMATE_SCORE: i32 = -i32::MAX + 1;
+const IMMEDIATE_CHECKMATE_SCORE: i32 = -i32::MAX + 1;
+const CHECKMATE_SCORE: i32 = IMMEDIATE_CHECKMATE_SCORE.abs() - (u16::MAX as i32);
 
 const NOT_LATE_MOVES: usize = 3;
 
@@ -237,9 +238,9 @@ impl<'a> Search<'a> {
             if move_generator.is_in_check() {
                 // Checkmate
                 if ply_from_root == 0 {
-                    self.best_score = CHECKMATE_SCORE;
+                    self.best_score = IMMEDIATE_CHECKMATE_SCORE + ply_from_root as i32;
                 }
-                return CHECKMATE_SCORE;
+                return IMMEDIATE_CHECKMATE_SCORE + ply_from_root as i32;
             }
             // Stalemate
             if ply_from_root == 0 {
@@ -373,7 +374,7 @@ impl<'a> Search<'a> {
             depth += 1;
             self.negamax(depth, 0, false, &mut || false, -i32::MAX, i32::MAX);
 
-            if self.best_move.is_none() || self.best_score.abs() == CHECKMATE_SCORE.abs() {
+            if self.best_move.is_none() || self.best_score.abs() >= CHECKMATE_SCORE {
                 return (depth, self.best_move, self.best_score);
             }
             let stop = depth_completed(depth, (self.best_move, self.best_score));
@@ -397,7 +398,7 @@ impl<'a> Search<'a> {
                 break;
             }
 
-            if self.best_move.is_none() || self.best_score.abs() == CHECKMATE_SCORE.abs() {
+            if self.best_move.is_none() || self.best_score.abs() >= CHECKMATE_SCORE {
                 break;
             }
             depth_completed(depth, (self.best_move, self.best_score));
