@@ -6,41 +6,41 @@ use crate::{
     },
 };
 
-use super::{encoded_move::EncodedMove, Search};
+use super::{encoded_move::EncodedMove, eval_data::EvalNumber, Search};
 
 #[derive(Clone, Copy)]
 pub struct MoveGuess {
-    guess: i32,
+    guess: EvalNumber,
     pub move_data: EncodedMove,
 }
 
 const MAX_LEGAL_MOVES: usize = 218;
 const MAX_CAPTURES: usize = 74;
 
-const HASH_MOVE_BONUS: i32 = 100000;
-const PROMOTION_BONUS: i32 = 2000;
-const CAPTURE_BONUS: i32 = 2000;
-const KILLER_MOVE_BONUS: i32 = 500;
+const HASH_MOVE_BONUS: EvalNumber = 100000;
+const PROMOTION_BONUS: EvalNumber = 2000;
+const CAPTURE_BONUS: EvalNumber = 2000;
+const KILLER_MOVE_BONUS: EvalNumber = 500;
 
-const PIECE_VALUES: [i32; 12] = [100, 300, 320, 500, 900, 0, 100, 300, 320, 500, 900, 0];
+const PIECE_VALUES: [EvalNumber; 12] = [100, 300, 320, 500, 900, 0, 100, 300, 320, 500, 900, 0];
 
 pub struct MoveOrderer {}
 impl MoveOrderer {
-    fn guess_move_value(search: &Search, enemy_pawn_attacks: BitBoard, move_data: Move) -> i32 {
+    fn guess_move_value(search: &Search, enemy_pawn_attacks: BitBoard, move_data: Move) -> EvalNumber {
         let moving_from = move_data.from;
         let moving_to = move_data.to;
 
         let mut score = 0;
         match move_data.flag {
             Flag::EnPassant => {
-                return i32::from(
+                return EvalNumber::from(
                     search.history_heuristic[usize::from(search.board.white_to_move)]
                         [moving_from.usize()][moving_to.usize()],
                 )
             }
             Flag::PawnTwoUp => {}
             Flag::Castle => {
-                return i32::from(
+                return EvalNumber::from(
                     search.history_heuristic[usize::from(search.board.white_to_move)]
                         [moving_from.usize()][moving_to.usize()],
                 )
@@ -65,7 +65,7 @@ impl MoveOrderer {
             let score_difference = PIECE_VALUES[capturing as usize] - potential_value_loss;
             score += CAPTURE_BONUS + score_difference;
         } else {
-            score += i32::from(
+            score += EvalNumber::from(
                 search.history_heuristic[usize::from(search.board.white_to_move)]
                     [moving_from.usize()][moving_to.usize()],
             );
@@ -97,7 +97,7 @@ impl MoveOrderer {
         move_guesses[unsorted_index]
     }
 
-    fn guess_capture_value(search: &Search, move_data: Move) -> i32 {
+    fn guess_capture_value(search: &Search, move_data: Move) -> EvalNumber {
         let mut score = match move_data.flag {
             Flag::EnPassant => return 0,
 

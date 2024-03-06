@@ -1,13 +1,13 @@
 use crate::board::zobrist::Zobrist;
 
-use super::encoded_move::EncodedMove;
+use super::{encoded_move::EncodedMove, eval_data::EvalNumber};
 
 #[derive(Clone, Copy)]
 pub struct NodeValue {
     pub zobrist_key: Zobrist,
     pub ply_remaining: u16,
     pub node_type: NodeType,
-    pub value: i32,
+    pub value: EvalNumber,
     pub transposition_move: EncodedMove,
 }
 

@@ -1,8 +1,10 @@
-const MIDDLE_GAME_PIECE_VALUES: [i32; 6] = [82, 337, 365, 477, 1025, 0];
-const END_GAME_PIECE_VALUES: [i32; 6] = [94, 281, 297, 512, 936, 0];
+pub type EvalNumber = i32;
+
+const MIDDLE_GAME_PIECE_VALUES: [EvalNumber; 6] = [82, 337, 365, 477, 1025, 0];
+const END_GAME_PIECE_VALUES: [EvalNumber; 6] = [94, 281, 297, 512, 936, 0];
 
 #[rustfmt::skip]
-const MIDDLE_GAME_PAWN: [i32; 64] = [
+const MIDDLE_GAME_PAWN: [EvalNumber; 64] = [
     0,   0,   0,   0,   0,   0,  0,   0,
     98, 134,  61,  95,  68, 126, 34, -11,
     -6,   7,  26,  31,  65,  56, 25, -20,
@@ -14,7 +16,7 @@ const MIDDLE_GAME_PAWN: [i32; 64] = [
 ];
 
 #[rustfmt::skip]
-const END_GAME_PAWN: [i32; 64] = [
+const END_GAME_PAWN: [EvalNumber; 64] = [
     0,   0,   0,   0,   0,   0,   0,   0,
     178, 173, 158, 134, 147, 132, 165, 187,
     94, 100,  85,  67,  56,  53,  82,  84,
@@ -26,7 +28,7 @@ const END_GAME_PAWN: [i32; 64] = [
 ];
 
 #[rustfmt::skip]
-const MIDDLE_GAME_KNIGHT: [i32; 64] = [
+const MIDDLE_GAME_KNIGHT: [EvalNumber; 64] = [
     -167, -89, -34, -49,  61, -97, -15, -107,
      -73, -41,  72,  36,  23,  62,   7,  -17,
      -47,  60,  37,  65,  84, 129,  73,   44,
@@ -38,7 +40,7 @@ const MIDDLE_GAME_KNIGHT: [i32; 64] = [
 ];
 
 #[rustfmt::skip]
-const END_GAME_KNIGHT: [i32; 64] = [
+const END_GAME_KNIGHT: [EvalNumber; 64] = [
     -58, -38, -13, -28, -31, -27, -63, -99,
     -25,  -8, -25,  -2,  -9, -25, -24, -52,
     -24, -20,  10,   9,  -1,  -9, -19, -41,
@@ -50,7 +52,7 @@ const END_GAME_KNIGHT: [i32; 64] = [
 ];
 
 #[rustfmt::skip]
-const MIDDLE_GAME_BISHOP: [i32; 64] = [
+const MIDDLE_GAME_BISHOP: [EvalNumber; 64] = [
     -29,   4, -82, -37, -25, -42,   7,  -8,
     -26,  16, -18, -13,  30,  59,  18, -47,
     -16,  37,  43,  40,  35,  50,  37,  -2,
@@ -62,7 +64,7 @@ const MIDDLE_GAME_BISHOP: [i32; 64] = [
 ];
 
 #[rustfmt::skip]
-const END_GAME_BISHOP: [i32; 64] = [
+const END_GAME_BISHOP: [EvalNumber; 64] = [
     -14, -21, -11,  -8, -7,  -9, -17, -24,
      -8,  -4,   7, -12, -3, -13,  -4, -14,
       2,  -8,   0,  -1, -2,   6,   0,   4,
@@ -74,7 +76,7 @@ const END_GAME_BISHOP: [i32; 64] = [
 ];
 
 #[rustfmt::skip]
-const MIDDLE_GAME_ROOK: [i32; 64] = [
+const MIDDLE_GAME_ROOK: [EvalNumber; 64] = [
     32,  42,  32,  51, 63,  9,  31,  43,
     27,  32,  58,  62, 80, 67,  26,  44,
     -5,  19,  26,  36, 17, 45,  61,  16,
@@ -86,7 +88,7 @@ const MIDDLE_GAME_ROOK: [i32; 64] = [
 ];
 
 #[rustfmt::skip]
-const END_GAME_ROOK: [i32; 64] = [
+const END_GAME_ROOK: [EvalNumber; 64] = [
     13, 10, 18, 15, 12,  12,   8,   5,
     11, 13, 13, 11, -3,   3,   8,   3,
      7,  7,  7,  5,  4,  -3,  -5,  -3,
@@ -98,7 +100,7 @@ const END_GAME_ROOK: [i32; 64] = [
 ];
 
 #[rustfmt::skip]
-const MIDDLE_GAME_QUEEN: [i32; 64] = [
+const MIDDLE_GAME_QUEEN: [EvalNumber; 64] = [
     -28,   0,  29,  12,  59,  44,  43,  45,
     -24, -39,  -5,   1, -16,  57,  28,  54,
     -13, -17,   7,   8,  29,  56,  47,  57,
@@ -110,7 +112,7 @@ const MIDDLE_GAME_QUEEN: [i32; 64] = [
 ];
 
 #[rustfmt::skip]
-const END_GAME_QUEEN: [i32; 64] = [
+const END_GAME_QUEEN: [EvalNumber; 64] = [
     -9,  22,  22,  27,  27,  19,  10,  20,
     -17,  20,  32,  41,  58,  25,  30,   0,
     -20,   6,   9,  49,  47,  35,  19,   9,
@@ -122,7 +124,7 @@ const END_GAME_QUEEN: [i32; 64] = [
 ];
 
 #[rustfmt::skip]
-const MIDDLE_GAME_KING: [i32; 64] = [
+const MIDDLE_GAME_KING: [EvalNumber; 64] = [
     -65,  23,  16, -15, -56, -34,   2,  13,
      29,  -1, -20,  -7,  -8,  -4, -38, -29,
      -9,  24,   2, -16, -20,   6,  22, -22,
@@ -134,7 +136,7 @@ const MIDDLE_GAME_KING: [i32; 64] = [
 ];
 
 #[rustfmt::skip]
-const END_GAME_KING: [i32; 64] = [
+const END_GAME_KING: [EvalNumber; 64] = [
     -74, -35, -18, -18, -11,  15,   4, -17,
     -12,  17,  14,  17,  17,  38,  23,  11,
      10,  17,  23,  15,  20,  45,  44,  13,
@@ -145,7 +147,7 @@ const END_GAME_KING: [i32; 64] = [
     -53, -34, -21, -11, -28, -14, -24, -43
 ];
 
-const MIDDLE_GAME_PIECE_SQUARE_TABLES: [[i32; 64]; 6] = [
+const MIDDLE_GAME_PIECE_SQUARE_TABLES: [[EvalNumber; 64]; 6] = [
     MIDDLE_GAME_PAWN,
     MIDDLE_GAME_KNIGHT,
     MIDDLE_GAME_BISHOP,
@@ -154,7 +156,7 @@ const MIDDLE_GAME_PIECE_SQUARE_TABLES: [[i32; 64]; 6] = [
     MIDDLE_GAME_KING,
 ];
 
-const END_GAME_PIECE_SQUARE_TABLES: [[i32; 64]; 6] = [
+const END_GAME_PIECE_SQUARE_TABLES: [[EvalNumber; 64]; 6] = [
     END_GAME_PAWN,
     END_GAME_KNIGHT,
     END_GAME_BISHOP,
@@ -163,7 +165,7 @@ const END_GAME_PIECE_SQUARE_TABLES: [[i32; 64]; 6] = [
     END_GAME_KING,
 ];
 
-const fn merge(piece_values: [i32; 6], piece_square_table: &[[i32; 64]; 6]) -> [[i32; 64]; 6] {
+const fn merge(piece_values: [EvalNumber; 6], piece_square_table: &[[EvalNumber; 64]; 6]) -> [[EvalNumber; 64]; 6] {
     let mut merged = [[0; 64]; 6];
     let mut piece_index = 0;
     while piece_index < 6 {
@@ -179,7 +181,7 @@ const fn merge(piece_values: [i32; 6], piece_square_table: &[[i32; 64]; 6]) -> [
     merged
 }
 
-pub const MIDDLE_GAME_PIECE_VALUES_WITH_SQUARE: [[i32; 64]; 6] =
+pub const MIDDLE_GAME_PIECE_VALUES_WITH_SQUARE: [[EvalNumber; 64]; 6] =
     merge(MIDDLE_GAME_PIECE_VALUES, &MIDDLE_GAME_PIECE_SQUARE_TABLES);
-pub const END_GAME_PIECE_VALUES_WITH_SQUARE: [[i32; 64]; 6] =
+pub const END_GAME_PIECE_VALUES_WITH_SQUARE: [[EvalNumber; 64]; 6] =
     merge(END_GAME_PIECE_VALUES, &END_GAME_PIECE_SQUARE_TABLES);

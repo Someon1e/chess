@@ -1,10 +1,10 @@
 use crate::board::{piece::Piece, square::Square, Board};
 
-use super::eval_data;
+use super::eval_data::{self, EvalNumber};
 
 pub struct Eval {}
 impl Eval {
-    pub fn get_phase(board: &Board) -> i32 {
+    pub fn get_phase(board: &Board) -> EvalNumber {
         let mut phase = 0;
         for piece in Piece::ALL_PIECES {
             match piece {
@@ -24,10 +24,10 @@ impl Eval {
                 Piece::WhiteKing | Piece::BlackKing => {}
             }
         }
-        phase as i32
+        phase as EvalNumber
     }
 
-    fn get_piece_value(piece_index: usize, square_index: usize) -> (i32, i32) {
+    fn get_piece_value(piece_index: usize, square_index: usize) -> (EvalNumber, EvalNumber) {
         let middle_game_piece_score =
             eval_data::MIDDLE_GAME_PIECE_VALUES_WITH_SQUARE[piece_index][square_index];
         let end_game_piece_score =
@@ -35,20 +35,20 @@ impl Eval {
 
         (middle_game_piece_score, end_game_piece_score)
     }
-    pub fn get_black_piece_value(piece: Piece, square: Square) -> (i32, i32) {
+    pub fn get_black_piece_value(piece: Piece, square: Square) -> (EvalNumber, EvalNumber) {
         Self::get_piece_value(piece as usize - 6, square.usize())
     }
-    pub fn get_white_piece_value(piece: Piece, square: Square) -> (i32, i32) {
+    pub fn get_white_piece_value(piece: Piece, square: Square) -> (EvalNumber, EvalNumber) {
         Self::get_piece_value(piece as usize, square.flip().usize())
     }
 
-    pub fn calculate_score(phase: i32, middle_game_score: i32, end_game_score: i32) -> i32 {
+    pub fn calculate_score(phase: EvalNumber, middle_game_score: EvalNumber, end_game_score: EvalNumber) -> EvalNumber {
         let middle_game_phase = phase.min(24);
         let end_game_phase = 24 - middle_game_phase;
         (middle_game_score * middle_game_phase + end_game_score * end_game_phase) / 24
     }
 
-    pub fn evaluate(board: &Board) -> i32 {
+    pub fn evaluate(board: &Board) -> EvalNumber {
         let mut middle_game_score_white = 0;
         let mut end_game_score_white = 0;
 

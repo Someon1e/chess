@@ -10,14 +10,11 @@ use crate::{
 };
 
 use self::{
-    encoded_move::EncodedMove,
-    eval::Eval,
-    move_ordering::MoveOrderer,
-    transposition::{NodeType, NodeValue, TRANSPOSITION_CAPACITY},
+    encoded_move::EncodedMove, eval::Eval, eval_data::EvalNumber, move_ordering::MoveOrderer, transposition::{NodeType, NodeValue, TRANSPOSITION_CAPACITY}
 };
 
-const IMMEDIATE_CHECKMATE_SCORE: i32 = -i32::MAX + 1;
-const CHECKMATE_SCORE: i32 = IMMEDIATE_CHECKMATE_SCORE.abs() - (u16::MAX as i32);
+const IMMEDIATE_CHECKMATE_SCORE: EvalNumber = -EvalNumber::MAX + 1;
+const CHECKMATE_SCORE: EvalNumber = IMMEDIATE_CHECKMATE_SCORE.abs() - (u16::MAX as EvalNumber);
 
 const NOT_LATE_MOVES: usize = 3;
 
@@ -28,7 +25,7 @@ pub struct Search<'a> {
     killer_moves: [EncodedMove; 32],
     history_heuristic: [[[u16; 64]; 64]; 2],
     best_move: EncodedMove,
-    best_score: i32,
+    best_score: EvalNumber,
 
     #[cfg(test)]
     times_evaluation_was_called: u32,
@@ -44,7 +41,7 @@ impl<'a> Search<'a> {
             killer_moves: [EncodedMove::NONE; 32],
             history_heuristic: [[[0; 64]; 64]; 2],
             best_move: EncodedMove::NONE,
-            best_score: -i32::MAX,
+            best_score: -EvalNumber::MAX,
 
             #[cfg(test)]
             times_evaluation_was_called: 0,
@@ -57,7 +54,7 @@ impl<'a> Search<'a> {
     }
 
     #[must_use]
-    fn quiescence_search(&mut self, mut alpha: i32, beta: i32) -> i32 {
+    fn quiescence_search(&mut self, mut alpha: EvalNumber, beta: EvalNumber) -> EvalNumber {
         #[cfg(test)]
         {
             self.times_evaluation_was_called += 1;
@@ -123,9 +120,9 @@ impl<'a> Search<'a> {
 
         should_cancel: &mut dyn FnMut() -> bool,
 
-        mut alpha: i32,
-        mut beta: i32,
-    ) -> i32 {
+        mut alpha: EvalNumber,
+        mut beta: EvalNumber,
+    ) -> EvalNumber {
         // Get the zobrist key
         let zobrist_key = self.board.zobrist_key();
 
@@ -238,9 +235,9 @@ impl<'a> Search<'a> {
             if move_generator.is_in_check() {
                 // Checkmate
                 if ply_from_root == 0 {
-                    self.best_score = IMMEDIATE_CHECKMATE_SCORE + ply_from_root as i32;
+                    self.best_score = IMMEDIATE_CHECKMATE_SCORE + ply_from_root as EvalNumber;
                 }
-                return IMMEDIATE_CHECKMATE_SCORE + ply_from_root as i32;
+                return IMMEDIATE_CHECKMATE_SCORE + ply_from_root as EvalNumber;
             }
             // Stalemate
             if ply_from_root == 0 {
@@ -250,7 +247,7 @@ impl<'a> Search<'a> {
         }
 
         let mut node_type = NodeType::Alpha;
-        let (mut transposition_move, mut best_score) = (EncodedMove::NONE, -i32::MAX);
+        let (mut transposition_move, mut best_score) = (EncodedMove::NONE, -EvalNumber::MAX);
 
         let mut index = 0;
         loop {
@@ -367,12 +364,12 @@ impl<'a> Search<'a> {
     #[must_use]
     pub fn depth_by_depth(
         &mut self,
-        depth_completed: &mut dyn FnMut(u16, (EncodedMove, i32)) -> bool,
-    ) -> (u16, EncodedMove, i32) {
+        depth_completed: &mut dyn FnMut(u16, (EncodedMove, EvalNumber)) -> bool,
+    ) -> (u16, EncodedMove, EvalNumber) {
         let mut depth = 0;
         loop {
             depth += 1;
-            self.negamax(depth, 0, false, &mut || false, -i32::MAX, i32::MAX);
+            self.negamax(depth, 0, false, &mut || false, -EvalNumber::MAX, EvalNumber::MAX);
 
             if self.best_move.is_none() || self.best_score.abs() >= CHECKMATE_SCORE {
                 return (depth, self.best_move, self.best_score);
@@ -387,13 +384,13 @@ impl<'a> Search<'a> {
     #[must_use]
     pub fn iterative_deepening(
         &mut self,
-        depth_completed: &mut dyn FnMut(u16, (EncodedMove, i32)),
+        depth_completed: &mut dyn FnMut(u16, (EncodedMove, EvalNumber)),
         should_cancel: &mut dyn FnMut() -> bool,
-    ) -> (u16, EncodedMove, i32) {
+    ) -> (u16, EncodedMove, EvalNumber) {
         let mut depth = 0;
         while !should_cancel() {
             depth += 1;
-            self.negamax(depth, 0, false, should_cancel, -i32::MAX, i32::MAX);
+            self.negamax(depth, 0, false, should_cancel, -EvalNumber::MAX, EvalNumber::MAX);
             if should_cancel() {
                 break;
             }
@@ -413,7 +410,7 @@ mod tests {
 
     use crate::{
         board::Board,
-        search::{eval::Eval, Search},
+        search::{eval::Eval, eval_data::EvalNumber, Search},
         timer::inner::Time,
         uci,
     };
@@ -424,7 +421,7 @@ mod tests {
             Board::from_fen("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
         let quiet = Board::from_fen("rnb1kbnr/ppp1pppp/8/3q4/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
         assert_eq!(
-            Search::new(&mut board).quiescence_search(-i32::MAX, i32::MAX),
+            Search::new(&mut board).quiescence_search(-EvalNumber::MAX, EvalNumber::MAX),
             Eval::evaluate(&quiet)
         );
     }
