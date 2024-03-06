@@ -165,7 +165,10 @@ const END_GAME_PIECE_SQUARE_TABLES: [[EvalNumber; 64]; 6] = [
     END_GAME_KING,
 ];
 
-const fn merge(piece_values: [EvalNumber; 6], piece_square_table: &[[EvalNumber; 64]; 6]) -> [[EvalNumber; 64]; 6] {
+const fn merge(
+    piece_values: [EvalNumber; 6],
+    piece_square_table: &[[EvalNumber; 64]; 6],
+) -> [[EvalNumber; 64]; 6] {
     let mut merged = [[0; 64]; 6];
     let mut piece_index = 0;
     while piece_index < 6 {

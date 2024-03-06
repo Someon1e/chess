@@ -26,7 +26,11 @@ const PIECE_VALUES: [EvalNumber; 12] = [100, 300, 320, 500, 900, 0, 100, 300, 32
 
 pub struct MoveOrderer {}
 impl MoveOrderer {
-    fn guess_move_value(search: &Search, enemy_pawn_attacks: BitBoard, move_data: Move) -> EvalNumber {
+    fn guess_move_value(
+        search: &Search,
+        enemy_pawn_attacks: BitBoard,
+        move_data: Move,
+    ) -> EvalNumber {
         let moving_from = move_data.from;
         let moving_to = move_data.to;
 

@@ -10,7 +10,11 @@ use crate::{
 };
 
 use self::{
-    encoded_move::EncodedMove, eval::Eval, eval_data::EvalNumber, move_ordering::MoveOrderer, transposition::{NodeType, NodeValue, TRANSPOSITION_CAPACITY}
+    encoded_move::EncodedMove,
+    eval::Eval,
+    eval_data::EvalNumber,
+    move_ordering::MoveOrderer,
+    transposition::{NodeType, NodeValue, TRANSPOSITION_CAPACITY},
 };
 
 const IMMEDIATE_CHECKMATE_SCORE: EvalNumber = -EvalNumber::MAX + 1;
@@ -369,7 +373,14 @@ impl<'a> Search<'a> {
         let mut depth = 0;
         loop {
             depth += 1;
-            self.negamax(depth, 0, false, &mut || false, -EvalNumber::MAX, EvalNumber::MAX);
+            self.negamax(
+                depth,
+                0,
+                false,
+                &mut || false,
+                -EvalNumber::MAX,
+                EvalNumber::MAX,
+            );
 
             if self.best_move.is_none() || self.best_score.abs() >= CHECKMATE_SCORE {
                 return (depth, self.best_move, self.best_score);
@@ -390,7 +401,14 @@ impl<'a> Search<'a> {
         let mut depth = 0;
         while !should_cancel() {
             depth += 1;
-            self.negamax(depth, 0, false, should_cancel, -EvalNumber::MAX, EvalNumber::MAX);
+            self.negamax(
+                depth,
+                0,
+                false,
+                should_cancel,
+                -EvalNumber::MAX,
+                EvalNumber::MAX,
+            );
             if should_cancel() {
                 break;
             }
