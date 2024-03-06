@@ -52,7 +52,7 @@ impl GoParameters {
                 "movetime" => self.move_time_in_ms = parse_number!(),
                 "perft" => {
                     self.perft = true;
-                    self.depth = parse_number!()
+                    self.depth = parse_number!();
                 }
                 "infinite" => {
                     self.infinite = true;
