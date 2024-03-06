@@ -120,15 +120,15 @@ uciok",
         let mut parameters = GoParameters::empty();
         parameters.parse(args);
 
-        let board = &mut Board::from_fen(self.fen.as_ref().unwrap());
+        let mut board = Board::from_fen(self.fen.as_ref().unwrap());
 
         if parameters.perft {
             for uci_move in &self.moves {
-                board.make_move(&decode_move(board, uci_move));
+                board.make_move(&decode_move(&board, uci_move));
             }
             (self.out)(&format!(
                 "Nodes searched: {}",
-                perft_root(board, parameters.depth.unwrap(), self.out)
+                perft_root(&mut board, parameters.depth.unwrap(), self.out)
             ));
             return;
         }
