@@ -42,7 +42,11 @@ impl Eval {
         Self::get_piece_value(piece as usize, square.flip().usize())
     }
 
-    pub fn calculate_score(phase: EvalNumber, middle_game_score: EvalNumber, end_game_score: EvalNumber) -> EvalNumber {
+    pub fn calculate_score(
+        phase: EvalNumber,
+        middle_game_score: EvalNumber,
+        end_game_score: EvalNumber,
+    ) -> EvalNumber {
         let middle_game_phase = phase.min(24);
         let end_game_phase = 24 - middle_game_phase;
         (middle_game_score * middle_game_phase + end_game_score * end_game_phase) / 24
