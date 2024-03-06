@@ -18,9 +18,9 @@ const MAX_LEGAL_MOVES: usize = 218;
 const MAX_CAPTURES: usize = 74;
 
 const HASH_MOVE_BONUS: EvalNumber = 100000;
-const PROMOTION_BONUS: EvalNumber = 2000;
-const CAPTURE_BONUS: EvalNumber = 2000;
-const KILLER_MOVE_BONUS: EvalNumber = 500;
+const PROMOTION_BONUS: EvalNumber = 4000;
+const CAPTURE_BONUS: EvalNumber = 4000;
+const KILLER_MOVE_BONUS: EvalNumber = 2000;
 
 const PIECE_VALUES: [EvalNumber; 12] = [100, 300, 320, 500, 900, 0, 100, 300, 320, 500, 900, 0];
 
