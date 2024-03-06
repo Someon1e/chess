@@ -322,13 +322,14 @@ impl<'a> Search<'a> {
             if score > best_score {
                 best_score = score;
                 if score > alpha {
+                    alpha = score;
+
                     if ply_from_root == 0 {
                         self.best_move = encoded_move_data;
                         self.best_score = best_score;
                     }
                     transposition_move = encoded_move_data;
                     node_type = NodeType::Exact;
-                    alpha = score;
 
                     if score >= beta {
                         if !is_capture {
