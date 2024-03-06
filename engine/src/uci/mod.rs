@@ -84,7 +84,6 @@ uciok",
     }
     pub fn position(&mut self, args: &mut SplitWhitespace) {
         self.moves.clear();
-        self.fen = None;
 
         let mut startpos = true;
         let mut building_fen = String::new();
@@ -109,11 +108,11 @@ uciok",
                 }
             }
         }
-        if startpos {
-            self.fen = Some(Board::START_POSITION_FEN.to_owned());
+        self.fen = Some(if startpos {
+            Board::START_POSITION_FEN.to_owned()
         } else {
-            self.fen = Some(building_fen);
-        }
+            building_fen
+        })
     }
 
     pub fn go(&mut self, args: &mut SplitWhitespace) {
