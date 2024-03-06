@@ -68,6 +68,8 @@ pub struct UCIProcessor {
     pub moves: Vec<String>,
     pub fen: Option<String>,
 
+    pub search: Option<Search>,
+
     pub out: fn(&str),
 }
 
@@ -128,7 +130,18 @@ uciok",
             return;
         }
 
-        let mut search = Search::new(board);
+        let search = if self.search.is_none() {
+            // First time making search
+            let search = Search::new(board);
+            self.search = Some(search);
+            self.search.as_mut().unwrap()
+        } else {
+            // Using cached search
+            let search = self.search.as_mut().unwrap();
+            search.new_board(board);
+            search.clear_for_new_search();
+            search
+        };
         for uci_move in &self.moves {
             search.make_move(&decode_move(search.board(), uci_move));
         }
@@ -174,5 +187,10 @@ uciok",
     }
 
     pub fn stop(&self) {}
-    pub fn ucinewgame(&self) {}
+    pub fn ucinewgame(&mut self) {
+        // New game, so old data like transposition table will not help
+        if let Some(search) = &mut self.search {
+            search.clear_cache_for_new_game()
+        }
+    }
 }

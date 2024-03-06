@@ -24,10 +24,14 @@ const NOT_LATE_MOVES: usize = 3;
 
 pub struct Search {
     board: Board,
-    transposition_table: Vec<Option<NodeValue>>,
+
     repetition_table: Vec<Zobrist>,
+
+    transposition_table: Vec<Option<NodeValue>>,
+
     killer_moves: [EncodedMove; 32],
     history_heuristic: [[[u16; 64]; 64]; 2],
+
     best_move: EncodedMove,
     best_score: EvalNumber,
 
@@ -40,10 +44,14 @@ impl Search {
     pub fn new(board: Board) -> Self {
         Self {
             board,
-            transposition_table: vec![None; TRANSPOSITION_CAPACITY],
+
             repetition_table: Vec::with_capacity(5),
+
+            transposition_table: vec![None; TRANSPOSITION_CAPACITY],
+
             killer_moves: [EncodedMove::NONE; 32],
             history_heuristic: [[[0; 64]; 64]; 2],
+
             best_move: EncodedMove::NONE,
             best_score: -EvalNumber::MAX,
 
@@ -55,6 +63,34 @@ impl Search {
     #[must_use]
     pub fn board(&self) -> &Board {
         &self.board
+    }
+
+    pub fn new_board(&mut self, board: Board) {
+        self.board = board;
+        self.repetition_table.clear();
+    }
+
+    pub fn clear_cache_for_new_game(&mut self) {
+        self.transposition_table.fill(None);
+        for side in self.history_heuristic.iter_mut() {
+            for from in side.iter_mut() {
+                for to in from.iter_mut() {
+                    *to = 0;
+                }
+            }
+        }
+    }
+    pub fn clear_for_new_search(&mut self) {
+        self.killer_moves.fill(EncodedMove::NONE);
+        for side in self.history_heuristic.iter_mut() {
+            for from in side.iter_mut() {
+                for to in from.iter_mut() {
+                    *to /= 10;
+                }
+            }
+        }
+        self.best_move = EncodedMove::NONE;
+        self.best_score = -EvalNumber::MAX;
     }
 
     #[must_use]
@@ -145,33 +181,34 @@ impl Search {
         let is_not_pv_node = alpha + 1 == beta;
 
         // Get value from transposition table
-        if let Some(saved) = self.transposition_table[zobrist_index] {
-            // Check if it's actually the same position
-            if saved.zobrist_key == zobrist_key {
-                // Check if the saved depth is as high as the depth now
-                if saved.ply_remaining >= ply_remaining {
-                    let node_type = &saved.node_type;
-                    match node_type {
-                        NodeType::Exact => {
-                            if is_not_pv_node {
-                                return saved.value;
-                            }
-                        }
-                        NodeType::Beta => alpha = alpha.max(saved.value),
-                        NodeType::Alpha => beta = beta.min(saved.value),
-                    }
-
-                    if alpha >= beta {
-                        return saved.value;
-                    }
-                }
-
-                hash_move = saved.transposition_move;
-            }
-        }
         if ply_from_root == 0 {
             // Use iterative deepening move as hash move
             hash_move = self.best_move;
+        } else {
+            if let Some(saved) = self.transposition_table[zobrist_index] {
+                // Check if it's actually the same position
+                if saved.zobrist_key == zobrist_key {
+                    // Check if the saved depth is as high as the depth now
+                    if saved.ply_remaining >= ply_remaining {
+                        let node_type = &saved.node_type;
+                        match node_type {
+                            NodeType::Exact => {
+                                if is_not_pv_node {
+                                    return saved.value;
+                                }
+                            }
+                            NodeType::Beta => alpha = alpha.max(saved.value),
+                            NodeType::Alpha => beta = beta.min(saved.value),
+                        }
+
+                        if alpha >= beta {
+                            return saved.value;
+                        }
+                    }
+
+                    hash_move = saved.transposition_move;
+                }
+            }
         }
         if hash_move.is_none() && ply_remaining > 3 {
             // Internal iterative reduction
@@ -436,8 +473,7 @@ mod tests {
 
     #[test]
     fn quiescence_search_works() {
-        let mut board =
-            Board::from_fen("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
+        let board = Board::from_fen("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
         let quiet = Board::from_fen("rnb1kbnr/ppp1pppp/8/3q4/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
         assert_eq!(
             Search::new(board).quiescence_search(-EvalNumber::MAX, EvalNumber::MAX),
@@ -1188,7 +1224,7 @@ mod tests {
 
             thread::spawn(move || {
                 for (position, solution) in positions {
-                    let mut board = Board::from_fen(position);
+                    let board = Board::from_fen(position);
                     let solution = uci::decode_move(&board, &solution[0..4]);
                     let mut search = Search::new(board);
                     let search_start = Time::now();
