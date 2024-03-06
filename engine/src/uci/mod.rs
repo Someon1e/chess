@@ -89,16 +89,12 @@ uciok",
         let mut building_fen = String::new();
         while let Some(label) = args.next() {
             match label {
+                "startpos" => startpos = true,
+                "fen" => startpos = false,
                 "moves" => {
                     for uci_move in args.by_ref() {
                         self.moves.push(uci_move.to_owned());
                     }
-                }
-                "fen" => {
-                    startpos = false;
-                }
-                "startpos" => {
-                    startpos = true;
                 }
                 _ => {
                     if !startpos {
