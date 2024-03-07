@@ -186,30 +186,28 @@ impl Search {
         if ply_from_root == 0 {
             // Use iterative deepening move as hash move
             hash_move = self.best_move;
-        } else {
-            if let Some(saved) = self.transposition_table[zobrist_index] {
-                // Check if it's actually the same position
-                if saved.zobrist_key == zobrist_key {
-                    // Check if the saved depth is as high as the depth now
-                    if saved.ply_remaining >= ply_remaining {
-                        let node_type = &saved.node_type;
-                        match node_type {
-                            NodeType::Exact => {
-                                if is_not_pv_node {
-                                    return saved.value;
-                                }
+        } else if let Some(saved) = self.transposition_table[zobrist_index] {
+            // Check if it's actually the same position
+            if saved.zobrist_key == zobrist_key {
+                // Check if the saved depth is as high as the depth now
+                if saved.ply_remaining >= ply_remaining {
+                    let node_type = &saved.node_type;
+                    match node_type {
+                        NodeType::Exact => {
+                            if is_not_pv_node {
+                                return saved.value;
                             }
-                            NodeType::Beta => alpha = alpha.max(saved.value),
-                            NodeType::Alpha => beta = beta.min(saved.value),
                         }
-
-                        if alpha >= beta {
-                            return saved.value;
-                        }
+                        NodeType::Beta => alpha = alpha.max(saved.value),
+                        NodeType::Alpha => beta = beta.min(saved.value),
                     }
 
-                    hash_move = saved.transposition_move;
+                    if alpha >= beta {
+                        return saved.value;
+                    }
                 }
+
+                hash_move = saved.transposition_move;
             }
         }
         if hash_move.is_none() && ply_remaining > 3 {
@@ -337,11 +335,7 @@ impl Search {
                     -alpha - 1,
                     -alpha,
                 );
-                if alpha < score && score < beta {
-                    normal_search = true;
-                } else {
-                    normal_search = false;
-                }
+                normal_search = alpha < score && score < beta;
             }
             if normal_search {
                 score = -self.negamax(
