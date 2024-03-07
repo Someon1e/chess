@@ -74,9 +74,9 @@ impl Search {
 
     pub fn clear_cache_for_new_game(&mut self) {
         self.transposition_table.fill(None);
-        for side in self.history_heuristic.iter_mut() {
-            for from in side.iter_mut() {
-                for to in from.iter_mut() {
+        for side in &mut self.history_heuristic {
+            for from in side {
+                for to in from {
                     *to = 0;
                 }
             }
@@ -84,9 +84,9 @@ impl Search {
     }
     pub fn clear_for_new_search(&mut self) {
         self.killer_moves.fill(EncodedMove::NONE);
-        for side in self.history_heuristic.iter_mut() {
-            for from in side.iter_mut() {
-                for to in from.iter_mut() {
+        for side in &mut self.history_heuristic {
+            for from in side {
+                for to in from {
                     *to /= 10;
                 }
             }
