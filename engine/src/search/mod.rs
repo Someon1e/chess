@@ -163,7 +163,7 @@ impl Search {
         allow_null_move: bool,
 
         mut alpha: EvalNumber,
-        mut beta: EvalNumber,
+        beta: EvalNumber,
     ) -> EvalNumber {
         // Get the zobrist key
         let zobrist_key = self.board.zobrist_key();
@@ -192,17 +192,11 @@ impl Search {
                 // Check if the saved depth is as high as the depth now
                 if saved.ply_remaining >= ply_remaining {
                     let node_type = &saved.node_type;
-                    match node_type {
-                        NodeType::Exact => {
-                            if is_not_pv_node {
-                                return saved.value;
-                            }
-                        }
-                        NodeType::Beta => alpha = alpha.max(saved.value),
-                        NodeType::Alpha => beta = beta.min(saved.value),
-                    }
-
-                    if alpha >= beta {
+                    if match node_type {
+                        NodeType::Exact => is_not_pv_node,
+                        NodeType::Beta => saved.value >= beta,
+                        NodeType::Alpha => saved.value <= alpha,
+                    } {
                         return saved.value;
                     }
                 }
