@@ -110,7 +110,7 @@ uciok",
             Board::START_POSITION_FEN.to_owned()
         } else {
             building_fen
-        })
+        });
     }
 
     pub fn go(&mut self, args: &mut SplitWhitespace) {
@@ -190,7 +190,7 @@ uciok",
     pub fn ucinewgame(&mut self) {
         // New game, so old data like transposition table will not help
         if let Some(search) = &mut self.search {
-            search.clear_cache_for_new_game()
+            search.clear_cache_for_new_game();
         }
     }
 }
