@@ -1223,10 +1223,16 @@ mod tests {
             let positions = &OBVIOUS_POSITIONS_RANDOMISED[i * divide..end];
 
             thread::spawn(move || {
+                let mut search = Search::new(Board::from_fen(Board::START_POSITION_FEN));
+
                 for (position, solution) in positions {
                     let board = Board::from_fen(position);
                     let solution = uci::decode_move(&board, &solution[0..4]);
-                    let mut search = Search::new(board);
+
+                    search.new_board(board);
+                    search.clear_cache_for_new_game();
+                    search.clear_for_new_search();
+
                     let search_start = Time::now();
                     let result = search.depth_by_depth(&mut |_depth, answer| {
                         if answer.0.decode() == solution {
