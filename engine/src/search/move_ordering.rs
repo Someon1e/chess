@@ -8,7 +8,7 @@ use crate::{
 
 use super::{encoded_move::EncodedMove, Search};
 
-type MoveGuessNum = i16;
+pub type MoveGuessNum = i16;
 
 #[derive(Clone, Copy)]
 pub struct MoveGuess {
@@ -40,12 +40,12 @@ impl MoveOrderer {
         match move_data.flag {
             Flag::EnPassant => {
                 return search.history_heuristic[usize::from(search.board.white_to_move)]
-                    [moving_from.usize()][moving_to.usize()] as MoveGuessNum
+                    [moving_from.usize()][moving_to.usize()]
             }
             Flag::PawnTwoUp => {}
             Flag::Castle => {
                 return search.history_heuristic[usize::from(search.board.white_to_move)]
-                    [moving_from.usize()][moving_to.usize()] as MoveGuessNum
+                    [moving_from.usize()][moving_to.usize()]
             }
 
             Flag::BishopPromotion => return PROMOTION_BONUS + 200,
@@ -68,7 +68,7 @@ impl MoveOrderer {
             score += CAPTURE_BONUS + score_difference;
         } else {
             score += search.history_heuristic[usize::from(search.board.white_to_move)]
-                [moving_from.usize()][moving_to.usize()] as MoveGuessNum;
+                [moving_from.usize()][moving_to.usize()];
 
             if enemy_pawn_attacks.get(&moving_to) {
                 score -= 50;

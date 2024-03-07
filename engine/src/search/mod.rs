@@ -13,7 +13,7 @@ use self::{
     encoded_move::EncodedMove,
     eval::Eval,
     eval_data::EvalNumber,
-    move_ordering::MoveOrderer,
+    move_ordering::{MoveGuessNum, MoveOrderer},
     transposition::{NodeType, NodeValue, TRANSPOSITION_CAPACITY},
 };
 
@@ -32,7 +32,7 @@ pub struct Search {
     transposition_table: Vec<Option<NodeValue>>,
 
     killer_moves: [EncodedMove; 32],
-    history_heuristic: [[[u16; 64]; 64]; 2],
+    history_heuristic: [[[MoveGuessNum; 64]; 64]; 2],
 
     best_move: EncodedMove,
     best_score: EvalNumber,
@@ -380,7 +380,7 @@ impl Search {
 
                             self.history_heuristic[usize::from(self.board.white_to_move)]
                                 [move_data.from.usize()][move_data.to.usize()] +=
-                                u16::from(ply_remaining) * u16::from(ply_remaining);
+                                i16::from(ply_remaining) * i16::from(ply_remaining);
                         }
                         node_type = NodeType::Beta;
                         break;
