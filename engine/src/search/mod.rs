@@ -17,8 +17,10 @@ use self::{
     transposition::{NodeType, NodeValue, TRANSPOSITION_CAPACITY},
 };
 
+type Ply = u8;
+
 const IMMEDIATE_CHECKMATE_SCORE: EvalNumber = -EvalNumber::MAX + 1;
-const CHECKMATE_SCORE: EvalNumber = IMMEDIATE_CHECKMATE_SCORE.abs() - (u16::MAX as EvalNumber);
+const CHECKMATE_SCORE: EvalNumber = IMMEDIATE_CHECKMATE_SCORE.abs() - (Ply::MAX as EvalNumber);
 
 const NOT_LATE_MOVES: usize = 3;
 
@@ -155,8 +157,8 @@ impl Search {
         &mut self,
         should_cancel: &mut dyn FnMut() -> bool,
 
-        mut ply_remaining: u16,
-        ply_from_root: u16,
+        mut ply_remaining: Ply,
+        ply_from_root: Ply,
 
         allow_null_move: bool,
 
@@ -276,9 +278,9 @@ impl Search {
             if move_generator.is_in_check() {
                 // Checkmate
                 if ply_from_root == 0 {
-                    self.best_score = IMMEDIATE_CHECKMATE_SCORE + ply_from_root as EvalNumber;
+                    self.best_score = IMMEDIATE_CHECKMATE_SCORE + EvalNumber::from(ply_from_root);
                 }
-                return IMMEDIATE_CHECKMATE_SCORE + ply_from_root as EvalNumber;
+                return IMMEDIATE_CHECKMATE_SCORE + EvalNumber::from(ply_from_root);
             }
             // Stalemate
             if ply_from_root == 0 {
@@ -311,7 +313,7 @@ impl Search {
 
             if !normal_search {
                 // Late move reduction
-                let r = 2 + ply_remaining / 9 + index as u16 / 15;
+                let r = 2 + ply_remaining / 9 + index as Ply / 15;
                 score = -self.negamax(
                     should_cancel,
                     ply_remaining.saturating_sub(r),
@@ -329,7 +331,7 @@ impl Search {
             if normal_search && index != 0 {
                 score = -self.negamax(
                     should_cancel,
-                    ply_remaining - 1 + u16::from(check_extension),
+                    ply_remaining - 1 + Ply::from(check_extension),
                     ply_from_root + 1,
                     true,
                     -alpha - 1,
@@ -344,7 +346,7 @@ impl Search {
             if normal_search {
                 score = -self.negamax(
                     should_cancel,
-                    ply_remaining - 1 + u16::from(check_extension),
+                    ply_remaining - 1 + Ply::from(check_extension),
                     ply_from_root + 1,
                     true,
                     -beta,
@@ -378,7 +380,7 @@ impl Search {
 
                             self.history_heuristic[usize::from(self.board.white_to_move)]
                                 [move_data.from.usize()][move_data.to.usize()] +=
-                                ply_remaining * ply_remaining;
+                                u16::from(ply_remaining) * u16::from(ply_remaining);
                         }
                         node_type = NodeType::Beta;
                         break;
@@ -406,8 +408,8 @@ impl Search {
     #[must_use]
     pub fn depth_by_depth(
         &mut self,
-        depth_completed: &mut dyn FnMut(u16, (EncodedMove, EvalNumber)) -> bool,
-    ) -> (u16, EncodedMove, EvalNumber) {
+        depth_completed: &mut dyn FnMut(Ply, (EncodedMove, EvalNumber)) -> bool,
+    ) -> (Ply, EncodedMove, EvalNumber) {
         let mut depth = 0;
         loop {
             depth += 1;
@@ -433,9 +435,9 @@ impl Search {
     #[must_use]
     pub fn iterative_deepening(
         &mut self,
-        depth_completed: &mut dyn FnMut(u16, (EncodedMove, EvalNumber)),
+        depth_completed: &mut dyn FnMut(Ply, (EncodedMove, EvalNumber)),
         should_cancel: &mut dyn FnMut() -> bool,
-    ) -> (u16, EncodedMove, EvalNumber) {
+    ) -> (Ply, EncodedMove, EvalNumber) {
         let mut depth = 0;
         while !should_cancel() {
             depth += 1;
@@ -455,6 +457,10 @@ impl Search {
                 break;
             }
             depth_completed(depth, (self.best_move, self.best_score));
+
+            if depth == Ply::MAX {
+                break;
+            }
         }
         (depth, self.best_move, self.best_score)
     }
