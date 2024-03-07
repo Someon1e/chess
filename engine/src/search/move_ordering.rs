@@ -6,23 +6,25 @@ use crate::{
     },
 };
 
-use super::{encoded_move::EncodedMove, eval_data::EvalNumber, Search};
+use super::{encoded_move::EncodedMove, Search};
+
+type MoveGuessNum = i16;
 
 #[derive(Clone, Copy)]
 pub struct MoveGuess {
-    guess: EvalNumber,
+    guess: MoveGuessNum,
     pub move_data: EncodedMove,
 }
 
 const MAX_LEGAL_MOVES: usize = 218;
 const MAX_CAPTURES: usize = 74;
 
-const HASH_MOVE_BONUS: EvalNumber = 100000;
-const PROMOTION_BONUS: EvalNumber = 4000;
-const CAPTURE_BONUS: EvalNumber = 4000;
-const KILLER_MOVE_BONUS: EvalNumber = 2000;
+const HASH_MOVE_BONUS: MoveGuessNum = 20000;
+const PROMOTION_BONUS: MoveGuessNum = 4000;
+const CAPTURE_BONUS: MoveGuessNum = 4000;
+const KILLER_MOVE_BONUS: MoveGuessNum = 2000;
 
-const PIECE_VALUES: [EvalNumber; 12] = [100, 300, 320, 500, 900, 0, 100, 300, 320, 500, 900, 0];
+const PIECE_VALUES: [MoveGuessNum; 12] = [100, 300, 320, 500, 900, 0, 100, 300, 320, 500, 900, 0];
 
 pub struct MoveOrderer {}
 impl MoveOrderer {
@@ -30,24 +32,20 @@ impl MoveOrderer {
         search: &Search,
         enemy_pawn_attacks: BitBoard,
         move_data: Move,
-    ) -> EvalNumber {
+    ) -> MoveGuessNum {
         let moving_from = move_data.from;
         let moving_to = move_data.to;
 
         let mut score = 0;
         match move_data.flag {
             Flag::EnPassant => {
-                return EvalNumber::from(
-                    search.history_heuristic[usize::from(search.board.white_to_move)]
-                        [moving_from.usize()][moving_to.usize()],
-                )
+                return search.history_heuristic[usize::from(search.board.white_to_move)]
+                    [moving_from.usize()][moving_to.usize()] as MoveGuessNum
             }
             Flag::PawnTwoUp => {}
             Flag::Castle => {
-                return EvalNumber::from(
-                    search.history_heuristic[usize::from(search.board.white_to_move)]
-                        [moving_from.usize()][moving_to.usize()],
-                )
+                return search.history_heuristic[usize::from(search.board.white_to_move)]
+                    [moving_from.usize()][moving_to.usize()] as MoveGuessNum
             }
 
             Flag::BishopPromotion => return PROMOTION_BONUS + 200,
@@ -69,10 +67,8 @@ impl MoveOrderer {
             let score_difference = PIECE_VALUES[capturing as usize] - potential_value_loss;
             score += CAPTURE_BONUS + score_difference;
         } else {
-            score += EvalNumber::from(
-                search.history_heuristic[usize::from(search.board.white_to_move)]
-                    [moving_from.usize()][moving_to.usize()],
-            );
+            score += search.history_heuristic[usize::from(search.board.white_to_move)]
+                [moving_from.usize()][moving_to.usize()] as MoveGuessNum;
 
             if enemy_pawn_attacks.get(&moving_to) {
                 score -= 50;
@@ -101,7 +97,7 @@ impl MoveOrderer {
         move_guesses[unsorted_index]
     }
 
-    fn guess_capture_value(search: &Search, move_data: Move) -> EvalNumber {
+    fn guess_capture_value(search: &Search, move_data: Move) -> MoveGuessNum {
         let mut score = match move_data.flag {
             Flag::EnPassant => return 0,
 
