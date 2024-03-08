@@ -81,6 +81,10 @@ impl Search {
         }
     }
     pub fn clear_for_new_search(&mut self) {
+        #[cfg(test)]
+        {
+            self.times_evaluation_was_called = 0;
+        }
         self.killer_moves.fill(EncodedMove::NONE);
         for side in &mut self.history_heuristic {
             for from in side {
@@ -397,7 +401,7 @@ impl Search {
             if stop {
                 return (depth, self.best_move, score);
             }
-        };
+        }
 
         unreachable!();
     }
