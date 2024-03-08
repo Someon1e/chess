@@ -194,16 +194,15 @@ impl Search {
                 if saved.ply_remaining >= ply_remaining {
                     let node_type = &saved.node_type;
                     if match node_type {
-                        NodeType::Exact => {
-                            if is_not_pv_node && ply_from_root == 0 {
-                                self.best_move = saved.transposition_move;
-                                self.best_score = saved.value;
-                            }
-                            is_not_pv_node
-                        }
+                        NodeType::Exact => is_not_pv_node,
                         NodeType::Beta => saved.value >= beta,
                         NodeType::Alpha => saved.value <= alpha,
                     } {
+                        if ply_from_root == 0 {
+                            self.best_move = saved.transposition_move;
+                            self.best_score = saved.value;
+                        }
+
                         return saved.value;
                     }
                 }
@@ -222,7 +221,7 @@ impl Search {
 
         if ply_remaining == 0 {
             // Enter quiescence search
-            return self.quiescence_search(alpha, beta)
+            return self.quiescence_search(alpha, beta);
         };
 
         let move_generator = MoveGenerator::new(&self.board);
