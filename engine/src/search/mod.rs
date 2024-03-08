@@ -35,7 +35,6 @@ pub struct Search {
     history_heuristic: [[[MoveGuessNum; 64]; 64]; 2],
 
     best_move: EncodedMove,
-    best_score: EvalNumber,
 
     #[cfg(test)]
     times_evaluation_was_called: u32,
@@ -55,7 +54,6 @@ impl Search {
             history_heuristic: [[[0; 64]; 64]; 2],
 
             best_move: EncodedMove::NONE,
-            best_score: -EvalNumber::MAX,
 
             #[cfg(test)]
             times_evaluation_was_called: 0,
@@ -92,7 +90,6 @@ impl Search {
             }
         }
         self.best_move = EncodedMove::NONE;
-        self.best_score = -EvalNumber::MAX;
     }
 
     #[must_use]
@@ -211,7 +208,7 @@ impl Search {
 
         if ply_remaining == 0 {
             // Enter quiescence search
-            return self.quiescence_search(alpha, beta)
+            return self.quiescence_search(alpha, beta);
         };
 
         let move_generator = MoveGenerator::new(&self.board);
@@ -261,15 +258,9 @@ impl Search {
             // No moves
             if move_generator.is_in_check() {
                 // Checkmate
-                if ply_from_root == 0 {
-                    self.best_score = IMMEDIATE_CHECKMATE_SCORE + EvalNumber::from(ply_from_root);
-                }
                 return IMMEDIATE_CHECKMATE_SCORE + EvalNumber::from(ply_from_root);
             }
             // Stalemate
-            if ply_from_root == 0 {
-                self.best_score = 0;
-            }
             return 0;
         }
 
@@ -345,7 +336,6 @@ impl Search {
 
                     if ply_from_root == 0 {
                         self.best_move = encoded_move_data;
-                        self.best_score = best_score;
                     }
                     transposition_move = encoded_move_data;
                     node_type = NodeType::Exact;
@@ -390,10 +380,8 @@ impl Search {
         &mut self,
         depth_completed: &mut dyn FnMut(Ply, (EncodedMove, EvalNumber)) -> bool,
     ) -> (Ply, EncodedMove, EvalNumber) {
-        let mut depth = 0;
-        loop {
-            depth += 1;
-            self.negamax(
+        for depth in 1..=Ply::MAX {
+            let score = self.negamax(
                 &mut || false,
                 depth,
                 0,
@@ -402,15 +390,16 @@ impl Search {
                 EvalNumber::MAX,
             );
 
-            if self.best_move.is_none() || self.best_score.abs() >= CHECKMATE_SCORE {
-                return (depth, self.best_move, self.best_score);
+            if self.best_move.is_none() || score.abs() >= CHECKMATE_SCORE {
+                return (depth, self.best_move, score);
             }
-            let stop = depth_completed(depth, (self.best_move, self.best_score));
+            let stop = depth_completed(depth, (self.best_move, score));
             if stop {
-                break;
+                return (depth, self.best_move, score);
             }
-        }
-        (depth, self.best_move, self.best_score)
+        };
+
+        unreachable!();
     }
     #[must_use]
     pub fn iterative_deepening(
@@ -419,9 +408,11 @@ impl Search {
         should_cancel: &mut dyn FnMut() -> bool,
     ) -> (Ply, EncodedMove, EvalNumber) {
         let mut depth = 0;
+
+        let mut score = -EvalNumber::MAX;
         while !should_cancel() {
             depth += 1;
-            self.negamax(
+            score = self.negamax(
                 should_cancel,
                 depth,
                 0,
@@ -433,16 +424,16 @@ impl Search {
                 break;
             }
 
-            if self.best_move.is_none() || self.best_score.abs() >= CHECKMATE_SCORE {
+            if self.best_move.is_none() || score.abs() >= CHECKMATE_SCORE {
                 break;
             }
-            depth_completed(depth, (self.best_move, self.best_score));
+            depth_completed(depth, (self.best_move, score));
 
             if depth == Ply::MAX {
                 break;
             }
         }
-        (depth, self.best_move, self.best_score)
+        (depth, self.best_move, score)
     }
 }
 
