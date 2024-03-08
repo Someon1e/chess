@@ -19,7 +19,7 @@ pub struct MoveGuess {
 const MAX_LEGAL_MOVES: usize = 218;
 const MAX_CAPTURES: usize = 74;
 
-const HASH_MOVE_BONUS: MoveGuessNum = 20000;
+const HASH_MOVE_BONUS: MoveGuessNum = i16::MAX;
 const PROMOTION_BONUS: MoveGuessNum = 4000;
 const CAPTURE_BONUS: MoveGuessNum = 4000;
 const KILLER_MOVE_BONUS: MoveGuessNum = 2000;
