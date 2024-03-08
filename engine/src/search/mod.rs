@@ -211,15 +211,7 @@ impl Search {
 
         if ply_remaining == 0 {
             // Enter quiescence search
-            let evaluation = self.quiescence_search(alpha, beta);
-            self.transposition_table[zobrist_index] = Some(NodeValue {
-                zobrist_key,
-                ply_remaining,
-                node_type: NodeType::Exact,
-                value: evaluation,
-                transposition_move: EncodedMove::NONE,
-            });
-            return evaluation;
+            return self.quiescence_search(alpha, beta)
         };
 
         let move_generator = MoveGenerator::new(&self.board);
@@ -1240,7 +1232,7 @@ mod tests {
                         .send((
                             position,
                             result.1.decode() == solution,
-                            search.times_evaluation_was_called,
+                            search.times_evaluation_was_called, // TODO: fix
                         ))
                         .unwrap();
                 }
