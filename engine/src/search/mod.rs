@@ -192,7 +192,7 @@ impl Search {
                     let node_type = &saved.node_type;
                     if match node_type {
                         NodeType::Exact => {
-                            if ply_from_root == 0 {
+                            if is_not_pv_node && ply_from_root == 0 {
                                 self.best_move = saved.transposition_move;
                             }
                             is_not_pv_node
