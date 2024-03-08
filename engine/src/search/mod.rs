@@ -331,7 +331,7 @@ impl Search {
 
             self.unmake_move(&move_data);
             if should_cancel() {
-                return 0;
+                return best_score;
             }
             if score > best_score {
                 best_score = score;
