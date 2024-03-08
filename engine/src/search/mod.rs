@@ -184,17 +184,19 @@ impl Search {
         let is_not_pv_node = alpha + 1 == beta;
 
         // Get value from transposition table
-        if ply_from_root == 0 {
-            // Use iterative deepening move as hash move
-            hash_move = self.best_move;
-        } else if let Some(saved) = self.transposition_table[zobrist_index] {
+        if let Some(saved) = self.transposition_table[zobrist_index] {
             // Check if it's actually the same position
             if saved.zobrist_key == zobrist_key {
                 // Check if the saved depth is as high as the depth now
                 if saved.ply_remaining >= ply_remaining {
                     let node_type = &saved.node_type;
                     if match node_type {
-                        NodeType::Exact => is_not_pv_node,
+                        NodeType::Exact => {
+                            if ply_from_root == 0 {
+                                self.best_move = saved.transposition_move;
+                            }
+                            is_not_pv_node
+                        }
                         NodeType::Beta => saved.value >= beta,
                         NodeType::Alpha => saved.value <= alpha,
                     } {
@@ -204,6 +206,10 @@ impl Search {
 
                 hash_move = saved.transposition_move;
             }
+        }
+        if ply_from_root == 0 {
+            // Use iterative deepening move as hash move
+            hash_move = self.best_move;
         }
         if hash_move.is_none() && ply_remaining > 3 {
             // Internal iterative reduction
