@@ -174,7 +174,6 @@ uciok",
                     search_start.miliseconds(),
                     encode_move(best_move.decode())
                 ));
-                // TODO: fix crash when depth goes very high
             },
             &mut || search_start.miliseconds() > think_time,
         );

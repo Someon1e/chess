@@ -1227,7 +1227,7 @@ mod tests {
                         .send((
                             position,
                             result.1.decode() == solution,
-                            search.times_evaluation_was_called, // TODO: fix
+                            search.times_evaluation_was_called
                         ))
                         .unwrap();
                 }
