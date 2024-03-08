@@ -351,6 +351,8 @@ impl Search {
             }
             if score > best_score {
                 best_score = score;
+                transposition_move = encoded_move_data;
+
                 if score > alpha {
                     alpha = score;
 
@@ -358,7 +360,6 @@ impl Search {
                         self.best_move = encoded_move_data;
                         self.best_score = best_score;
                     }
-                    transposition_move = encoded_move_data;
                     node_type = NodeType::Exact;
 
                     if score >= beta {
