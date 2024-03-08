@@ -416,7 +416,7 @@ impl Search {
         let mut score = -EvalNumber::MAX;
         while !should_cancel() {
             depth += 1;
-            score = self.negamax(
+            let new_score = self.negamax(
                 should_cancel,
                 depth,
                 0,
@@ -427,10 +427,12 @@ impl Search {
             if should_cancel() {
                 break;
             }
+            score = new_score;
 
             if self.best_move.is_none() || score.abs() >= CHECKMATE_SCORE {
                 break;
             }
+
             depth_completed(depth, (self.best_move, score));
 
             if depth == Ply::MAX {
