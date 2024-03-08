@@ -1208,9 +1208,16 @@ mod tests {
             thread::spawn(move || {
                 let mut search = Search::new(Board::from_fen(Board::START_POSITION_FEN));
 
-                for (position, solution) in positions {
+                for (position, solutions) in positions {
                     let board = Board::from_fen(position);
-                    let solution = uci::decode_move(&board, &solution[0..4]);
+                    let matches_solution = |answer| {
+                        for solution in solutions.split_whitespace() {
+                            if solution == uci::encode_move(answer) {
+                                return true;
+                            }
+                        }
+                        false
+                    };
 
                     search.new_board(board);
                     search.clear_cache_for_new_game();
@@ -1218,7 +1225,7 @@ mod tests {
 
                     let search_start = Time::now();
                     let result = search.depth_by_depth(&mut |_depth, answer| {
-                        if answer.0.decode() == solution {
+                        if matches_solution(answer.0.decode()) {
                             true
                         } else {
                             1000 < search_start.miliseconds()
@@ -1228,7 +1235,7 @@ mod tests {
                     sender
                         .send((
                             position,
-                            result.1.decode() == solution,
+                            matches_solution(result.1.decode()),
                             search.times_evaluation_was_called,
                         ))
                         .unwrap();
