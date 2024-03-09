@@ -36,15 +36,15 @@ fn parse_data_set() -> Vec<(Board, f64)> {
 fn mean_square_error(
     data_set: &[(Board, f64)],
     k: f64,
-    middle_game_piece_square_table: &[[i32; 64]; 6],
-    end_game_piece_square_table: &[[i32; 64]; 6],
+    middle_game_piece_square_tables: &[[i32; 64]; 6],
+    end_game_piece_square_tables: &[[i32; 64]; 6],
 ) -> f64 {
     let mut error = 0.0;
 
     for (board, result) in data_set {
         let score = (Eval::evaluate(
-            middle_game_piece_square_table,
-            end_game_piece_square_table,
+            middle_game_piece_square_tables,
+            end_game_piece_square_tables,
             board,
         ) * if board.white_to_move { 1 } else { -1 }) as f64;
 
@@ -56,30 +56,51 @@ fn mean_square_error(
     error / data_set.len() as f64
 }
 
+fn pretty_piece_square_tables(piece_square_tables: [[i32; 64]; 6]) -> String {
+    let mut output = String::new();
+    output.push_str("[\n");
+    for piece_square_table in piece_square_tables {
+        output.push('[');
+        for rank in 0..8 {
+            output.push_str("\n");
+            for file in 0..8 {
+                output.push_str(&format!("{:>4},", piece_square_table[rank * 8 + file]));
+            }
+        }
+        output.push_str("\n],\n");
+    }
+    output.push(']');
+    output
+}
+
 fn tune(
     data_set: &[(Board, f64)],
     k: f64,
-    middle_game_piece_square_table: [[i32; 64]; 6],
-    end_game_piece_square_table: [[i32; 64]; 6],
+    middle_game_piece_square_tables: [[i32; 64]; 6],
+    end_game_piece_square_tables: [[i32; 64]; 6],
 ) {
     const ADJUSTMENT_VALUE: i32 = 1;
     let mut best_error = mean_square_error(
         data_set,
         k,
-        &middle_game_piece_square_table,
-        &end_game_piece_square_table,
+        &middle_game_piece_square_tables,
+        &end_game_piece_square_tables,
     );
     let mut improved = true;
 
-    let mut best_params = [middle_game_piece_square_table, end_game_piece_square_table];
+    let mut best_params = [
+        middle_game_piece_square_tables,
+        end_game_piece_square_tables,
+    ];
 
     let log_new_params = |a, b| {
         std::fs::write(
             "tuned.rs",
             format!(
-                "const MIDDLE_GAME_PIECE_SQUARE_TABLE: [[i32; 64]; 6] = {:#?};
-const END_GAME_PIECE_SQUARE_TABLE: [[i32; 64]; 6] = {:#?};",
-                a, b
+                "const MIDDLE_GAME_PIECE_SQUARE_TABLE: [[i32; 64]; 6] = {};
+const END_GAME_PIECE_SQUARE_TABLE: [[i32; 64]; 6] = {};",
+                pretty_piece_square_tables(a),
+                pretty_piece_square_tables(b)
             ),
         )
         .unwrap();
@@ -123,7 +144,7 @@ const END_GAME_PIECE_SQUARE_TABLE: [[i32; 64]; 6] = {:#?};",
 }
 
 fn main() {
-    let middle_game_piece_square_table: [[i32; 64]; 6] = [
+    let middle_game_piece_square_tables: [[i32; 64]; 6] = [
         [
             82, 82, 82, 82, 82, 82, 82, 82, 180, 216, 143, 177, 150, 208, 116, 71, 76, 89, 108,
             113, 147, 138, 107, 62, 68, 95, 88, 103, 105, 94, 99, 59, 55, 80, 77, 94, 99, 88, 92,
@@ -162,7 +183,7 @@ fn main() {
             36, 12, -54, 8, -28, 24, 14,
         ],
     ];
-    let end_game_piece_square_table: [[i32; 64]; 6] = [
+    let end_game_piece_square_tables: [[i32; 64]; 6] = [
         [
             94, 94, 94, 94, 94, 94, 94, 94, 272, 267, 252, 228, 241, 226, 259, 281, 188, 194, 179,
             161, 150, 147, 176, 178, 126, 118, 107, 99, 92, 98, 111, 111, 107, 103, 91, 87, 87, 86,
@@ -206,8 +227,8 @@ fn main() {
     tune(
         &parse_data_set(),
         0.2,
-        middle_game_piece_square_table,
-        end_game_piece_square_table,
+        middle_game_piece_square_tables,
+        end_game_piece_square_tables,
     );
 
     println!("{}", time.elapsed().as_secs_f64());
