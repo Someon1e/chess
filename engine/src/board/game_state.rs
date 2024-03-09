@@ -83,7 +83,7 @@ impl CastlingRights {
         }
     }
     #[must_use]
-    pub fn none(&self) -> bool {
+    pub fn is_none(&self) -> bool {
         self.0 == 0
     }
     #[must_use]
