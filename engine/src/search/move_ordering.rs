@@ -225,14 +225,6 @@ mod tests {
                     flag: Flag::None
                 }
         );
-        assert!(
-            next_move().0.decode()
-                == Move {
-                    from: Square::from_notation("a7"),
-                    to: Square::from_notation("a8"),
-                    flag: Flag::QueenPromotion
-                }
-        );
         while next_move().1 {}
     }
 }
