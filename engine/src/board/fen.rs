@@ -128,7 +128,7 @@ impl Board {
             fen.push_str(" b ");
         }
 
-        if self.game_state.castling_rights.none() {
+        if self.game_state.castling_rights.is_none() {
             fen.push('-');
         } else {
             if self.game_state.castling_rights.get_white_king_side() {
