@@ -21,29 +21,34 @@ macro_rules! define_castling_rights {
 #[derive(Copy, Clone)]
 pub struct CastlingRights(u8);
 impl CastlingRights {
+    const WHITE_KING_SIDE_OFFSET: u8 = 0;
+    const WHITE_QUEEN_SIDE_OFFSET: u8 = 1;
+    const BLACK_KING_SIDE_OFFSET: u8 = 2;
+    const BLACK_QUEEN_SIDE_OFFSET: u8 = 3;
+
     define_castling_rights!(
         get_white_king_side,
         set_white_king_side,
         unset_white_king_side,
-        0
+        Self::WHITE_KING_SIDE_OFFSET
     );
     define_castling_rights!(
         get_white_queen_side,
         set_white_queen_side,
         unset_white_queen_side,
-        1
+        Self::WHITE_QUEEN_SIDE_OFFSET
     );
     define_castling_rights!(
         get_black_king_side,
         set_black_king_side,
         unset_black_king_side,
-        2
+        Self::BLACK_KING_SIDE_OFFSET
     );
     define_castling_rights!(
         get_black_queen_side,
         set_black_queen_side,
         unset_black_queen_side,
-        3
+        Self::BLACK_QUEEN_SIDE_OFFSET
     );
 
     #[must_use]
@@ -54,20 +59,12 @@ impl CastlingRights {
         black_can_castle_king_side: bool,
         black_can_castle_queen_side: bool,
     ) -> Self {
-        let mut data = Self(0);
-        if white_can_castle_king_side {
-            data.set_white_king_side();
-        };
-        if white_can_castle_queen_side {
-            data.set_white_queen_side();
-        };
-        if black_can_castle_king_side {
-            data.set_black_king_side();
-        };
-        if black_can_castle_queen_side {
-            data.set_black_queen_side();
-        };
-        data
+        let mut data = 0;
+        data |= u8::from(white_can_castle_king_side) << Self::WHITE_KING_SIDE_OFFSET;
+        data |= u8::from(white_can_castle_queen_side) << Self::WHITE_QUEEN_SIDE_OFFSET;
+        data |= u8::from(black_can_castle_king_side) << Self::BLACK_KING_SIDE_OFFSET;
+        data |= u8::from(black_can_castle_queen_side) << Self::BLACK_QUEEN_SIDE_OFFSET;
+        Self(data)
     }
     #[must_use]
     pub fn from_fen_section(castling_rights: &str) -> Self {
