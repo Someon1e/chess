@@ -29,29 +29,17 @@ pub fn encode_move(move_data: Move) -> String {
 }
 
 #[must_use]
-pub fn decode_move(board: &Board, uci_move: &str) -> Move {
-    let (from, to) = (&uci_move[0..2], &uci_move[2..4]);
-    let (from, to) = (Square::from_notation(from), Square::from_notation(to));
+pub fn decode_move(board: &Board, from: Square, to: Square, promotion: Flag) -> Move {
     let piece = board
         .friendly_piece_at(from)
         .expect("Tried to play illegal move {uci_move} on {board}");
 
-    let mut flag = Flag::None;
+    let mut flag = promotion;
     if piece == Piece::WhitePawn || piece == Piece::BlackPawn {
         if from.rank().abs_diff(to.rank()) == 2 {
             flag = Flag::PawnTwoUp;
         } else if board.game_state.en_passant_square == Some(to) {
             flag = Flag::EnPassant;
-        } else if let Some(promotion) = uci_move.chars().nth(4) {
-            flag = match promotion {
-                'q' => Flag::QueenPromotion,
-                'r' => Flag::RookPromotion,
-                'n' => Flag::KnightPromotion,
-                'b' => Flag::BishopPromotion,
-                _ => {
-                    panic!("Invalid promotion notation in {uci_move}")
-                }
-            }
         }
     } else if (piece == Piece::BlackKing || piece == Piece::WhiteKing)
         && from.file().abs_diff(to.file()) > 1
@@ -65,7 +53,7 @@ pub fn decode_move(board: &Board, uci_move: &str) -> Move {
 pub struct UCIProcessor {
     pub max_thinking_time: u128,
 
-    pub moves: Vec<String>,
+    pub moves: Vec<(Square, Square, Flag)>,
     pub fen: Option<String>,
 
     pub search: Option<Search>,
@@ -95,7 +83,19 @@ uciok",
                 "fen" => startpos = false,
                 "moves" => {
                     for uci_move in args.by_ref() {
-                        self.moves.push(uci_move.to_owned());
+                        let (from, to) = (&uci_move[0..2], &uci_move[2..4]);
+                        let (from, to) = (Square::from_notation(from), Square::from_notation(to));
+                        let promotion = match uci_move.chars().nth(4) {
+                            None => Flag::None,
+                            Some('q') => Flag::QueenPromotion,
+                            Some('r') => Flag::RookPromotion,
+                            Some('n') => Flag::KnightPromotion,
+                            Some('b') => Flag::BishopPromotion,
+                            _ => {
+                                panic!("Invalid promotion notation in {uci_move}")
+                            }
+                        };
+                        self.moves.push((from, to, promotion));
                     }
                 }
                 _ => {
@@ -120,8 +120,8 @@ uciok",
         let mut board = Board::from_fen(self.fen.as_ref().unwrap());
 
         if parameters.perft {
-            for uci_move in &self.moves {
-                board.make_move(&decode_move(&board, uci_move));
+            for (from, to, promotion) in &self.moves {
+                board.make_move(&decode_move(&board, *from, *to, *promotion));
             }
             (self.out)(&format!(
                 "Nodes searched: {}",
@@ -142,8 +142,8 @@ uciok",
             search.clear_for_new_search();
             search
         };
-        for uci_move in &self.moves {
-            search.make_move(&decode_move(search.board(), uci_move));
+        for (from, to, promotion) in &self.moves {
+            search.make_move(&decode_move(search.board(), *from, *to, *promotion));
         }
 
         let think_time = if parameters.infinite {

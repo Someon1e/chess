@@ -370,7 +370,9 @@ impl Search {
                             }
 
                             self.history_heuristic[usize::from(self.board.white_to_move)]
-                                [move_data.from.usize()][move_data.to.usize()] += MoveGuessNum::from(ply_remaining) * MoveGuessNum::from(ply_remaining);
+                                [move_data.from.usize()][move_data.to.usize()] +=
+                                MoveGuessNum::from(ply_remaining)
+                                    * MoveGuessNum::from(ply_remaining);
                         }
                         node_type = NodeType::Beta;
                         break;
