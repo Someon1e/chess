@@ -1,5 +1,5 @@
 mod encoded_move;
-mod eval;
+pub mod eval;
 mod eval_data;
 mod move_ordering;
 mod transposition;
@@ -106,7 +106,11 @@ impl Search {
             self.times_evaluation_was_called += 1;
         }
 
-        let mut best_score = Eval::evaluate(&self.board);
+        let mut best_score = Eval::evaluate(
+            &eval_data::MIDDLE_GAME_PIECE_VALUES_WITH_SQUARE,
+            &eval_data::END_GAME_PIECE_VALUES_WITH_SQUARE,
+            &self.board,
+        );
         if best_score > alpha {
             alpha = best_score;
         }
@@ -464,7 +468,11 @@ mod tests {
 
     use crate::{
         board::Board,
-        search::{eval::Eval, eval_data::EvalNumber, Search},
+        search::{
+            eval::Eval,
+            eval_data::{self, EvalNumber},
+            Search,
+        },
         timer::inner::Time,
         uci,
     };
@@ -475,7 +483,11 @@ mod tests {
         let quiet = Board::from_fen("rnb1kbnr/ppp1pppp/8/3q4/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
         assert_eq!(
             Search::new(board).quiescence_search(-EvalNumber::MAX, EvalNumber::MAX),
-            Eval::evaluate(&quiet)
+            Eval::evaluate(
+                &eval_data::MIDDLE_GAME_PIECE_VALUES_WITH_SQUARE,
+                &eval_data::END_GAME_PIECE_VALUES_WITH_SQUARE,
+                &quiet
+            )
         );
     }
 
