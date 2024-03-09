@@ -44,13 +44,11 @@ impl MoveOrderer {
             Flag::EnPassant => {
                 return search.history_heuristic[usize::from(search.board.white_to_move)]
                     [moving_from.usize()][moving_to.usize()]
-                .into()
             }
             Flag::PawnTwoUp => {}
             Flag::Castle => {
                 return search.history_heuristic[usize::from(search.board.white_to_move)]
                     [moving_from.usize()][moving_to.usize()]
-                .into()
             }
 
             Flag::BishopPromotion => return BISHOP_PROMOTION_BONUS,
