@@ -28,13 +28,13 @@ impl Eval {
     }
 
     fn get_piece_value(
-        MIDDLE_GAME_PIECE_SQUARE_TABLE: &[[EvalNumber; 64]; 6],
-        END_GAME_PIECE_SQUARE_TABLE: &[[EvalNumber; 64]; 6],
+        middle_game_piece_square_table: &[[EvalNumber; 64]; 6],
+        end_game_piece_square_table: &[[EvalNumber; 64]; 6],
         piece_index: usize,
         square_index: usize,
     ) -> (EvalNumber, EvalNumber) {
-        let middle_game_piece_score = MIDDLE_GAME_PIECE_SQUARE_TABLE[piece_index][square_index];
-        let end_game_piece_score = END_GAME_PIECE_SQUARE_TABLE[piece_index][square_index];
+        let middle_game_piece_score = middle_game_piece_square_table[piece_index][square_index];
+        let end_game_piece_score = end_game_piece_square_table[piece_index][square_index];
 
         (middle_game_piece_score, end_game_piece_score)
     }
@@ -50,8 +50,8 @@ impl Eval {
     }
 
     pub fn evaluate(
-        MIDDLE_GAME_PIECE_SQUARE_TABLE: &[[EvalNumber; 64]; 6],
-        END_GAME_PIECE_SQUARE_TABLE: &[[EvalNumber; 64]; 6],
+        middle_game_piece_square_table: &[[EvalNumber; 64]; 6],
+        end_game_piece_square_table: &[[EvalNumber; 64]; 6],
         board: &Board,
     ) -> EvalNumber {
         let mut total_middle_game_score = 0;
@@ -63,8 +63,8 @@ impl Eval {
                 let square = bit_board.pop_square();
 
                 let (middle_game_value, end_game_value) = Self::get_piece_value(
-                    MIDDLE_GAME_PIECE_SQUARE_TABLE,
-                    END_GAME_PIECE_SQUARE_TABLE,
+                    middle_game_piece_square_table,
+                    end_game_piece_square_table,
                     piece as usize,
                     square.flip().usize(),
                 );
@@ -80,8 +80,8 @@ impl Eval {
                 let square = bit_board.pop_square();
 
                 let (middle_game_value, end_game_value) = Self::get_piece_value(
-                    MIDDLE_GAME_PIECE_SQUARE_TABLE,
-                    END_GAME_PIECE_SQUARE_TABLE,
+                    middle_game_piece_square_table,
+                    end_game_piece_square_table,
                     piece as usize - 6,
                     square.usize(),
                 );
