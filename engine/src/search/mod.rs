@@ -107,8 +107,8 @@ impl Search {
         }
 
         let mut best_score = Eval::evaluate(
-            &eval_data::MIDDLE_GAME_PIECE_VALUES_WITH_SQUARE,
-            &eval_data::END_GAME_PIECE_VALUES_WITH_SQUARE,
+            &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLE,
+            &eval_data::END_GAME_PIECE_SQUARE_TABLE,
             &self.board,
         );
         if best_score > alpha {
@@ -484,8 +484,8 @@ mod tests {
         assert_eq!(
             Search::new(board).quiescence_search(-EvalNumber::MAX, EvalNumber::MAX),
             Eval::evaluate(
-                &eval_data::MIDDLE_GAME_PIECE_VALUES_WITH_SQUARE,
-                &eval_data::END_GAME_PIECE_VALUES_WITH_SQUARE,
+                &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLE,
+                &eval_data::END_GAME_PIECE_SQUARE_TABLE,
                 &quiet
             )
         );

@@ -28,14 +28,13 @@ impl Eval {
     }
 
     fn get_piece_value(
-        middle_game_piece_values_with_square: &[[EvalNumber; 64]; 6],
-        end_game_piece_values_with_square: &[[EvalNumber; 64]; 6],
+        MIDDLE_GAME_PIECE_SQUARE_TABLE: &[[EvalNumber; 64]; 6],
+        END_GAME_PIECE_SQUARE_TABLE: &[[EvalNumber; 64]; 6],
         piece_index: usize,
         square_index: usize,
     ) -> (EvalNumber, EvalNumber) {
-        let middle_game_piece_score =
-            middle_game_piece_values_with_square[piece_index][square_index];
-        let end_game_piece_score = end_game_piece_values_with_square[piece_index][square_index];
+        let middle_game_piece_score = MIDDLE_GAME_PIECE_SQUARE_TABLE[piece_index][square_index];
+        let end_game_piece_score = END_GAME_PIECE_SQUARE_TABLE[piece_index][square_index];
 
         (middle_game_piece_score, end_game_piece_score)
     }
@@ -51,8 +50,8 @@ impl Eval {
     }
 
     pub fn evaluate(
-        middle_game_piece_values_with_square: &[[EvalNumber; 64]; 6],
-        end_game_piece_values_with_square: &[[EvalNumber; 64]; 6],
+        MIDDLE_GAME_PIECE_SQUARE_TABLE: &[[EvalNumber; 64]; 6],
+        END_GAME_PIECE_SQUARE_TABLE: &[[EvalNumber; 64]; 6],
         board: &Board,
     ) -> EvalNumber {
         let mut total_middle_game_score = 0;
@@ -64,8 +63,8 @@ impl Eval {
                 let square = bit_board.pop_square();
 
                 let (middle_game_value, end_game_value) = Self::get_piece_value(
-                    middle_game_piece_values_with_square,
-                    end_game_piece_values_with_square,
+                    MIDDLE_GAME_PIECE_SQUARE_TABLE,
+                    END_GAME_PIECE_SQUARE_TABLE,
                     piece as usize,
                     square.flip().usize(),
                 );
@@ -81,8 +80,8 @@ impl Eval {
                 let square = bit_board.pop_square();
 
                 let (middle_game_value, end_game_value) = Self::get_piece_value(
-                    middle_game_piece_values_with_square,
-                    end_game_piece_values_with_square,
+                    MIDDLE_GAME_PIECE_SQUARE_TABLE,
+                    END_GAME_PIECE_SQUARE_TABLE,
                     piece as usize - 6,
                     square.usize(),
                 );
@@ -111,12 +110,12 @@ mod tests {
         let one_step_from_promoting_pawn = Board::from_fen("7k/4P3/8/8/8/8/8/K7 w - - 0 1");
         assert!(
             Eval::evaluate(
-                &eval_data::MIDDLE_GAME_PIECE_VALUES_WITH_SQUARE,
-                &eval_data::END_GAME_PIECE_VALUES_WITH_SQUARE,
+                &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLE,
+                &eval_data::END_GAME_PIECE_SQUARE_TABLE,
                 &one_step_from_promoting_pawn
             ) > Eval::evaluate(
-                &eval_data::MIDDLE_GAME_PIECE_VALUES_WITH_SQUARE,
-                &eval_data::END_GAME_PIECE_VALUES_WITH_SQUARE,
+                &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLE,
+                &eval_data::END_GAME_PIECE_SQUARE_TABLE,
                 &starting_rank_pawn
             )
         );
@@ -128,12 +127,12 @@ mod tests {
         let knight_on_the_edge = Board::from_fen("7k/8/8/8/7n/8/8/K7 b - - 0 1");
         assert!(
             Eval::evaluate(
-                &eval_data::MIDDLE_GAME_PIECE_VALUES_WITH_SQUARE,
-                &eval_data::END_GAME_PIECE_VALUES_WITH_SQUARE,
+                &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLE,
+                &eval_data::END_GAME_PIECE_SQUARE_TABLE,
                 &centralised_knight
             ) > Eval::evaluate(
-                &eval_data::MIDDLE_GAME_PIECE_VALUES_WITH_SQUARE,
-                &eval_data::END_GAME_PIECE_VALUES_WITH_SQUARE,
+                &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLE,
+                &eval_data::END_GAME_PIECE_SQUARE_TABLE,
                 &knight_on_the_edge
             )
         );
