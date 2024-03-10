@@ -119,29 +119,26 @@ const END_GAME_PIECE_SQUARE_TABLE: [[i32; 64]; 6] = {};",
                     let mut new_params: [[[i32; 64]; 6]; 2] = best_params;
                     new_params[table_number][piece][square] += ADJUSTMENT_VALUE;
 
-                    let new_error = mean_square_error(data_set, k, &new_params[0], &new_params[1]);
+                    let mut new_error =
+                        mean_square_error(data_set, k, &new_params[0], &new_params[1]);
 
                     if new_error < best_error {
                         println!("{new_error} Found better params +");
-
-                        best_error = new_error;
-                        improved = true;
-                        best_params = new_params;
-                        log_params(best_params[0], best_params[1]);
                     } else {
                         new_params[table_number][piece][square] -= ADJUSTMENT_VALUE * 2;
-                        let new_error =
-                            mean_square_error(data_set, k, &new_params[0], &new_params[1]);
+                        new_error = mean_square_error(data_set, k, &new_params[0], &new_params[1]);
 
                         if new_error < best_error {
                             println!("{new_error} Found better params -");
-
-                            best_error = new_error;
-                            improved = true;
-                            best_params = new_params;
-                            log_params(best_params[0], best_params[1]);
+                        } else {
+                            continue;
                         }
                     }
+
+                    improved = true;
+                    best_error = new_error;
+                    best_params = new_params;
+                    log_params(best_params[0], best_params[1]);
                 }
             }
         }
