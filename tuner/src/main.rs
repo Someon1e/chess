@@ -147,6 +147,44 @@ const END_GAME_PIECE_SQUARE_TABLE: [[i32; 64]; 6] = {};",
     }
 }
 
+fn find_k(
+    data_set: &[(Board, f64)],
+    middle_game_piece_square_tables: &[[i32; 64]; 6],
+    end_game_piece_square_tables: &[[i32; 64]; 6],
+) -> f64 {
+    let mut min = -10.0;
+    let mut max = 10.0;
+    let mut delta = 1.0;
+
+    let mut best = 1.0;
+    let mut best_error = 100.0;
+
+    for _ in 0..10 {
+        println!("Determining K: ({min} to {max}, {delta})");
+
+        while min < max {
+            let error = mean_square_error(
+                data_set,
+                min,
+                middle_game_piece_square_tables,
+                end_game_piece_square_tables,
+            );
+            if error < best_error {
+                best_error = error;
+                best = min;
+                println!("New best K: {min}, Error: {best_error}");
+            }
+            min += delta;
+        }
+
+        min = best - delta;
+        max = best + delta;
+        delta /= 10.0;
+    }
+
+    best
+}
+
 fn main() {
     #[rustfmt::skip]
     let middle_game_piece_square_tables: [[i32; 64]; 6] = [
@@ -278,6 +316,15 @@ fn main() {
 
     let time = Instant::now();
 
+    let k = find_k(
+        &parse_data_set(),
+        &middle_game_piece_square_tables,
+        &end_game_piece_square_tables,
+    );
+
+    println!("{k}");
+    println!("Found k in {} seconds", time.elapsed().as_secs_f64());
+
     tune(
         &parse_data_set(),
         0.2,
@@ -285,5 +332,5 @@ fn main() {
         &end_game_piece_square_tables,
     );
 
-    println!("{}", time.elapsed().as_secs_f64());
+    println!("Tuned in {} seconds", time.elapsed().as_secs_f64());
 }
