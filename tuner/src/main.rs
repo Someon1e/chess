@@ -86,6 +86,7 @@ fn tune(
         middle_game_piece_square_tables,
         end_game_piece_square_tables,
     );
+    println!("Currently {best_error}");
 
     let log_params = |a, b| {
         std::fs::write(
@@ -327,7 +328,7 @@ fn main() {
 
     tune(
         &parse_data_set(),
-        0.2,
+        k,
         &middle_game_piece_square_tables,
         &end_game_piece_square_tables,
     );
