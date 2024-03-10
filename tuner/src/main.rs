@@ -7,7 +7,7 @@ use std::{fs::File, io::BufReader};
 fn parse_data_set() -> Vec<(Board, f64)> {
     let file = File::open("dataset/positions.txt").expect("Failed to open file");
     let data_set = BufReader::new(file);
-    let mut parsed = Vec::new();
+    let mut parsed = Vec::with_capacity(100000);
 
     for data in data_set.lines() {
         let Result::Ok(data) = data else {
@@ -118,10 +118,11 @@ const END_GAME_PIECE_SQUARE_TABLE: [[i32; 64]; 6] = {};",
                     let new_error = mean_square_error(data_set, k, &new_params[0], &new_params[1]);
 
                     if new_error < best_error {
+                        println!("{new_error} Found better params +");
+
                         best_error = new_error;
                         improved = true;
                         best_params = new_params;
-                        println!("{new_error} Found better params +");
                         log_new_params(best_params[0], best_params[1]);
                     } else {
                         new_params[table_number][piece][square] -= ADJUSTMENT_VALUE * 2;
@@ -129,10 +130,11 @@ const END_GAME_PIECE_SQUARE_TABLE: [[i32; 64]; 6] = {};",
                             mean_square_error(data_set, k, &new_params[0], &new_params[1]);
 
                         if new_error < best_error {
+                            println!("{new_error} Found better params -");
+
                             best_error = new_error;
                             improved = true;
                             best_params = new_params;
-                            println!("{new_error} Found better params -");
                             log_new_params(best_params[0], best_params[1]);
                         }
                     }

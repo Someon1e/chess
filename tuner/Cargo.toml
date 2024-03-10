@@ -7,3 +7,7 @@ edition = "2021"
 
 [dependencies]
 engine = { path = "../engine" }
+
+[profile.release]
+lto = true
+codegen-units = 1
