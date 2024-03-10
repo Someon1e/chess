@@ -10,9 +10,7 @@ fn parse_data_set() -> Vec<(Board, f64)> {
     let mut parsed = Vec::new();
 
     for data in data_set.lines() {
-        let data = if let Result::Ok(data) = data {
-            data
-        } else {
+        let Result::Ok(data) = data else {
             eprintln!("Failed to read data");
             continue;
         };
@@ -27,7 +25,7 @@ fn parse_data_set() -> Vec<(Board, f64)> {
         };
 
         let board = Board::from_fen(fen);
-        parsed.push((board, result))
+        parsed.push((board, result));
     }
 
     parsed
@@ -42,11 +40,13 @@ fn mean_square_error(
     let mut error = 0.0;
 
     for (board, result) in data_set {
-        let score = (Eval::evaluate(
-            middle_game_piece_square_tables,
-            end_game_piece_square_tables,
-            board,
-        ) * if board.white_to_move { 1 } else { -1 }) as f64;
+        let score = f64::from(
+            Eval::evaluate(
+                middle_game_piece_square_tables,
+                end_game_piece_square_tables,
+                board,
+            ) * if board.white_to_move { 1 } else { -1 },
+        );
 
         let sigmoid = 1.0 / (1.0 + f64::powf(10.0, -k * score / 400.0));
 
@@ -62,7 +62,7 @@ fn pretty_piece_square_tables(piece_square_tables: [[i32; 64]; 6]) -> String {
     for piece_square_table in piece_square_tables {
         output.push('[');
         for rank in 0..8 {
-            output.push_str("\n");
+            output.push('\n');
             for file in 0..8 {
                 output.push_str(&format!("{:>4},", piece_square_table[rank * 8 + file]));
             }
@@ -76,22 +76,16 @@ fn pretty_piece_square_tables(piece_square_tables: [[i32; 64]; 6]) -> String {
 fn tune(
     data_set: &[(Board, f64)],
     k: f64,
-    middle_game_piece_square_tables: [[i32; 64]; 6],
-    end_game_piece_square_tables: [[i32; 64]; 6],
+    middle_game_piece_square_tables: &[[i32; 64]; 6],
+    end_game_piece_square_tables: &[[i32; 64]; 6],
 ) {
     const ADJUSTMENT_VALUE: i32 = 1;
     let mut best_error = mean_square_error(
         data_set,
         k,
-        &middle_game_piece_square_tables,
-        &end_game_piece_square_tables,
-    );
-    let mut improved = true;
-
-    let mut best_params = [
         middle_game_piece_square_tables,
         end_game_piece_square_tables,
-    ];
+    );
 
     let log_new_params = |a, b| {
         std::fs::write(
@@ -105,13 +99,20 @@ const END_GAME_PIECE_SQUARE_TABLE: [[i32; 64]; 6] = {};",
         )
         .unwrap();
     };
+
+    let mut best_params = [
+        *middle_game_piece_square_tables,
+        *end_game_piece_square_tables,
+    ];
+    let mut improved = true;
+
     while improved {
         improved = false;
 
         for table_number in 0..2 {
             for piece in 0..6 {
                 for square in 0..64 {
-                    let mut new_params: [[[i32; 64]; 6]; 2] = best_params.clone();
+                    let mut new_params: [[[i32; 64]; 6]; 2] = best_params;
                     new_params[table_number][piece][square] += ADJUSTMENT_VALUE;
 
                     let new_error = mean_square_error(data_set, k, &new_params[0], &new_params[1]);
@@ -227,8 +228,8 @@ fn main() {
     tune(
         &parse_data_set(),
         0.2,
-        middle_game_piece_square_tables,
-        end_game_piece_square_tables,
+        &middle_game_piece_square_tables,
+        &end_game_piece_square_tables,
     );
 
     println!("{}", time.elapsed().as_secs_f64());
