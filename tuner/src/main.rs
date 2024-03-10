@@ -144,7 +144,7 @@ const END_GAME_PIECE_SQUARE_TABLE: [[i32; 64]; 6] = {};",
             }
         }
 
-        println!("Finished");
+        println!("Finished one iteration");
     }
 }
 
