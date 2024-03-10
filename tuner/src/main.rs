@@ -317,8 +317,10 @@ fn main() {
 
     let time = Instant::now();
 
+    let data_set = parse_data_set();
+
     let k = find_k(
-        &parse_data_set(),
+        &data_set,
         &middle_game_piece_square_tables,
         &end_game_piece_square_tables,
     );
@@ -327,7 +329,7 @@ fn main() {
     println!("Found k in {} seconds", time.elapsed().as_secs_f64());
 
     tune(
-        &parse_data_set(),
+        &data_set,
         k,
         &middle_game_piece_square_tables,
         &end_game_piece_square_tables,
