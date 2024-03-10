@@ -10,14 +10,16 @@ use super::{
 impl Board {
     #[must_use]
     pub fn from_fen(fen: &str) -> Self {
+        let mut components = fen.split_whitespace();
+
         let mut bit_boards = [BitBoard::EMPTY; 12];
         let mut zobrist_key = Zobrist::EMPTY;
 
         let (mut rank, mut file) = (7, 0);
 
-        let mut characters = fen.chars().peekable();
+        let position = components.next().expect("Missing position").chars();
 
-        for character in characters.by_ref() {
+        for character in position {
             if character == '/' {
                 continue;
             }
@@ -39,10 +41,7 @@ impl Board {
             }
         }
 
-        let state = characters.collect::<String>();
-        let mut split = state.split_whitespace();
-
-        let white_to_move = match split.next().expect("Missing w/b to move") {
+        let white_to_move = match components.next().expect("Missing w/b to move") {
             "w" => true,
             "b" => {
                 zobrist_key.flip_side_to_move();
@@ -52,10 +51,10 @@ impl Board {
         };
 
         let castling_rights =
-            CastlingRights::from_fen_section(split.next().expect("Missing castling rights"));
+            CastlingRights::from_fen_section(components.next().expect("Missing castling rights"));
         zobrist_key.xor_castling_rights(&castling_rights);
 
-        let en_passant = split.next().expect("Missing en passant");
+        let en_passant = components.next().expect("Missing en passant");
         let en_passant_square = if en_passant == "-" {
             None
         } else {
@@ -63,12 +62,12 @@ impl Board {
             zobrist_key.xor_en_passant(&en_passant_square);
             Some(en_passant_square)
         };
-        let half_move_clock = split
+        let half_move_clock = components
             .next()
             .expect("No half move clock")
             .parse()
             .expect("No half move clock");
-        let full_move_counter = split
+        let full_move_counter = components
             .next()
             .expect("No full move counter")
             .parse()
