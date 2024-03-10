@@ -87,7 +87,7 @@ fn tune(
         end_game_piece_square_tables,
     );
 
-    let log_new_params = |a, b| {
+    let log_params = |a, b| {
         std::fs::write(
             "tuned.rs",
             format!(
@@ -99,6 +99,7 @@ const END_GAME_PIECE_SQUARE_TABLE: [[i32; 64]; 6] = {};",
         )
         .unwrap();
     };
+    log_params(*middle_game_piece_square_tables, *end_game_piece_square_tables);
 
     let mut best_params = [
         *middle_game_piece_square_tables,
@@ -123,7 +124,7 @@ const END_GAME_PIECE_SQUARE_TABLE: [[i32; 64]; 6] = {};",
                         best_error = new_error;
                         improved = true;
                         best_params = new_params;
-                        log_new_params(best_params[0], best_params[1]);
+                        log_params(best_params[0], best_params[1]);
                     } else {
                         new_params[table_number][piece][square] -= ADJUSTMENT_VALUE * 2;
                         let new_error =
@@ -135,7 +136,7 @@ const END_GAME_PIECE_SQUARE_TABLE: [[i32; 64]; 6] = {};",
                             best_error = new_error;
                             improved = true;
                             best_params = new_params;
-                            log_new_params(best_params[0], best_params[1]);
+                            log_params(best_params[0], best_params[1]);
                         }
                     }
                 }
