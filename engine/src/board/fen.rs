@@ -26,7 +26,8 @@ impl Board {
             if let Some(digit) = character.to_digit(10) {
                 file += digit as i8;
             } else {
-                let piece = Piece::from_fen_char(&character).expect("Failed to parse FEN character");
+                let piece =
+                    Piece::from_fen_char(&character).expect("Failed to parse FEN character");
                 let square = &Square::from_coords(rank, file);
                 bit_boards[piece as usize].set(square);
                 zobrist_key.xor_piece(piece as usize, square.usize());
