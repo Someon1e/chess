@@ -110,12 +110,12 @@ mod tests {
         let one_step_from_promoting_pawn = Board::from_fen("7k/4P3/8/8/8/8/8/K7 w - - 0 1");
         assert!(
             Eval::evaluate(
-                &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLE,
-                &eval_data::END_GAME_PIECE_SQUARE_TABLE,
+                &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLES,
+                &eval_data::END_GAME_PIECE_SQUARE_TABLES,
                 &one_step_from_promoting_pawn
             ) > Eval::evaluate(
-                &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLE,
-                &eval_data::END_GAME_PIECE_SQUARE_TABLE,
+                &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLES,
+                &eval_data::END_GAME_PIECE_SQUARE_TABLES,
                 &starting_rank_pawn
             )
         );
@@ -127,12 +127,12 @@ mod tests {
         let knight_on_the_edge = Board::from_fen("7k/8/8/8/7n/8/8/K7 b - - 0 1");
         assert!(
             Eval::evaluate(
-                &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLE,
-                &eval_data::END_GAME_PIECE_SQUARE_TABLE,
+                &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLES,
+                &eval_data::END_GAME_PIECE_SQUARE_TABLES,
                 &centralised_knight
             ) > Eval::evaluate(
-                &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLE,
-                &eval_data::END_GAME_PIECE_SQUARE_TABLE,
+                &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLES,
+                &eval_data::END_GAME_PIECE_SQUARE_TABLES,
                 &knight_on_the_edge
             )
         );
