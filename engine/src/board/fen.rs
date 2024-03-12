@@ -80,19 +80,19 @@ impl Board {
             castling_rights,
 
             half_move_clock,
-            full_move_counter,
             captured: None,
 
             zobrist_key,
         };
 
         Self {
-            bit_boards,
-
             white_to_move,
 
-            game_state,
+            bit_boards,
 
+            full_move_counter,
+
+            game_state,
             history: Vec::new(),
         }
     }
@@ -155,7 +155,7 @@ impl Board {
         fen.push(' ');
         fen.push_str(&self.game_state.half_move_clock.to_string());
         fen.push(' ');
-        fen.push_str(&self.game_state.full_move_counter.to_string());
+        fen.push_str(&self.full_move_counter.to_string());
 
         fen
     }

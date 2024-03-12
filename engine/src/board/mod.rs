@@ -18,6 +18,8 @@ pub struct Board {
 
     pub bit_boards: [BitBoard; 12],
 
+    pub full_move_counter: u64,
+
     pub game_state: GameState,
     pub history: Vec<GameState>,
 }
