@@ -33,13 +33,13 @@ impl Eval {
     }
 
     fn get_piece_value(
-        middle_game_piece_square_tables: &[[EvalNumber; 64]; 6],
-        end_game_piece_square_tables: &[[EvalNumber; 64]; 6],
+        middle_game_piece_square_tables: &[EvalNumber; 384],
+        end_game_piece_square_tables: &[EvalNumber; 384],
         piece_index: usize,
         square_index: usize,
     ) -> (EvalNumber, EvalNumber) {
-        let middle_game_piece_score = middle_game_piece_square_tables[piece_index][square_index];
-        let end_game_piece_score = end_game_piece_square_tables[piece_index][square_index];
+        let middle_game_piece_score = middle_game_piece_square_tables[piece_index * 64 + square_index];
+        let end_game_piece_score = end_game_piece_square_tables[piece_index * 64 + square_index];
 
         (middle_game_piece_score, end_game_piece_score)
     }
@@ -55,8 +55,8 @@ impl Eval {
     }
 
     pub fn evaluate(
-        middle_game_piece_square_tables: &[[EvalNumber; 64]; 6],
-        end_game_piece_square_tables: &[[EvalNumber; 64]; 6],
+        middle_game_piece_square_tables: &[EvalNumber; 384],
+        end_game_piece_square_tables: &[EvalNumber; 384],
         phases: &[u32; 5],
         board: &Board,
     ) -> EvalNumber {
