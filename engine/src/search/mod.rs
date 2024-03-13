@@ -109,6 +109,7 @@ impl Search {
         let mut best_score = Eval::evaluate(
             &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLES,
             &eval_data::END_GAME_PIECE_SQUARE_TABLES,
+            &eval_data::PHASES,
             &self.board,
         );
         if best_score > alpha {
@@ -486,6 +487,7 @@ mod tests {
             Eval::evaluate(
                 &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLES,
                 &eval_data::END_GAME_PIECE_SQUARE_TABLES,
+                &eval_data::PHASES,
                 &quiet
             )
         );
