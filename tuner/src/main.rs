@@ -134,14 +134,14 @@ const PHASES: [i32; 5] = {:#?};",
                 new_psqts[table_number][index] += PSQT_ADJUSTMENT_VALUE;
 
                 let mut new_error =
-                    mean_square_error(data_set, k, &new_psqts[0], &new_psqts[1], phases);
+                    mean_square_error(data_set, k, &new_psqts[0], &new_psqts[1], &best_phases);
 
                 if new_error < best_error {
                     println!("{new_error} Found better params +");
                 } else {
                     new_psqts[table_number][index] -= PSQT_ADJUSTMENT_VALUE * 2;
                     new_error =
-                        mean_square_error(data_set, k, &new_psqts[0], &new_psqts[1], phases);
+                        mean_square_error(data_set, k, &new_psqts[0], &new_psqts[1], &best_phases);
 
                     if new_error < best_error {
                         println!("{new_error} Found better params -");
@@ -153,7 +153,7 @@ const PHASES: [i32; 5] = {:#?};",
                 improved = true;
                 best_error = new_error;
                 best_psqt = new_psqts;
-                log_params(best_psqt[0], best_psqt[1], *phases);
+                log_params(best_psqt[0], best_psqt[1], best_phases);
             }
         }
         for index in 0..5 {
