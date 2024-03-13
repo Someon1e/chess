@@ -38,7 +38,8 @@ impl Eval {
         piece_index: usize,
         square_index: usize,
     ) -> (EvalNumber, EvalNumber) {
-        let middle_game_piece_score = middle_game_piece_square_tables[piece_index * 64 + square_index];
+        let middle_game_piece_score =
+            middle_game_piece_square_tables[piece_index * 64 + square_index];
         let end_game_piece_score = end_game_piece_square_tables[piece_index * 64 + square_index];
 
         (middle_game_piece_score, end_game_piece_score)
@@ -46,12 +47,13 @@ impl Eval {
 
     fn calculate_score(
         phase: EvalNumber,
+        total_phase: EvalNumber,
         middle_game_score: EvalNumber,
         end_game_score: EvalNumber,
     ) -> EvalNumber {
-        let middle_game_phase = phase.min(2400);
-        let end_game_phase = 2400 - middle_game_phase;
-        (middle_game_score * middle_game_phase + end_game_score * end_game_phase) / 2400
+        let middle_game_phase = phase.min(total_phase);
+        let end_game_phase = total_phase - middle_game_phase;
+        (middle_game_score * middle_game_phase + end_game_score * end_game_phase) / total_phase
     }
 
     pub fn evaluate(
@@ -60,6 +62,13 @@ impl Eval {
         phases: &[EvalNumber; 5],
         board: &Board,
     ) -> EvalNumber {
+        let mut total_phase = 0;
+        total_phase += phases[0] * 16;
+        total_phase += phases[1] * 4;
+        total_phase += phases[2] * 4;
+        total_phase += phases[3] * 4;
+        total_phase += phases[4] * 2;
+
         let mut total_middle_game_score = 0;
         let mut total_end_game_score = 0;
 
@@ -98,7 +107,7 @@ impl Eval {
         }
 
         let phase = Self::get_phase(board, phases);
-        Self::calculate_score(phase, total_middle_game_score, total_end_game_score)
+        Self::calculate_score(phase, total_phase, total_middle_game_score, total_end_game_score)
             * if board.white_to_move { 1 } else { -1 }
     }
 }
