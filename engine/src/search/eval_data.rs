@@ -124,7 +124,7 @@ pub const END_GAME_PIECE_SQUARE_TABLES: [EvalNumber; 384] = [
      -60, -48, -29, -11, -35, -12, -34, -61,
 ];
 
-pub const PHASES: [u32; 5] = [
+pub const PHASES: [EvalNumber; 5] = [
     000, // Pawn
     100, // Knight
     100, // Bishop
