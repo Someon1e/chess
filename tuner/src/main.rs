@@ -37,6 +37,7 @@ fn mean_square_error(
     k: f64,
     middle_game_piece_square_tables: &[[i32; 64]; 6],
     end_game_piece_square_tables: &[[i32; 64]; 6],
+    phases: &[u32; 5],
 ) -> f64 {
     let error: f64 = data_set
         .par_iter()
@@ -45,6 +46,7 @@ fn mean_square_error(
                 Eval::evaluate(
                     middle_game_piece_square_tables,
                     end_game_piece_square_tables,
+                    phases,
                     board,
                 ) * if board.white_to_move { 1 } else { -1 },
             );
@@ -80,6 +82,7 @@ fn tune(
     k: f64,
     middle_game_piece_square_tables: &[[i32; 64]; 6],
     end_game_piece_square_tables: &[[i32; 64]; 6],
+    phases: &[u32; 5],
 ) {
     const ADJUSTMENT_VALUE: i32 = 1;
     let mut best_error = mean_square_error(
@@ -87,17 +90,20 @@ fn tune(
         k,
         middle_game_piece_square_tables,
         end_game_piece_square_tables,
+        phases,
     );
     println!("Currently {best_error}");
 
-    let log_params = |a, b| {
+    let log_params = |psqt_1, psqt_2, new_phases| {
         std::fs::write(
             "tuned.rs",
             format!(
                 "const MIDDLE_GAME_PIECE_SQUARE_TABLES: [[i32; 64]; 6] = {};
-const END_GAME_PIECE_SQUARE_TABLES: [[i32; 64]; 6] = {};",
-                pretty_piece_square_tables(a),
-                pretty_piece_square_tables(b)
+const END_GAME_PIECE_SQUARE_TABLES: [[i32; 64]; 6] = {};
+const PHASES: [u32; 5] = {:#?}",
+                pretty_piece_square_tables(psqt_1),
+                pretty_piece_square_tables(psqt_2),
+                new_phases
             ),
         )
         .unwrap();
@@ -105,6 +111,7 @@ const END_GAME_PIECE_SQUARE_TABLES: [[i32; 64]; 6] = {};",
     log_params(
         *middle_game_piece_square_tables,
         *end_game_piece_square_tables,
+        phases,
     );
 
     let mut best_params = [
@@ -123,13 +130,14 @@ const END_GAME_PIECE_SQUARE_TABLES: [[i32; 64]; 6] = {};",
                     new_params[table_number][piece][square] += ADJUSTMENT_VALUE;
 
                     let mut new_error =
-                        mean_square_error(data_set, k, &new_params[0], &new_params[1]);
+                        mean_square_error(data_set, k, &new_params[0], &new_params[1], phases);
 
                     if new_error < best_error {
                         println!("{new_error} Found better params +");
                     } else {
                         new_params[table_number][piece][square] -= ADJUSTMENT_VALUE * 2;
-                        new_error = mean_square_error(data_set, k, &new_params[0], &new_params[1]);
+                        new_error =
+                            mean_square_error(data_set, k, &new_params[0], &new_params[1], phases);
 
                         if new_error < best_error {
                             println!("{new_error} Found better params -");
@@ -141,7 +149,7 @@ const END_GAME_PIECE_SQUARE_TABLES: [[i32; 64]; 6] = {};",
                     improved = true;
                     best_error = new_error;
                     best_params = new_params;
-                    log_params(best_params[0], best_params[1]);
+                    log_params(best_params[0], best_params[1], phases);
                 }
             }
         }
@@ -154,6 +162,7 @@ fn find_k(
     data_set: &[(Board, f64)],
     middle_game_piece_square_tables: &[[i32; 64]; 6],
     end_game_piece_square_tables: &[[i32; 64]; 6],
+    phases: &[u32; 5],
 ) -> f64 {
     let mut min = -10.0;
     let mut max = 10.0;
@@ -171,6 +180,7 @@ fn find_k(
                 min,
                 middle_game_piece_square_tables,
                 end_game_piece_square_tables,
+                phases,
             );
             if error < best_error {
                 best_error = error;
@@ -317,6 +327,14 @@ fn main() {
         ],
     ];
 
+    let phases: [u32; 5] = [
+        000, // Pawn
+        100, // Knight
+        100, // Bishop
+        200, // Rook
+        400, // Queen
+    ];
+
     let time = Instant::now();
 
     let data_set = parse_data_set();
@@ -325,16 +343,21 @@ fn main() {
         &data_set,
         &middle_game_piece_square_tables,
         &end_game_piece_square_tables,
+        &phases,
     );
 
     println!("{k}");
     println!("Found k in {} seconds", time.elapsed().as_secs_f64());
 
+    if true {
+        return;
+    };
     tune(
         &data_set,
         k,
         &middle_game_piece_square_tables,
         &end_game_piece_square_tables,
+        &phases,
     );
 
     println!("Tuned in {} seconds", time.elapsed().as_secs_f64());

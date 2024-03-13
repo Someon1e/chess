@@ -2,28 +2,33 @@ use crate::board::{piece::Piece, Board};
 
 use super::eval_data::EvalNumber;
 
-pub struct Eval {}
+pub struct Eval;
 impl Eval {
-    pub fn get_phase(board: &Board) -> EvalNumber {
+    pub fn get_phase(board: &Board, phases: &[u32; 5]) -> EvalNumber {
         let mut phase = 0;
-        for piece in Piece::ALL_PIECES {
-            match piece {
-                Piece::WhitePawn | Piece::BlackPawn => {}
-                Piece::WhiteKnight | Piece::BlackKnight => {
-                    phase += 1 * board.get_bit_board(piece).count();
-                }
-                Piece::WhiteBishop | Piece::BlackBishop => {
-                    phase += 1 * board.get_bit_board(piece).count();
-                }
-                Piece::WhiteRook | Piece::BlackRook => {
-                    phase += 2 * board.get_bit_board(piece).count();
-                }
-                Piece::WhiteQueen | Piece::BlackQueen => {
-                    phase += 4 * board.get_bit_board(piece).count();
-                }
-                Piece::WhiteKing | Piece::BlackKing => {}
-            }
-        }
+
+        phase += phases[0]
+            * ((*board.get_bit_board(Piece::WhitePawn) | *board.get_bit_board(Piece::BlackPawn))
+                .count());
+
+        phase += phases[1]
+            * ((*board.get_bit_board(Piece::WhiteKnight)
+                | *board.get_bit_board(Piece::BlackKnight))
+            .count());
+
+        phase += phases[2]
+            * ((*board.get_bit_board(Piece::WhiteBishop)
+                | *board.get_bit_board(Piece::BlackBishop))
+            .count());
+
+        phase += phases[3]
+            * ((*board.get_bit_board(Piece::WhiteRook) | *board.get_bit_board(Piece::BlackRook))
+                .count());
+
+        phase += phases[4]
+            * ((*board.get_bit_board(Piece::WhiteQueen) | *board.get_bit_board(Piece::BlackQueen))
+                .count());
+
         phase as EvalNumber
     }
 
@@ -44,14 +49,15 @@ impl Eval {
         middle_game_score: EvalNumber,
         end_game_score: EvalNumber,
     ) -> EvalNumber {
-        let middle_game_phase = phase.min(24);
-        let end_game_phase = 24 - middle_game_phase;
-        (middle_game_score * middle_game_phase + end_game_score * end_game_phase) / 24
+        let middle_game_phase = phase.min(2400);
+        let end_game_phase = 2400 - middle_game_phase;
+        (middle_game_score * middle_game_phase + end_game_score * end_game_phase) / 2400
     }
 
     pub fn evaluate(
         middle_game_piece_square_tables: &[[EvalNumber; 64]; 6],
         end_game_piece_square_tables: &[[EvalNumber; 64]; 6],
+        phases: &[u32; 5],
         board: &Board,
     ) -> EvalNumber {
         let mut total_middle_game_score = 0;
@@ -91,7 +97,7 @@ impl Eval {
             }
         }
 
-        let phase = Self::get_phase(board);
+        let phase = Self::get_phase(board, phases);
         Self::calculate_score(phase, total_middle_game_score, total_end_game_score)
             * if board.white_to_move { 1 } else { -1 }
     }
@@ -112,10 +118,12 @@ mod tests {
             Eval::evaluate(
                 &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLES,
                 &eval_data::END_GAME_PIECE_SQUARE_TABLES,
+                &eval_data::PHASES,
                 &one_step_from_promoting_pawn
             ) > Eval::evaluate(
                 &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLES,
                 &eval_data::END_GAME_PIECE_SQUARE_TABLES,
+                &eval_data::PHASES,
                 &starting_rank_pawn
             )
         );
@@ -129,10 +137,12 @@ mod tests {
             Eval::evaluate(
                 &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLES,
                 &eval_data::END_GAME_PIECE_SQUARE_TABLES,
+                &eval_data::PHASES,
                 &centralised_knight
             ) > Eval::evaluate(
                 &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLES,
                 &eval_data::END_GAME_PIECE_SQUARE_TABLES,
+                &eval_data::PHASES,
                 &knight_on_the_edge
             )
         );
