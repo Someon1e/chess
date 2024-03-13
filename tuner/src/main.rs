@@ -158,6 +158,7 @@ const PHASES: [i32; 5] = {:#?};",
         }
         for index in 0..5 {
             let mut new_phases = best_phases;
+            new_phases[index] += PHASE_ADJUSTMENT_VALUE;
 
             let mut new_error =
                 mean_square_error(data_set, k, &best_psqt[0], &best_psqt[1], &new_phases);
