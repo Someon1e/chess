@@ -37,7 +37,7 @@ fn mean_square_error(
     k: f64,
     middle_game_piece_square_tables: &[i32; 384],
     end_game_piece_square_tables: &[i32; 384],
-    phases: &[u32; 5],
+    phases: &[i32; 5],
 ) -> f64 {
     let error: f64 = data_set
         .par_iter()
@@ -84,9 +84,11 @@ fn tune(
     k: f64,
     middle_game_piece_square_tables: &[i32; 384],
     end_game_piece_square_tables: &[i32; 384],
-    phases: &[u32; 5],
+    phases: &[i32; 5],
 ) {
-    const ADJUSTMENT_VALUE: i32 = 1;
+    const PSQT_ADJUSTMENT_VALUE: i32 = 1;
+    const PHASE_ADJUSTMENT_VALUE: i32 = 1;
+
     let mut best_error = mean_square_error(
         data_set,
         k,
@@ -102,7 +104,7 @@ fn tune(
             format!(
                 "const MIDDLE_GAME_PIECE_SQUARE_TABLES: [i32; 384] = {};
 const END_GAME_PIECE_SQUARE_TABLES: [i32; 384] = {};
-const PHASES: [u32; 5] = {:#?}",
+const PHASES: [i32; 5] = {:#?};",
                 pretty_piece_square_tables(psqt_1),
                 pretty_piece_square_tables(psqt_2),
                 new_phases
@@ -113,13 +115,14 @@ const PHASES: [u32; 5] = {:#?}",
     log_params(
         *middle_game_piece_square_tables,
         *end_game_piece_square_tables,
-        phases,
+        *phases,
     );
 
-    let mut best_params = [
+    let mut best_psqt = [
         *middle_game_piece_square_tables,
         *end_game_piece_square_tables,
     ];
+    let mut best_phases = *phases;
     let mut improved = true;
 
     while improved {
@@ -127,18 +130,18 @@ const PHASES: [u32; 5] = {:#?}",
 
         for table_number in 0..2 {
             for index in 0..384 {
-                let mut new_params: [[i32; 384]; 2] = best_params;
-                new_params[table_number][index] += ADJUSTMENT_VALUE;
+                let mut new_psqts: [[i32; 384]; 2] = best_psqt;
+                new_psqts[table_number][index] += PSQT_ADJUSTMENT_VALUE;
 
                 let mut new_error =
-                    mean_square_error(data_set, k, &new_params[0], &new_params[1], phases);
+                    mean_square_error(data_set, k, &new_psqts[0], &new_psqts[1], phases);
 
                 if new_error < best_error {
                     println!("{new_error} Found better params +");
                 } else {
-                    new_params[table_number][index] -= ADJUSTMENT_VALUE * 2;
+                    new_psqts[table_number][index] -= PSQT_ADJUSTMENT_VALUE * 2;
                     new_error =
-                        mean_square_error(data_set, k, &new_params[0], &new_params[1], phases);
+                        mean_square_error(data_set, k, &new_psqts[0], &new_psqts[1], phases);
 
                     if new_error < best_error {
                         println!("{new_error} Found better params -");
@@ -149,9 +152,34 @@ const PHASES: [u32; 5] = {:#?}",
 
                 improved = true;
                 best_error = new_error;
-                best_params = new_params;
-                log_params(best_params[0], best_params[1], phases);
+                best_psqt = new_psqts;
+                log_params(best_psqt[0], best_psqt[1], *phases);
             }
+        }
+        for index in 0..5 {
+            let mut new_phases = best_phases;
+
+            let mut new_error =
+                mean_square_error(data_set, k, &best_psqt[0], &best_psqt[1], &new_phases);
+
+            if new_error < best_error {
+                println!("{new_error} Found better params +");
+            } else {
+                new_phases[index] -= PHASE_ADJUSTMENT_VALUE * 2;
+                new_error =
+                    mean_square_error(data_set, k, &best_psqt[0], &best_psqt[1], &new_phases);
+
+                if new_error < best_error {
+                    println!("{new_error} Found better params -");
+                } else {
+                    continue;
+                }
+            }
+
+            improved = true;
+            best_error = new_error;
+            best_phases = new_phases;
+            log_params(best_psqt[0], best_psqt[1], best_phases);
         }
 
         println!("Finished one iteration");
@@ -162,7 +190,7 @@ fn find_k(
     data_set: &[(Board, f64)],
     middle_game_piece_square_tables: &[i32; 384],
     end_game_piece_square_tables: &[i32; 384],
-    phases: &[u32; 5],
+    phases: &[i32; 5],
 ) -> f64 {
     let mut min = -10.0;
     let mut max = 10.0;
@@ -323,7 +351,7 @@ fn main() {
       -60, -48, -29, -11, -35, -12, -34, -61,
     ];
 
-    let phases: [u32; 5] = [
+    let phases: [i32; 5] = [
         000, // Pawn
         100, // Knight
         100, // Bishop
@@ -342,12 +370,8 @@ fn main() {
         &phases,
     );
 
-    println!("{k}");
-    println!("Found k in {} seconds", time.elapsed().as_secs_f64());
+    println!("Found k: {k} in {} seconds", time.elapsed().as_secs_f64());
 
-    if true {
-        return;
-    };
     tune(
         &data_set,
         k,

@@ -4,32 +4,32 @@ use super::eval_data::EvalNumber;
 
 pub struct Eval;
 impl Eval {
-    pub fn get_phase(board: &Board, phases: &[u32; 5]) -> EvalNumber {
+    pub fn get_phase(board: &Board, phases: &[EvalNumber; 5]) -> EvalNumber {
         let mut phase = 0;
 
         phase += phases[0]
             * ((*board.get_bit_board(Piece::WhitePawn) | *board.get_bit_board(Piece::BlackPawn))
-                .count());
+                .count()) as EvalNumber;
 
         phase += phases[1]
             * ((*board.get_bit_board(Piece::WhiteKnight)
                 | *board.get_bit_board(Piece::BlackKnight))
-            .count());
+            .count()) as EvalNumber;
 
         phase += phases[2]
             * ((*board.get_bit_board(Piece::WhiteBishop)
                 | *board.get_bit_board(Piece::BlackBishop))
-            .count());
+            .count()) as EvalNumber;
 
         phase += phases[3]
             * ((*board.get_bit_board(Piece::WhiteRook) | *board.get_bit_board(Piece::BlackRook))
-                .count());
+                .count()) as EvalNumber;
 
         phase += phases[4]
             * ((*board.get_bit_board(Piece::WhiteQueen) | *board.get_bit_board(Piece::BlackQueen))
-                .count());
+                .count()) as EvalNumber;
 
-        phase as EvalNumber
+        phase
     }
 
     fn get_piece_value(
@@ -57,7 +57,7 @@ impl Eval {
     pub fn evaluate(
         middle_game_piece_square_tables: &[EvalNumber; 384],
         end_game_piece_square_tables: &[EvalNumber; 384],
-        phases: &[u32; 5],
+        phases: &[EvalNumber; 5],
         board: &Board,
     ) -> EvalNumber {
         let mut total_middle_game_score = 0;
