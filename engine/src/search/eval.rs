@@ -4,6 +4,7 @@ use super::eval_data::EvalNumber;
 
 pub struct Eval;
 impl Eval {
+    #[must_use]
     pub fn get_phase(board: &Board, phases: &[EvalNumber; 5]) -> EvalNumber {
         let mut phase = 0;
 
@@ -32,6 +33,7 @@ impl Eval {
         phase
     }
 
+    #[must_use]
     fn get_piece_value(
         middle_game_piece_square_tables: &[EvalNumber; 384],
         end_game_piece_square_tables: &[EvalNumber; 384],
@@ -45,6 +47,7 @@ impl Eval {
         (middle_game_piece_score, end_game_piece_score)
     }
 
+    #[must_use]
     fn calculate_score(
         phase: EvalNumber,
         total_phase: EvalNumber,
@@ -56,6 +59,7 @@ impl Eval {
         (middle_game_score * middle_game_phase + end_game_score * end_game_phase) / total_phase
     }
 
+    #[must_use]
     pub fn evaluate(
         middle_game_piece_square_tables: &[EvalNumber; 384],
         end_game_piece_square_tables: &[EvalNumber; 384],
@@ -107,8 +111,12 @@ impl Eval {
         }
 
         let phase = Self::get_phase(board, phases);
-        Self::calculate_score(phase, total_phase, total_middle_game_score, total_end_game_score)
-            * if board.white_to_move { 1 } else { -1 }
+        Self::calculate_score(
+            phase,
+            total_phase,
+            total_middle_game_score,
+            total_end_game_score,
+        ) * if board.white_to_move { 1 } else { -1 }
     }
 }
 
