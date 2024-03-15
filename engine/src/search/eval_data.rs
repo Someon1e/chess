@@ -124,10 +124,4 @@ pub const END_GAME_PIECE_SQUARE_TABLES: [EvalNumber; 384] = [
  -55, -37, -18,  -6, -27, -10, -33, -59,
 ];
 
-pub const PHASES: [EvalNumber; 5] = [
-    0,
-    81,
-    114,
-    174,
-    430,
-];
+pub const PHASES: [EvalNumber; 5] = [0, 81, 114, 174, 430];
