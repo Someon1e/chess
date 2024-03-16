@@ -21,7 +21,6 @@ pub struct Board {
     pub full_move_counter: u64,
 
     pub game_state: GameState,
-    pub history: Vec<GameState>,
 }
 
 impl Display for Board {

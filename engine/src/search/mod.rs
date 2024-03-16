@@ -5,7 +5,7 @@ mod move_ordering;
 mod transposition;
 
 use crate::{
-    board::{zobrist::Zobrist, Board},
+    board::{game_state::GameState, zobrist::Zobrist, Board},
     move_generator::{move_data::Move, MoveGenerator},
 };
 
@@ -129,9 +129,9 @@ impl Search {
                     .move_data
                     .decode();
 
-            self.board.make_move(&move_data);
+            let old_state = self.board.make_move(&move_data);
             let score = -self.quiescence_search(-beta, -alpha);
-            self.board.unmake_move(&move_data);
+            self.board.unmake_move(&move_data, &old_state);
 
             if score > best_score {
                 best_score = score;
@@ -147,12 +147,12 @@ impl Search {
         }
         best_score
     }
-    pub fn make_move(&mut self, move_data: &Move) {
+    pub fn make_move(&mut self, move_data: &Move) -> GameState {
         self.repetition_table.push(self.board.zobrist_key());
-        self.board.make_move(move_data);
+        self.board.make_move(move_data)
     }
-    pub fn unmake_move(&mut self, move_data: &Move) {
-        self.board.unmake_move(move_data);
+    pub fn unmake_move(&mut self, move_data: &Move, old_state: &GameState) {
+        self.board.unmake_move(move_data, old_state);
 
         let zobrist_key = self.board.zobrist_key();
         for (index, other_key) in self.repetition_table.iter().enumerate().rev() {
@@ -243,7 +243,7 @@ impl Search {
             && move_generator.friendly_pawns().count() + 1
                 != move_generator.friendly_pieces().count()
         {
-            self.board.make_null_move();
+            let old_state = self.board.make_null_move();
 
             let score = -self.negamax(
                 should_cancel,
@@ -253,7 +253,7 @@ impl Search {
                 -beta,
                 -beta + 1,
             );
-            self.board.unmake_null_move();
+            self.board.unmake_null_move(&old_state);
 
             if score >= beta {
                 return score;
@@ -299,7 +299,7 @@ impl Search {
             let move_data = encoded_move_data.decode();
 
             let is_capture = move_generator.enemy_piece_bit_board().get(&move_data.to);
-            self.make_move(&move_data);
+            let old_state = self.make_move(&move_data);
 
             // Search deeper when in check
             let check_extension = MoveGenerator::calculate_is_in_check(&self.board);
@@ -349,7 +349,7 @@ impl Search {
                 );
             }
 
-            self.unmake_move(&move_data);
+            self.unmake_move(&move_data, &old_state);
             if should_cancel() {
                 return 0;
             }

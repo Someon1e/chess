@@ -93,7 +93,6 @@ impl Board {
             full_move_counter,
 
             game_state,
-            history: Vec::new(),
         }
     }
     #[must_use]
