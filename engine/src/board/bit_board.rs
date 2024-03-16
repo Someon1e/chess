@@ -25,17 +25,17 @@ impl fmt::Display for BitBoard {
 }
 
 impl BitBoard {
-    pub const NOT_A_FILE: BitBoard = BitBoard::new(!0x101010101010101);
-    pub const NOT_H_FILE: BitBoard = BitBoard::new(!(0x101010101010101 << 7));
+    pub const NOT_A_FILE: BitBoard = Self(!0x101010101010101);
+    pub const NOT_H_FILE: BitBoard = Self(!(0x101010101010101 << 7));
 
-    pub const RANK_1: BitBoard = Self::new(0b11111111);
-    pub const RANK_2: BitBoard = Self::new(0b11111111 << 8);
-    pub const RANK_3: BitBoard = Self::new(0b11111111 << 16);
-    pub const RANK_4: BitBoard = Self::new(0b11111111 << 24);
-    pub const RANK_5: BitBoard = Self::new(0b11111111 << 32);
-    pub const RANK_6: BitBoard = Self::new(0b11111111 << 40);
-    pub const RANK_7: BitBoard = Self::new(0b11111111 << 48);
-    pub const RANK_8: BitBoard = Self::new(0b11111111 << 56);
+    pub const RANK_1: BitBoard = Self(0b11111111);
+    pub const RANK_2: BitBoard = Self(0b11111111 << 8);
+    pub const RANK_3: BitBoard = Self(0b11111111 << 16);
+    pub const RANK_4: BitBoard = Self(0b11111111 << 24);
+    pub const RANK_5: BitBoard = Self(0b11111111 << 32);
+    pub const RANK_6: BitBoard = Self(0b11111111 << 40);
+    pub const RANK_7: BitBoard = Self(0b11111111 << 48);
+    pub const RANK_8: BitBoard = Self(0b11111111 << 56);
 
     pub const EMPTY: Self = Self(0);
     pub const FULL: Self = Self(!0);
@@ -46,24 +46,24 @@ impl BitBoard {
     }
     #[must_use]
     pub fn is_empty(&self) -> bool {
-        self.0 == 0
+        *self == Self::EMPTY
     }
     #[must_use]
     pub fn is_not_empty(&self) -> bool {
-        self.0 != 0
+        *self != Self::EMPTY
     }
     #[must_use]
     pub fn from_square(square: &Square) -> Self {
         Self(1 << square.index())
     }
     pub fn set(&mut self, square: &Square) {
-        self.0 |= square.bit_board().0;
+        *self |= square.bit_board();
     }
     pub fn unset(&mut self, square: &Square) {
-        self.0 &= !(square.bit_board().0);
+        *self &= !square.bit_board();
     }
     pub fn toggle(&mut self, a: &Square, b: &Square) {
-        self.0 ^= (a.bit_board() | b.bit_board()).0;
+        *self ^= a.bit_board() | b.bit_board();
     }
     #[must_use]
     pub fn overlaps(&self, bit_board: &BitBoard) -> bool {
@@ -93,7 +93,7 @@ impl BitBoard {
     }
     #[must_use]
     pub fn carry_rippler(&self, d: Self) -> Self {
-        BitBoard::new(self.0.wrapping_sub(d.0) & d.0)
+        Self(self.0.wrapping_sub(d.0) & d.0)
     }
     #[must_use]
     pub fn magic_index(&self, magic: u64, shift: u8) -> usize {
