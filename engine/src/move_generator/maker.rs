@@ -1,10 +1,11 @@
-use crate::board::{piece::Piece, square::Square, Board};
+use crate::board::{game_state::GameState, piece::Piece, square::Square, Board};
 
 use super::move_data::{Flag, Move};
 
 impl Board {
-    pub fn make_null_move(&mut self) {
-        self.history.push(self.game_state);
+    pub fn make_null_move(&mut self) -> GameState {
+        let old_state = self.game_state;
+
         self.white_to_move = !self.white_to_move;
         self.game_state.zobrist_key.flip_side_to_move();
         let en_passant_square = self.game_state.en_passant_square;
@@ -15,13 +16,14 @@ impl Board {
                 .xor_en_passant(&en_passant_square);
         }
         self.game_state.en_passant_square = None;
+        old_state
     }
-    pub fn unmake_null_move(&mut self) {
-        self.game_state = self.history.pop().unwrap();
+    pub fn unmake_null_move(&mut self, old_state: &GameState) {
+        self.game_state = *old_state;
         self.white_to_move = !self.white_to_move;
     }
-    pub fn make_move(&mut self, move_data: &Move) {
-        self.history.push(self.game_state);
+    pub fn make_move(&mut self, move_data: &Move) -> GameState {
+        let old_state = self.game_state;
 
         let white_to_move = self.white_to_move;
 
@@ -150,10 +152,12 @@ impl Board {
         }
 
         self.white_to_move = !white_to_move;
+
+        old_state
     }
-    pub fn unmake_move(&mut self, move_data: &Move) {
+    pub fn unmake_move(&mut self, move_data: &Move, old_state: &GameState) {
         let capture = self.game_state.captured;
-        self.game_state = self.history.pop().unwrap();
+        self.game_state = *old_state;
 
         let white_to_move = !self.white_to_move;
         self.white_to_move = white_to_move;
