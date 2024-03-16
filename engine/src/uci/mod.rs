@@ -66,6 +66,8 @@ impl UCIProcessor {
         (self.out)(
             "id name chess
 id author someone
+option name Hash type spin default 32 min 32 max 32
+option name Threads type spin default 1 min 1 max 1
 uciok",
         );
     }
