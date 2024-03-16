@@ -137,10 +137,10 @@ implement_assign_op!(BitXorAssign, bitxor_assign, ^);
 
 macro_rules! shift {
     ($op:ident, $name:ident, $operator:tt) => {
-        impl $op<u64> for BitBoard {
+        impl $op<u8> for BitBoard {
             type Output = BitBoard;
 
-            fn $name(self, rhs: u64) -> Self::Output {
+            fn $name(self, rhs: u8) -> Self::Output {
                Self(self.0 $operator rhs)
             }
         }
