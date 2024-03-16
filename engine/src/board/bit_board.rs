@@ -62,7 +62,10 @@ impl BitBoard {
     pub fn unset(&mut self, square: &Square) {
         *self &= !square.bit_board();
     }
-    pub fn toggle(&mut self, a: &Square, b: &Square) {
+    pub fn toggle(&mut self, square: &Square) {
+        *self ^= square.bit_board();
+    }
+    pub fn toggle_two(&mut self, a: &Square, b: &Square) {
         *self ^= a.bit_board() | b.bit_board();
     }
     #[must_use]
