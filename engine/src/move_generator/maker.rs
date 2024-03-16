@@ -71,13 +71,13 @@ impl Board {
         let moving_bit_board = self.get_bit_board_mut(piece);
 
         if let Some(promotion_piece) = promotion_piece {
-            moving_bit_board.unset(&move_data.from);
+            moving_bit_board.toggle(&move_data.from);
             self.get_bit_board_mut(promotion_piece).set(&move_data.to);
             self.game_state
                 .zobrist_key
                 .xor_piece(promotion_piece as usize, move_data.to.usize());
         } else {
-            moving_bit_board.toggle(&move_data.from, &move_data.to);
+            moving_bit_board.toggle_two(&move_data.from, &move_data.to);
             self.game_state
                 .zobrist_key
                 .xor_piece(piece as usize, move_data.to.usize());
@@ -113,7 +113,7 @@ impl Board {
                 let rook_bit_board = self.get_bit_board_mut(rook);
                 let rook_from = &move_data.to.offset(rook_from_offset);
                 let rook_to = &move_data.to.offset(rook_to_offset);
-                rook_bit_board.toggle(rook_from, rook_to);
+                rook_bit_board.toggle_two(rook_from, rook_to);
                 self.game_state
                     .zobrist_key
                     .xor_piece(rook as usize, rook_from.usize());
@@ -134,7 +134,7 @@ impl Board {
                 self.game_state.captured = Some(captured);
 
                 let capturing_bit_board = self.get_bit_board_mut(captured);
-                capturing_bit_board.unset(&capture_position);
+                capturing_bit_board.toggle(&capture_position);
                 self.game_state
                     .zobrist_key
                     .xor_piece(captured as usize, capture_position.usize());
@@ -143,7 +143,7 @@ impl Board {
                 self.game_state.captured = self.enemy_piece_at(move_data.to);
                 if let Some(captured) = self.game_state.captured {
                     let capturing_bit_board = self.get_bit_board_mut(captured);
-                    capturing_bit_board.unset(&move_data.to);
+                    capturing_bit_board.toggle(&move_data.to);
                     self.game_state
                         .zobrist_key
                         .xor_piece(captured as usize, move_data.to.usize());
@@ -167,7 +167,7 @@ impl Board {
             Flag::None => {
                 let moving_bit_board =
                     self.get_bit_board_mut(self.friendly_piece_at(move_data.to).unwrap());
-                moving_bit_board.toggle(&move_data.from, &move_data.to);
+                moving_bit_board.toggle_two(&move_data.from, &move_data.to);
 
                 if let Some(capture) = capture {
                     let capturing_bit_board = self.get_bit_board_mut(capture);
@@ -181,7 +181,7 @@ impl Board {
                 } else {
                     Piece::BlackPawn
                 });
-                moving_bit_board.toggle(&move_data.from, &move_data.to);
+                moving_bit_board.toggle_two(&move_data.from, &move_data.to);
             }
 
             Flag::RookPromotion
@@ -195,7 +195,7 @@ impl Board {
                 });
                 moving_bit_board.set(&move_data.from);
                 self.get_bit_board_mut(flag.get_promotion_piece(white_to_move).unwrap())
-                    .unset(&move_data.to);
+                    .toggle(&move_data.to);
 
                 if let Some(capture) = capture {
                     let capturing_bit_board = self.get_bit_board_mut(capture);
@@ -218,7 +218,7 @@ impl Board {
                 } else {
                     Piece::BlackPawn
                 });
-                moving_bit_board.toggle(&move_data.from, &move_data.to);
+                moving_bit_board.toggle_two(&move_data.from, &move_data.to);
             }
 
             Flag::Castle => {
@@ -230,7 +230,7 @@ impl Board {
                 } else {
                     self.get_bit_board_mut(Piece::BlackRook)
                 };
-                rook_bit_board.toggle(
+                rook_bit_board.toggle_two(
                     &move_data.to.offset(rook_from_offset),
                     &move_data.to.offset(rook_to_offset),
                 );
@@ -240,7 +240,7 @@ impl Board {
                 } else {
                     Piece::BlackKing
                 });
-                moving_bit_board.toggle(&move_data.from, &move_data.to);
+                moving_bit_board.toggle_two(&move_data.from, &move_data.to);
             }
         };
     }
