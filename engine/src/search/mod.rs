@@ -24,6 +24,11 @@ const CHECKMATE_SCORE: EvalNumber = IMMEDIATE_CHECKMATE_SCORE.abs() - (Ply::MAX 
 
 const NOT_LATE_MOVES: usize = 3;
 
+const USE_LATE_MOVE_REDUCTION: bool = true;
+const USE_NULL_MOVE_PRUNING: bool = true;
+const USE_PVS: bool = true;
+const USE_KILLER_MOVE: bool = true;
+
 pub struct Search {
     board: Board,
 
@@ -232,7 +237,7 @@ impl Search {
         let move_generator = MoveGenerator::new(&self.board);
 
         // Null move pruning
-        if is_not_pv_node
+        if USE_NULL_MOVE_PRUNING && is_not_pv_node
             && allow_null_move
             && ply_remaining > 2
 
@@ -265,7 +270,7 @@ impl Search {
             self,
             &move_generator,
             hash_move,
-            if (ply_from_root as usize) < self.killer_moves.len() {
+            if USE_KILLER_MOVE && (ply_from_root as usize) < self.killer_moves.len() {
                 self.killer_moves[ply_from_root as usize]
             } else {
                 EncodedMove::NONE
@@ -307,7 +312,8 @@ impl Search {
             let mut normal_search = check_extension // Do not reduce if extending
                 || is_capture // Do not reduce if it's a capture
                 || index < NOT_LATE_MOVES // Do not reduce if it's not a late move
-                || (ply_remaining) < 3; // Do not reduce if there is little depth remaining
+                || (ply_remaining) < 3 // Do not reduce if there is little depth remaining
+                || !USE_LATE_MOVE_REDUCTION; // Do not reduce if turned off
             let mut score = 0;
 
             if !normal_search {
@@ -327,7 +333,7 @@ impl Search {
                 }
             }
 
-            if normal_search && index != 0 {
+            if USE_PVS && normal_search && index != 0 {
                 score = -self.negamax(
                     should_cancel,
                     ply_remaining - 1 + Ply::from(check_extension),
