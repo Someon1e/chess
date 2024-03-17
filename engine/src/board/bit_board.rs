@@ -103,10 +103,6 @@ impl BitBoard {
         let hash = self.0.wrapping_mul(magic);
         (hash >> shift) as usize
     }
-    #[must_use]
-    pub fn as_usize(&self) -> usize {
-        self.0 as usize
-    }
 }
 
 macro_rules! implement_op {
