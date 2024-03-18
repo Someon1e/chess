@@ -24,8 +24,9 @@ const CHECKMATE_SCORE: EvalNumber = IMMEDIATE_CHECKMATE_SCORE.abs() - (Ply::MAX 
 
 const NOT_LATE_MOVES: usize = 3;
 
-const USE_LATE_MOVE_REDUCTION: bool = true;
 const USE_NULL_MOVE_PRUNING: bool = true;
+const USE_LATE_MOVE_REDUCTION: bool = true;
+const USE_INTERNAL_ITERATIVE_REDUCTION: bool = true;
 const USE_PVS: bool = true;
 const USE_KILLER_MOVE: bool = true;
 
@@ -224,7 +225,7 @@ impl Search {
             // Use iterative deepening move as hash move
             hash_move = self.best_move;
         }
-        if hash_move.is_none() && ply_remaining > 3 {
+        if USE_INTERNAL_ITERATIVE_REDUCTION && hash_move.is_none() && ply_remaining > 3 {
             // Internal iterative reduction
             ply_remaining -= 1;
         }
