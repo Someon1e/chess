@@ -19,7 +19,7 @@ use self::{
 
 type Ply = u8;
 
-const IMMEDIATE_CHECKMATE_SCORE: EvalNumber = -EvalNumber::MAX + 1;
+pub const IMMEDIATE_CHECKMATE_SCORE: EvalNumber = -EvalNumber::MAX + 1;
 const CHECKMATE_SCORE: EvalNumber = IMMEDIATE_CHECKMATE_SCORE.abs() - (Ply::MAX as EvalNumber);
 
 const NOT_LATE_MOVES: usize = 3;
@@ -439,7 +439,7 @@ impl Search {
                 EvalNumber::MAX,
             );
 
-            if self.best_move.is_none() || self.best_score.abs() >= CHECKMATE_SCORE {
+            if self.best_move.is_none() || Self::score_is_checkmate(self.best_score.abs()) {
                 return (depth, self.best_move, self.best_score);
             }
             let stop = depth_completed(depth, (self.best_move, self.best_score));
@@ -448,6 +448,10 @@ impl Search {
             }
         }
         (depth, self.best_move, self.best_score)
+    }
+    #[must_use]
+    pub fn score_is_checkmate(score: EvalNumber) -> bool {
+        score.abs() >= CHECKMATE_SCORE
     }
     #[must_use]
     pub fn iterative_deepening(
@@ -470,7 +474,7 @@ impl Search {
                 break;
             }
 
-            if self.best_move.is_none() || self.best_score.abs() >= CHECKMATE_SCORE {
+            if self.best_move.is_none() || Self::score_is_checkmate(self.best_score) {
                 break;
             }
             depth_completed(depth, (self.best_move, self.best_score));
