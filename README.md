@@ -8,6 +8,7 @@
 - Move ordering
 - Killer move heuristic
 - History heuristic
+- Static null move pruning (also known as reverse futility pruning)
 - Null move heuristic
 - Late move reduction
 - Internal iterative reduction
