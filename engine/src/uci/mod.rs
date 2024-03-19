@@ -6,7 +6,7 @@ use crate::{
     board::{piece::Piece, square::Square, Board},
     move_generator::move_data::{Flag, Move},
     perft::perft_root,
-    search::Search,
+    search::{Search, IMMEDIATE_CHECKMATE_SCORE},
     timer::inner::Time,
 };
 
@@ -169,21 +169,29 @@ uciok",
         };
 
         let search_start = Time::now();
-        let (depth, best_move, evaluation) = search.iterative_deepening(
-            &mut |depth, (best_move, evaluation)| {
+        let output_info = |depth, best_move, evaluation| {
+            if Search::score_is_checkmate(evaluation) {
+                (self.out)(&format!(
+                    "info depth {depth} score mate {} time {} pv {}",
+                    evaluation - IMMEDIATE_CHECKMATE_SCORE,
+                    search_start.miliseconds(),
+                    encode_move(best_move)
+                ));
+            } else {
                 (self.out)(&format!(
                     "info depth {depth} score cp {evaluation} time {} pv {}",
                     search_start.miliseconds(),
-                    encode_move(best_move.decode())
+                    encode_move(best_move)
                 ));
+            }
+        };
+        let (depth, best_move, evaluation) = search.iterative_deepening(
+            &mut |depth, (best_move, evaluation)| {
+                output_info(depth, best_move.decode(), evaluation)
             },
             &mut || search_start.miliseconds() > think_time,
         );
-        (self.out)(&format!(
-            "info depth {depth} score cp {evaluation} time {} pv {}",
-            search_start.miliseconds(),
-            encode_move(best_move.decode())
-        ));
+        output_info(depth, best_move.decode(), evaluation);
         (self.out)(&format!("bestmove {}", encode_move(best_move.decode())));
     }
 
