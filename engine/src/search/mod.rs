@@ -24,6 +24,7 @@ const CHECKMATE_SCORE: EvalNumber = IMMEDIATE_CHECKMATE_SCORE.abs() - (Ply::MAX 
 
 const NOT_LATE_MOVES: usize = 3;
 
+const USE_STATIC_NULL_MOVE_PRUNING: bool = true;
 const USE_NULL_MOVE_PRUNING: bool = true;
 const USE_LATE_MOVE_REDUCTION: bool = true;
 const USE_INTERNAL_ITERATIVE_REDUCTION: bool = true;
@@ -237,32 +238,44 @@ impl Search {
 
         let move_generator = MoveGenerator::new(&self.board);
 
-        // Null move pruning
-        if USE_NULL_MOVE_PRUNING && is_not_pv_node
+        if is_not_pv_node && !move_generator.is_in_check() {
+            // Static null move pruning (also known as reverse futility pruning)
+            if USE_STATIC_NULL_MOVE_PRUNING && ply_remaining < 7 {
+                let static_eval = Eval::evaluate(
+                    &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLES,
+                    &eval_data::END_GAME_PIECE_SQUARE_TABLES,
+                    &eval_data::PHASES,
+                    &self.board,
+                );
+                if static_eval - i32::from(ply_remaining) * 80 > beta {
+                    return static_eval;
+                }
+            }
+
+            // Null move pruning
+            if USE_NULL_MOVE_PRUNING
             && allow_null_move
             && ply_remaining > 2
-
-            // Do not do it if we are in check, they would capture our king
-            && !move_generator.is_in_check()
 
             // Do not do it if we only have pawns and a king
             && move_generator.friendly_pawns().count() + 1
                 != move_generator.friendly_pieces().count()
-        {
-            let old_state = self.board.make_null_move();
+            {
+                let old_state = self.board.make_null_move();
 
-            let score = -self.negamax(
-                should_cancel,
-                ply_remaining - (3 + ply_remaining / 6),
-                ply_from_root + 1,
-                false,
-                -beta,
-                -beta + 1,
-            );
-            self.board.unmake_null_move(&old_state);
+                let score = -self.negamax(
+                    should_cancel,
+                    ply_remaining - (3 + ply_remaining / 6),
+                    ply_from_root + 1,
+                    false,
+                    -beta,
+                    -beta + 1,
+                );
+                self.board.unmake_null_move(&old_state);
 
-            if score >= beta {
-                return score;
+                if score >= beta {
+                    return score;
+                }
             }
         }
 
