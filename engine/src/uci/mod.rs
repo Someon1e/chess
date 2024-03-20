@@ -173,7 +173,7 @@ uciok",
             if Search::score_is_checkmate(evaluation) {
                 (self.out)(&format!(
                     "info depth {depth} score mate {} time {} pv {}",
-                    evaluation - IMMEDIATE_CHECKMATE_SCORE,
+                    (evaluation - IMMEDIATE_CHECKMATE_SCORE.abs()) * -evaluation.signum(),
                     search_start.miliseconds(),
                     encode_move(best_move)
                 ));
