@@ -411,7 +411,7 @@ impl Search {
             }
         }
 
-        // Save in transposition table
+        // Save to transposition table
         self.transposition_table[zobrist_index] = Some(NodeValue {
             zobrist_key,
             ply_remaining,

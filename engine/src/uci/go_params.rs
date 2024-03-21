@@ -39,8 +39,8 @@ impl GoParameters {
                 };
             }
             match label {
-                "searchmoves" => {}
-                "ponder" => {}
+                "searchmoves" => todo!(),
+                "ponder" => todo!("Pondering"),
                 "wtime" => self.white_time = parse_number!(),
                 "btime" => self.black_time = parse_number!(),
                 "winc" => self.white_increment = parse_number!(),
@@ -57,7 +57,7 @@ impl GoParameters {
                 "infinite" => {
                     self.infinite = true;
                 }
-                _ => unimplemented!(),
+                _ => panic!("Unknown parameter"),
             }
         }
     }
