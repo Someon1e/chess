@@ -1,3 +1,5 @@
+// TODO: Less repetition here
+
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum Piece {
     WhitePawn,

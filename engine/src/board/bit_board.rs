@@ -29,6 +29,9 @@ impl BitBoard {
     pub const NOT_H_FILE: BitBoard = Self(!(0x101010101010101 << 7));
 
     pub const RANK_1: BitBoard = Self(0b11111111);
+
+    // TODO: Rewrite as Self::RANK_X << 8;
+    // currently cannot call non-const operator in constants
     pub const RANK_2: BitBoard = Self(0b11111111 << 8);
     pub const RANK_3: BitBoard = Self(0b11111111 << 16);
     pub const RANK_4: BitBoard = Self(0b11111111 << 24);

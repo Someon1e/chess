@@ -27,7 +27,21 @@ const KNIGHT_PROMOTION_BONUS: MoveGuessNum = 10000000;
 const ROOK_PROMOTION_BONUS: MoveGuessNum = 0;
 const BISHOP_PROMOTION_BONUS: MoveGuessNum = 0;
 
-const PIECE_VALUES: [MoveGuessNum; 12] = [100, 300, 320, 500, 900, 0, 100, 300, 320, 500, 900, 0];
+const PIECE_VALUES: [MoveGuessNum; 12] = [
+    100, // Pawn
+    300, // Knight
+    320, // Bishop
+    500, // Rook
+    900, // Queen
+    0,   // King
+
+    100, // Pawn
+    300, // Knight
+    320, // Bishop
+    500, // Rook
+    900, // Queen
+    0,   // King
+];
 
 pub struct MoveOrderer {}
 impl MoveOrderer {
@@ -86,16 +100,23 @@ impl MoveOrderer {
     ) -> MoveGuess {
         let (mut index_of_highest_move, mut highest_guess) =
             (unsorted_index, move_guesses[unsorted_index].guess);
+
+        // Find highest guessed unsorted move
         for index in unsorted_index..move_count {
+            // Iterate part of the array that is unsorted
             let guess = move_guesses[index].guess;
             if guess > highest_guess {
+                // New highest guess
                 highest_guess = guess;
                 index_of_highest_move = index;
             }
         }
+
         if index_of_highest_move != unsorted_index {
+            // Swap highest with first unsorted
             move_guesses.swap(index_of_highest_move, unsorted_index);
         }
+
         move_guesses[unsorted_index]
     }
 

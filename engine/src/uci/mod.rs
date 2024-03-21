@@ -195,7 +195,9 @@ uciok",
         (self.out)(&format!("bestmove {}", encode_move(best_move.decode())));
     }
 
-    pub fn stop(&self) {}
+    pub fn stop(&self) {
+        todo!("Stop search immediately")
+    }
     pub fn ucinewgame(&mut self) {
         // New game, so old data like transposition table will not help
         if let Some(search) = &mut self.search {
