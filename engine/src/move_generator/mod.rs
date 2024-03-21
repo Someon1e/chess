@@ -82,7 +82,7 @@ impl MoveGenerator {
         {
             // Captures
 
-            let non_orthogonally_pinned_pawns = self.friendly_pawns & !(self.orthogonal_pin_rays);
+            let non_orthogonally_pinned_pawns = self.friendly_pawns & !self.orthogonal_pin_rays;
 
             let not_on_the_right_edge = if self.white_to_move {
                 BitBoard::NOT_H_FILE
@@ -742,12 +742,12 @@ impl MoveGenerator {
 
         self.gen_pawns(add_move, captures_only);
         self.gen_knights(add_move, captures_only);
-        let mut friendly_diagonal = (self.friendly_diagonal) & !self.orthogonal_pin_rays;
+        let mut friendly_diagonal = self.friendly_diagonal & !self.orthogonal_pin_rays;
         while friendly_diagonal.is_not_empty() {
             let from = friendly_diagonal.pop_square();
             self.gen_bishop(from, add_move, captures_only);
         }
-        let mut friendly_orthogonal = (self.friendly_orthogonal) & !self.diagonal_pin_rays;
+        let mut friendly_orthogonal = self.friendly_orthogonal & !self.diagonal_pin_rays;
         while friendly_orthogonal.is_not_empty() {
             let from = friendly_orthogonal.pop_square();
             self.gen_rook(from, add_move, captures_only);
