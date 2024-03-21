@@ -34,7 +34,6 @@ const PIECE_VALUES: [MoveGuessNum; 12] = [
     500, // Rook
     900, // Queen
     0,   // King
-
     100, // Pawn
     300, // Knight
     320, // Bishop
