@@ -619,9 +619,8 @@ impl MoveGenerator {
             occupied_squares,
         );
 
-        let check_count = check_mask.count();
-        let is_in_check = check_count > 0;
-        let is_in_double_check = check_count > 1;
+        let is_in_check = check_mask.is_not_empty();
+        let is_in_double_check = check_mask.more_than_one_bit_set();
 
         let mut push_mask = BitBoard::EMPTY;
 
