@@ -8,13 +8,19 @@ pub struct NodeValue {
     pub ply_remaining: Ply,
     pub node_type: NodeType,
     pub value: EvalNumber,
+
+    /// The best move found
     pub transposition_move: EncodedMove,
 }
 
 #[derive(Clone, Copy)]
 pub enum NodeType {
     Exact,
+
+    /// Lower bound
     Beta,
+
+    /// Upper bound
     Alpha,
 }
 
