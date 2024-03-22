@@ -43,32 +43,39 @@ impl BitBoard {
     pub const EMPTY: Self = Self(0);
     pub const FULL: Self = Self(!0);
 
+    /// Bit board from a 64 bit numebr.
     #[must_use]
     pub const fn new(bits: u64) -> Self {
         BitBoard(bits)
     }
 
+    /// Bit board with the square set.
     #[must_use]
     pub fn from_square(square: &Square) -> Self {
         Self(1 << square.index())
     }
 
+    /// Sets a square.
     pub fn set(&mut self, square: &Square) {
         *self |= square.bit_board();
     }
 
+    /// Unsets a square.
     pub fn unset(&mut self, square: &Square) {
         *self &= !square.bit_board();
     }
 
+    /// Toggles a square.
     pub fn toggle(&mut self, square: &Square) {
         *self ^= square.bit_board();
     }
+
+    /// Toggles two squares.
     pub fn toggle_two(&mut self, a: &Square, b: &Square) {
         *self ^= a.bit_board() | b.bit_board();
     }
 
-    /// Returns whether no bits are set
+    /// Returns whether no bits are set.
     ///
     /// # Examples
     ///
@@ -83,7 +90,7 @@ impl BitBoard {
         *self == Self::EMPTY
     }
 
-    /// Returns whether any bits are set
+    /// Returns whether any bits are set.
     ///
     /// # Examples
     ///
@@ -98,7 +105,7 @@ impl BitBoard {
         *self != Self::EMPTY
     }
 
-    /// Returns whether there is more than one bit set
+    /// Returns whether there is more than one bit set.
     ///
     /// # Examples
     ///
@@ -113,7 +120,7 @@ impl BitBoard {
         (*self & Self(self.0 - 1)).is_not_empty()
     }
 
-    /// Returns whether there are any bits set in both bitboards
+    /// Returns whether there are any bits set in both bitboards.
     ///
     /// # Examples
     ///
@@ -127,7 +134,7 @@ impl BitBoard {
         (*self & *bit_board).is_not_empty()
     }
 
-    /// Returns whether a square is set
+    /// Returns whether a square is set.
     ///
     /// # Examples
     ///
@@ -142,7 +149,7 @@ impl BitBoard {
         self.overlaps(&square.bit_board())
     }
 
-    /// Gets the last square
+    /// Gets the last square.
     ///
     /// # Examples
     ///
@@ -160,7 +167,7 @@ impl BitBoard {
         Square::from_index(63 - self.0.leading_zeros() as i8)
     }
 
-    /// Gets the first square
+    /// Gets the first square.
     ///
     /// # Examples
     ///
@@ -178,7 +185,7 @@ impl BitBoard {
         Square::from_index(self.0.trailing_zeros() as i8)
     }
 
-    /// Pops the first square
+    /// Pops the first square.
     ///
     /// # Examples
     ///
@@ -197,7 +204,7 @@ impl BitBoard {
         index
     }
 
-    /// Returns how many bits are set
+    /// Returns how many bits are set.
     ///
     /// # Examples
     ///
@@ -213,7 +220,7 @@ impl BitBoard {
         self.0.count_ones()
     }
 
-    /// Used to traverse subsets of a set
+    /// Used to traverse subsets of a set.
     /// This take the current subset and find the next highest subset after it.
     ///
     /// # Examples
