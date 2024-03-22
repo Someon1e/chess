@@ -49,9 +49,9 @@ mod tests {
     use crate::board::Board;
 
     impl crate::board::Zobrist {
+        /// For debugging only.
+        /// Computes the zobrist key.
         pub fn compute(board: &Board) -> Self {
-            // For debugging only.
-
             let mut key = Self::EMPTY;
 
             for (piece, bit_board) in board.bit_boards.iter().enumerate() {
