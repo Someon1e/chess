@@ -52,6 +52,10 @@ impl BitBoard {
         *self == Self::EMPTY
     }
     #[must_use]
+    pub fn more_than_one_bit_set(&self) -> bool {
+        (*self & Self(self.0 - 1)).is_not_empty()
+    }
+    #[must_use]
     pub fn is_not_empty(&self) -> bool {
         *self != Self::EMPTY
     }
