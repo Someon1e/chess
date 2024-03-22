@@ -47,6 +47,7 @@ impl BitBoard {
     pub const fn new(bits: u64) -> Self {
         BitBoard(bits)
     }
+
     #[must_use]
     pub fn from_square(square: &Square) -> Self {
         Self(1 << square.index())
@@ -55,6 +56,7 @@ impl BitBoard {
     pub fn set(&mut self, square: &Square) {
         *self |= square.bit_board();
     }
+
     pub fn unset(&mut self, square: &Square) {
         *self &= !square.bit_board();
     }
@@ -66,40 +68,128 @@ impl BitBoard {
         *self ^= a.bit_board() | b.bit_board();
     }
 
+    /// Returns whether no bits are set
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use engine::board::bit_board::BitBoard;
+    ///
+    /// assert!(BitBoard::EMPTY.is_empty());
+    /// assert!(!BitBoard::FULL.is_empty());
+    /// ```
     #[must_use]
     pub fn is_empty(&self) -> bool {
         *self == Self::EMPTY
     }
+
+    /// Returns whether any bits are set
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use engine::board::bit_board::BitBoard;
+    ///
+    /// assert!(BitBoard::FULL.is_not_empty());
+    /// assert!(!BitBoard::EMPTY.is_not_empty());
+    /// ```
     #[must_use]
     pub fn is_not_empty(&self) -> bool {
         *self != Self::EMPTY
     }
 
+    /// Returns whether there is more than one bit set
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use engine::board::bit_board::BitBoard;
+    ///
+    /// assert!(!BitBoard::new(1).more_than_one_bit_set());
+    /// assert!(BitBoard::new(0b111).more_than_one_bit_set());
+    /// ```
     #[must_use]
     pub fn more_than_one_bit_set(&self) -> bool {
         (*self & Self(self.0 - 1)).is_not_empty()
     }
 
+    /// Returns whether there are any bits set in both bitboards
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use engine::board::bit_board::BitBoard;
+    ///
+    /// assert!(BitBoard::RANK_1.overlaps(&BitBoard::NOT_A_FILE));
+    /// ```
     #[must_use]
     pub fn overlaps(&self, bit_board: &BitBoard) -> bool {
         (*self & *bit_board).is_not_empty()
     }
 
+    /// Returns whether a square is set
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use engine::board::{bit_board::BitBoard, square::Square};
+    ///
+    /// assert!(BitBoard::RANK_4.get(&Square::from_notation("a4")));
+    /// assert!(!BitBoard::RANK_4.get(&Square::from_notation("a8")));
+    /// ```
     #[must_use]
     pub fn get(&self, square: &Square) -> bool {
         self.overlaps(&square.bit_board())
     }
 
+    /// Gets the last square
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use engine::board::{bit_board::BitBoard, square::Square};
+    ///
+    /// assert_eq!(BitBoard::FULL.last_square(), Square::from_index(63));
+    ///
+    /// assert_eq!(BitBoard::EMPTY.last_square(), Square::from_index(-1));
+    ///
+    /// assert_eq!(BitBoard::new(1).last_square(), Square::from_index(0));
+    /// ```
     #[must_use]
     pub fn last_square(&self) -> Square {
         Square::from_index(63 - self.0.leading_zeros() as i8)
     }
 
+    /// Gets the first square
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use engine::board::{bit_board::BitBoard, square::Square};
+    ///
+    /// let mut bit_board = BitBoard::FULL;
+    /// assert_eq!(bit_board.first_square(), Square::from_index(0));
+    ///
+    /// let mut bit_board = BitBoard::EMPTY;
+    /// assert_eq!(bit_board.first_square(), Square::from_index(64));
+    /// ```
     #[must_use]
     pub fn first_square(&self) -> Square {
         Square::from_index(self.0.trailing_zeros() as i8)
     }
 
+    /// Pops the first square
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use engine::board::{bit_board::BitBoard, square::Square};
+    ///
+    /// let mut bit_board = BitBoard::FULL;
+    /// assert_eq!(bit_board.pop_square(), Square::from_index(0));
+    /// assert_eq!(bit_board.pop_square(), Square::from_index(1));
+    /// assert_eq!(bit_board.pop_square(), Square::from_index(2));
+    /// ```
     #[must_use]
     pub fn pop_square(&mut self) -> Square {
         let index = self.first_square();
@@ -107,11 +197,40 @@ impl BitBoard {
         index
     }
 
+    /// Returns how many bits are set
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use engine::board::bit_board::BitBoard;
+    ///
+    /// assert_eq!(BitBoard::EMPTY.count(), 0);
+    /// assert_eq!(BitBoard::FULL.count(), 64);
+    /// assert_eq!(BitBoard::RANK_5.count(), 8);
+    /// ```
     #[must_use]
     pub fn count(&self) -> u32 {
         self.0.count_ones()
     }
 
+    /// Used to traverse subsets of a set
+    /// This take the current subset and find the next highest subset after it.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use engine::board::bit_board::BitBoard;
+    ///
+    /// let set = BitBoard::RANK_4;
+    /// let mut subset = BitBoard::EMPTY;
+    /// loop {
+    ///     println!("{subset}");
+    ///     subset = subset.carry_rippler(set);
+    ///     if subset.is_empty() {
+    ///         break;
+    ///     }
+    /// }
+    /// ```
     #[must_use]
     pub fn carry_rippler(&self, d: Self) -> Self {
         Self(self.0.wrapping_sub(d.0) & d.0)
