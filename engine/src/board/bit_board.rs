@@ -48,63 +48,75 @@ impl BitBoard {
         BitBoard(bits)
     }
     #[must_use]
-    pub fn is_empty(&self) -> bool {
-        *self == Self::EMPTY
-    }
-    #[must_use]
-    pub fn more_than_one_bit_set(&self) -> bool {
-        (*self & Self(self.0 - 1)).is_not_empty()
-    }
-    #[must_use]
-    pub fn is_not_empty(&self) -> bool {
-        *self != Self::EMPTY
-    }
-    #[must_use]
     pub fn from_square(square: &Square) -> Self {
         Self(1 << square.index())
     }
+
     pub fn set(&mut self, square: &Square) {
         *self |= square.bit_board();
     }
     pub fn unset(&mut self, square: &Square) {
         *self &= !square.bit_board();
     }
+
     pub fn toggle(&mut self, square: &Square) {
         *self ^= square.bit_board();
     }
     pub fn toggle_two(&mut self, a: &Square, b: &Square) {
         *self ^= a.bit_board() | b.bit_board();
     }
+
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        *self == Self::EMPTY
+    }
+    #[must_use]
+    pub fn is_not_empty(&self) -> bool {
+        *self != Self::EMPTY
+    }
+
+    #[must_use]
+    pub fn more_than_one_bit_set(&self) -> bool {
+        (*self & Self(self.0 - 1)).is_not_empty()
+    }
+
     #[must_use]
     pub fn overlaps(&self, bit_board: &BitBoard) -> bool {
         (*self & *bit_board).is_not_empty()
     }
+
     #[must_use]
     pub fn get(&self, square: &Square) -> bool {
         self.overlaps(&square.bit_board())
     }
+
     #[must_use]
     pub fn last_square(&self) -> Square {
         Square::from_index(63 - self.0.leading_zeros() as i8)
     }
+
     #[must_use]
     pub fn first_square(&self) -> Square {
         Square::from_index(self.0.trailing_zeros() as i8)
     }
+
     #[must_use]
     pub fn pop_square(&mut self) -> Square {
         let index = self.first_square();
         self.0 &= self.0 - 1;
         index
     }
+
     #[must_use]
     pub fn count(&self) -> u32 {
         self.0.count_ones()
     }
+
     #[must_use]
     pub fn carry_rippler(&self, d: Self) -> Self {
         Self(self.0.wrapping_sub(d.0) & d.0)
     }
+
     #[must_use]
     pub fn magic_index(&self, magic: u64, shift: u8) -> usize {
         let hash = self.0.wrapping_mul(magic);

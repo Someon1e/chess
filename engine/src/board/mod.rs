@@ -44,6 +44,7 @@ impl Board {
         }
         None
     }
+
     #[must_use]
     pub fn white_piece_at(&self, square: Square) -> Option<Piece> {
         let square_bit_board = square.bit_board();
@@ -66,6 +67,7 @@ impl Board {
         }
         None
     }
+
     #[must_use]
     pub fn friendly_piece_at(&self, square: Square) -> Option<Piece> {
         if self.white_to_move {
@@ -82,10 +84,12 @@ impl Board {
             self.white_piece_at(square)
         }
     }
+
     #[must_use]
     pub fn zobrist_key(&self) -> Zobrist {
         self.game_state.zobrist_key
     }
+
     #[must_use]
     pub fn get_bit_board(&self, piece: Piece) -> &BitBoard {
         &self.bit_boards[piece as usize]
