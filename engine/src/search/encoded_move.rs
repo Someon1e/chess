@@ -8,6 +8,7 @@ use core::fmt;
 pub struct EncodedMove(u16);
 
 impl EncodedMove {
+    /// Packs a move into 16 bits.
     pub fn new(move_data: Move) -> Self {
         let mut data: u16 = 0;
 
@@ -18,6 +19,15 @@ impl EncodedMove {
         data |= (move_data.flag as u16) << 12;
 
         Self(data)
+    }
+
+    /// Decodes from, to, and flag
+    pub fn decode(self) -> Move {
+        Move {
+            from: self.from(),
+            to: self.to(),
+            flag: *self.flag(),
+        }
     }
 
     pub const NONE: Self = Self(0);
@@ -31,13 +41,6 @@ impl EncodedMove {
     }
     pub fn to(self) -> Square {
         Square::from_index(((self.0 >> 6) & 0b111111) as i8)
-    }
-    pub fn decode(self) -> Move {
-        Move {
-            from: self.from(),
-            to: self.to(),
-            flag: *self.flag(),
-        }
     }
 
     pub fn flag(&self) -> &Flag {
