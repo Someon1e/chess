@@ -195,9 +195,14 @@ uciok",
         (self.out)(&format!("bestmove {}", encode_move(best_move.decode())));
     }
 
+    /// Stop calculating as soon as possible.
     pub fn stop(&self) {
         todo!("Stop search immediately")
     }
+
+    /// This is sent to the engine when the next search (started with "position" and "go") will be from
+    /// a different game. This can be a new game the engine should play or a new game it should analyse but
+    /// also the next position from a testsuite with positions only.
     pub fn ucinewgame(&mut self) {
         // New game, so old data like transposition table will not help
         if let Some(search) = &mut self.search {
