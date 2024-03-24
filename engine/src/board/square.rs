@@ -220,7 +220,7 @@ impl Square {
     /// ```
     /// use engine::board::square::Square;
     ///
-    /// assert_eq!(Square::from_notation("a1"), 0);
+    /// assert_eq!(Square::from_notation("a1"), Square::from_index(0));
     /// ```
     #[must_use]
     pub fn from_notation(notation: &str) -> Square {
