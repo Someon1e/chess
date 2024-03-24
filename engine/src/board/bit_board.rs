@@ -2,7 +2,7 @@ use super::square::Square;
 use core::fmt;
 use core::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not, Shl, Shr};
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 pub struct BitBoard(u64);
 
 impl fmt::Display for BitBoard {

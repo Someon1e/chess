@@ -1,6 +1,5 @@
 use std::str::SplitWhitespace;
 
-#[derive(Default)]
 pub struct GoParameters {
     pub white_time: Option<u128>,
     pub black_time: Option<u128>,
