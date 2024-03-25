@@ -1,3 +1,6 @@
+#![deny(clippy::all)]
+#![warn(clippy::nursery)]
+
 use engine::board::Board;
 use engine::search::eval::Eval;
 use rayon::prelude::*;
@@ -8,7 +11,7 @@ use std::{fs::File, io::BufReader};
 fn parse_data_set() -> Vec<(Board, f64)> {
     let file = File::open("dataset/positions.txt").expect("Failed to open file");
     let data_set = BufReader::new(file);
-    let mut parsed = Vec::with_capacity(100000);
+    let mut parsed = Vec::with_capacity(100_000);
 
     for data in data_set.lines() {
         let Result::Ok(data) = data else {
