@@ -1,4 +1,8 @@
-use std::io::{stdin, BufRead};
+#![deny(clippy::all)]
+#![warn(clippy::pedantic)]
+#![warn(clippy::nursery)]
+
+use std::io::stdin;
 
 use core::cell::RefCell;
 use engine::uci::UCIProcessor;
@@ -70,11 +74,9 @@ fn process_input(input: &str) {
 }
 
 fn main() {
-    let mut stdin = stdin().lock();
-
     loop {
         let mut input = String::new();
-        stdin.read_line(&mut input).unwrap();
+        stdin().read_line(&mut input).unwrap();
 
         process_input(&input);
     }

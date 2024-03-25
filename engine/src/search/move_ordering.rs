@@ -101,9 +101,9 @@ impl MoveOrderer {
             (unsorted_index, move_guesses[unsorted_index].guess);
 
         // Find highest guessed unsorted move
-        for index in unsorted_index..move_count {
+        for (index, item) in move_guesses.iter().enumerate().take(move_count).skip(unsorted_index) {
             // Iterate part of the array that is unsorted
-            let guess = move_guesses[index].guess;
+            let guess = item.guess;
             if guess > highest_guess {
                 // New highest guess
                 highest_guess = guess;
