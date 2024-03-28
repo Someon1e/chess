@@ -1,6 +1,6 @@
 #![deny(clippy::all)]
 #![warn(clippy::pedantic)]
-
+#![warn(clippy::nursery)]
 // TODO: reduce these
 #![allow(clippy::missing_panics_doc)]
 #![allow(clippy::cast_possible_truncation)]

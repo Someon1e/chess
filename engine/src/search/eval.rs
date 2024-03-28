@@ -34,7 +34,7 @@ impl Eval {
     }
 
     #[must_use]
-    fn get_piece_value(
+    const fn get_piece_value(
         middle_game_piece_square_tables: &[EvalNumber; 384],
         end_game_piece_square_tables: &[EvalNumber; 384],
         piece_index: usize,

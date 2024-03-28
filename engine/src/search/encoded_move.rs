@@ -4,12 +4,12 @@ use crate::{
 };
 use core::fmt;
 
-#[derive(PartialEq, Clone, Copy)]
+#[derive(PartialEq, Eq, Clone, Copy)]
 pub struct EncodedMove(u16);
 
 impl EncodedMove {
     /// Packs a move into 16 bits.
-    pub fn new(move_data: Move) -> Self {
+    pub const fn new(move_data: Move) -> Self {
         let mut data: u16 = 0;
 
         // Squares are 6 bits each
@@ -22,7 +22,7 @@ impl EncodedMove {
     }
 
     /// Decodes from, to, and flag
-    pub fn decode(self) -> Move {
+    pub const fn decode(self) -> Move {
         Move {
             from: self.from(),
             to: self.to(),
@@ -37,15 +37,15 @@ impl EncodedMove {
     }
 
     #[allow(clippy::unreadable_literal)]
-    pub fn from(self) -> Square {
+    pub const fn from(self) -> Square {
         Square::from_index((self.0 & 0b111111) as i8)
     }
     #[allow(clippy::unreadable_literal)]
-    pub fn to(self) -> Square {
+    pub const fn to(self) -> Square {
         Square::from_index(((self.0 >> 6) & 0b111111) as i8)
     }
 
-    pub fn flag(&self) -> &Flag {
+    pub const fn flag(&self) -> &Flag {
         &Flag::ALL[((self.0 >> 12) & 0b1111) as usize]
     }
 }

@@ -1,7 +1,7 @@
 use super::bit_board::BitBoard;
 use core::fmt;
 
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(PartialEq, Eq, Copy, Clone, Debug)]
 pub struct Square(i8);
 
 impl fmt::Display for Square {
@@ -70,7 +70,7 @@ impl Square {
     /// assert_eq!(Square::from_notation("a1").up(2), Square::from_notation("a3"));
     /// ```
     #[must_use]
-    pub fn up(&self, number: i8) -> Self {
+    pub const fn up(&self, number: i8) -> Self {
         self.offset(UP_OFFSET * number)
     }
 
@@ -84,7 +84,7 @@ impl Square {
     /// assert_eq!(Square::from_notation("a3").down(2), Square::from_notation("a1"));
     /// ```
     #[must_use]
-    pub fn down(&self, number: i8) -> Self {
+    pub const fn down(&self, number: i8) -> Self {
         self.offset(DOWN_OFFSET * number)
     }
 
@@ -98,7 +98,7 @@ impl Square {
     /// assert_eq!(Square::from_notation("c1").left(2), Square::from_notation("a1"));
     /// ```
     #[must_use]
-    pub fn left(&self, number: i8) -> Self {
+    pub const fn left(&self, number: i8) -> Self {
         self.offset(LEFT_OFFSET * number)
     }
 
@@ -112,12 +112,12 @@ impl Square {
     /// assert_eq!(Square::from_notation("a1").right(2), Square::from_notation("c1"));
     /// ```
     #[must_use]
-    pub fn right(&self, number: i8) -> Self {
+    pub const fn right(&self, number: i8) -> Self {
         self.offset(RIGHT_OFFSET * number)
     }
 
     #[must_use]
-    pub fn offset(&self, offset: i8) -> Self {
+    pub const fn offset(&self, offset: i8) -> Self {
         Self(self.index() + offset)
     }
 
@@ -135,7 +135,7 @@ impl Square {
     /// assert!(!Square::from_index(65).within_bounds());
     /// ```
     #[must_use]
-    pub fn within_bounds(&self) -> bool {
+    pub const fn within_bounds(&self) -> bool {
         self.index() >= 0 && self.index() < 64
     }
 
@@ -159,7 +159,7 @@ impl Square {
     /// assert_eq!(Square::from_notation("e4").flip(), Square::from_notation("e5"));
     /// ```
     #[must_use]
-    pub fn flip(&self) -> Self {
+    pub const fn flip(&self) -> Self {
         Self(self.index() ^ 56)
     }
 
@@ -223,7 +223,7 @@ impl Square {
     /// assert_eq!(Square::from_notation("a1"), Square::from_index(0));
     /// ```
     #[must_use]
-    pub fn from_notation(notation: &str) -> Square {
+    pub fn from_notation(notation: &str) -> Self {
         let file = notation.as_bytes().first().expect("Invalid notation") - b'a';
         let rank = notation
             .chars()
@@ -232,7 +232,7 @@ impl Square {
             .to_digit(10)
             .expect("Invalid notation")
             - 1;
-        Square::from_coords(rank as i8, file as i8)
+        Self::from_coords(rank as i8, file as i8)
     }
 
     /// # Examples
@@ -244,7 +244,7 @@ impl Square {
     /// assert!(square.bit_board() == BitBoard::from_square(&square));
     /// ```
     #[must_use]
-    pub fn bit_board(&self) -> BitBoard {
+    pub const fn bit_board(&self) -> BitBoard {
         BitBoard::from_square(self)
     }
 }

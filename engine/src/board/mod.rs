@@ -86,12 +86,12 @@ impl Board {
     }
 
     #[must_use]
-    pub fn zobrist_key(&self) -> Zobrist {
+    pub const fn zobrist_key(&self) -> Zobrist {
         self.game_state.zobrist_key
     }
 
     #[must_use]
-    pub fn get_bit_board(&self, piece: Piece) -> &BitBoard {
+    pub const fn get_bit_board(&self, piece: Piece) -> &BitBoard {
         &self.bit_boards[piece as usize]
     }
     #[must_use]

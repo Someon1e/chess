@@ -15,7 +15,7 @@ pub struct GoParameters {
 }
 impl GoParameters {
     #[must_use]
-    pub fn empty() -> Self {
+    pub const fn empty() -> Self {
         Self {
             white_time: None,
             black_time: None,

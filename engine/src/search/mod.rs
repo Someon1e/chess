@@ -70,7 +70,7 @@ impl Search {
     }
 
     #[must_use]
-    pub fn board(&self) -> &Board {
+    pub const fn board(&self) -> &Board {
         &self.board
     }
 
@@ -450,7 +450,7 @@ impl Search {
         (depth, self.best_move, self.best_score)
     }
     #[must_use]
-    pub fn score_is_checkmate(score: EvalNumber) -> bool {
+    pub const fn score_is_checkmate(score: EvalNumber) -> bool {
         score.abs() >= CHECKMATE_SCORE
     }
     #[must_use]

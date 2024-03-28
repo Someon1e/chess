@@ -25,20 +25,20 @@ impl fmt::Display for BitBoard {
 }
 
 impl BitBoard {
-    pub const NOT_A_FILE: BitBoard = Self(!0x0101_0101_0101_0101);
-    pub const NOT_H_FILE: BitBoard = Self(!(0x0101_0101_0101_0101 << 7));
+    pub const NOT_A_FILE: Self = Self(!0x0101_0101_0101_0101);
+    pub const NOT_H_FILE: Self = Self(!(0x0101_0101_0101_0101 << 7));
 
-    pub const RANK_1: BitBoard = Self(0xFF);
+    pub const RANK_1: Self = Self(0xFF);
 
     // TODO: Rewrite as Self::RANK_X << 8;
     // currently cannot call non-const operator in constants
-    pub const RANK_2: BitBoard = Self(0xFF << 8);
-    pub const RANK_3: BitBoard = Self(0xFF << 16);
-    pub const RANK_4: BitBoard = Self(0xFF << 24);
-    pub const RANK_5: BitBoard = Self(0xFF << 32);
-    pub const RANK_6: BitBoard = Self(0xFF << 40);
-    pub const RANK_7: BitBoard = Self(0xFF << 48);
-    pub const RANK_8: BitBoard = Self(0xFF << 56);
+    pub const RANK_2: Self = Self(0xFF << 8);
+    pub const RANK_3: Self = Self(0xFF << 16);
+    pub const RANK_4: Self = Self(0xFF << 24);
+    pub const RANK_5: Self = Self(0xFF << 32);
+    pub const RANK_6: Self = Self(0xFF << 40);
+    pub const RANK_7: Self = Self(0xFF << 48);
+    pub const RANK_8: Self = Self(0xFF << 56);
 
     pub const EMPTY: Self = Self(0);
     pub const FULL: Self = Self(!0);
@@ -46,12 +46,12 @@ impl BitBoard {
     /// Bit board from a 64 bit numebr.
     #[must_use]
     pub const fn new(bits: u64) -> Self {
-        BitBoard(bits)
+        Self(bits)
     }
 
     /// Bit board with the square set.
     #[must_use]
-    pub fn from_square(square: &Square) -> Self {
+    pub const fn from_square(square: &Square) -> Self {
         Self(1 << square.index())
     }
 
@@ -130,7 +130,7 @@ impl BitBoard {
     /// assert!(BitBoard::RANK_1.overlaps(&BitBoard::NOT_A_FILE));
     /// ```
     #[must_use]
-    pub fn overlaps(&self, bit_board: &BitBoard) -> bool {
+    pub fn overlaps(&self, bit_board: &Self) -> bool {
         (*self & *bit_board).is_not_empty()
     }
 
@@ -163,7 +163,7 @@ impl BitBoard {
     /// assert_eq!(BitBoard::new(1).last_square(), Square::from_index(0));
     /// ```
     #[must_use]
-    pub fn last_square(&self) -> Square {
+    pub const fn last_square(&self) -> Square {
         Square::from_index(63 - self.0.leading_zeros() as i8)
     }
 
@@ -181,7 +181,7 @@ impl BitBoard {
     /// assert_eq!(bit_board.first_square(), Square::from_index(64));
     /// ```
     #[must_use]
-    pub fn first_square(&self) -> Square {
+    pub const fn first_square(&self) -> Square {
         Square::from_index(self.0.trailing_zeros() as i8)
     }
 
@@ -216,7 +216,7 @@ impl BitBoard {
     /// assert_eq!(BitBoard::RANK_5.count(), 8);
     /// ```
     #[must_use]
-    pub fn count(&self) -> u32 {
+    pub const fn count(&self) -> u32 {
         self.0.count_ones()
     }
 
@@ -239,12 +239,12 @@ impl BitBoard {
     /// }
     /// ```
     #[must_use]
-    pub fn carry_rippler(&self, d: Self) -> Self {
+    pub const fn carry_rippler(&self, d: Self) -> Self {
         Self(self.0.wrapping_sub(d.0) & d.0)
     }
 
     #[must_use]
-    pub fn magic_index(&self, magic: u64, shift: u8) -> usize {
+    pub const fn magic_index(&self, magic: u64, shift: u8) -> usize {
         let hash = self.0.wrapping_mul(magic);
         (hash >> shift) as usize
     }
@@ -295,7 +295,7 @@ shift!(Shl, shl, <<);
 shift!(Shr, shr, >>);
 
 impl Not for BitBoard {
-    type Output = BitBoard;
+    type Output = Self;
 
     fn not(self) -> Self::Output {
         Self(!self.0)

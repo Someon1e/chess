@@ -96,7 +96,7 @@ impl Board {
             game_state,
         }
     }
-    
+
     /// Gets the Forsyth-Edwards Notation of the Board
     #[must_use]
     pub fn to_fen(&self) -> String {

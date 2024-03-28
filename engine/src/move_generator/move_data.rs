@@ -1,7 +1,7 @@
 use crate::board::{piece::Piece, square::Square};
 use core::fmt;
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Flag {
     None,
 
@@ -18,7 +18,7 @@ pub enum Flag {
 }
 
 impl Flag {
-    pub const ALL: [Flag; 8] = [
+    pub const ALL: [Self; 8] = [
         Self::None,
         Self::QueenPromotion,
         Self::RookPromotion,
@@ -28,7 +28,7 @@ impl Flag {
         Self::PawnTwoUp,
         Self::Castle,
     ];
-    pub const PROMOTIONS: [Flag; 4] = [
+    pub const PROMOTIONS: [Self; 4] = [
         Self::QueenPromotion,
         Self::RookPromotion,
         Self::BishopPromotion,
@@ -36,7 +36,7 @@ impl Flag {
     ];
 
     #[must_use]
-    pub fn get_promotion_piece(&self, white: bool) -> Option<Piece> {
+    pub const fn get_promotion_piece(&self, white: bool) -> Option<Piece> {
         match self {
             Self::QueenPromotion => Some({
                 if white {
@@ -71,7 +71,7 @@ impl Flag {
     }
 }
 
-#[derive(PartialEq, Clone, Copy)]
+#[derive(PartialEq, Eq, Clone, Copy)]
 pub struct Move {
     pub from: Square,
     pub to: Square,

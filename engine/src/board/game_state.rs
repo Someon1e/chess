@@ -5,7 +5,7 @@ use super::{piece::Piece, zobrist::Zobrist};
 macro_rules! define_castling_rights {
     ($getter:ident, $setter:ident, $unsetter:ident, $offset:expr) => {
         #[must_use]
-        pub fn $getter(&self) -> bool {
+        pub const fn $getter(&self) -> bool {
             self.0 & (1 << $offset) != 0
         }
 
@@ -81,11 +81,11 @@ impl CastlingRights {
         }
     }
     #[must_use]
-    pub fn is_none(&self) -> bool {
+    pub const fn is_none(&self) -> bool {
         self.0 == 0
     }
     #[must_use]
-    pub fn internal_value(&self) -> u8 {
+    pub const fn internal_value(&self) -> u8 {
         self.0
     }
 }
