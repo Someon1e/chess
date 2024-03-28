@@ -20,10 +20,10 @@ const MAX_LEGAL_MOVES: usize = 218;
 const MAX_CAPTURES: usize = 74;
 
 const HASH_MOVE_BONUS: MoveGuessNum = MoveGuessNum::MAX;
-const QUEEN_PROMOTION_BONUS: MoveGuessNum = 40000000;
-const CAPTURE_BONUS: MoveGuessNum = 40000000;
-const KILLER_MOVE_BONUS: MoveGuessNum = 20000000;
-const KNIGHT_PROMOTION_BONUS: MoveGuessNum = 10000000;
+const QUEEN_PROMOTION_BONUS: MoveGuessNum = 40_000_000;
+const CAPTURE_BONUS: MoveGuessNum = 40_000_000;
+const KILLER_MOVE_BONUS: MoveGuessNum = 20_000_000;
+const KNIGHT_PROMOTION_BONUS: MoveGuessNum = 10_000_000;
 const ROOK_PROMOTION_BONUS: MoveGuessNum = 0;
 const BISHOP_PROMOTION_BONUS: MoveGuessNum = 0;
 
@@ -54,12 +54,7 @@ impl MoveOrderer {
 
         let mut score = 0;
         match move_data.flag {
-            Flag::EnPassant => {
-                return search.history_heuristic[usize::from(search.board.white_to_move)]
-                    [moving_from.usize()][moving_to.usize()]
-            }
-            Flag::PawnTwoUp => {}
-            Flag::Castle => {
+            Flag::EnPassant | Flag::Castle => {
                 return search.history_heuristic[usize::from(search.board.white_to_move)]
                     [moving_from.usize()][moving_to.usize()]
             }
@@ -69,7 +64,7 @@ impl MoveOrderer {
             Flag::RookPromotion => return ROOK_PROMOTION_BONUS,
             Flag::QueenPromotion => return QUEEN_PROMOTION_BONUS,
 
-            Flag::None => {}
+            Flag::PawnTwoUp | Flag::None => {}
         }
 
         let moving_piece = search.board.friendly_piece_at(moving_from).unwrap();

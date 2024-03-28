@@ -5,6 +5,7 @@ pub struct Key {
     pub offset: u32,
 }
 
+#[allow(clippy::unreadable_literal)]
 pub const ROOK_KEYS: [Key; 64] = [
     Key {
         magic: 2630102251678467200,
@@ -330,6 +331,7 @@ pub const ROOK_KEYS: [Key; 64] = [
 
 pub const ROOK_TABLE_SIZE: usize = 88064;
 
+#[allow(clippy::unreadable_literal)]
 pub const BISHOP_KEYS: [Key; 64] = [
     Key {
         magic: 18441670916271046655,

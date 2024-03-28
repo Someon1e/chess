@@ -52,6 +52,7 @@ impl CastlingRights {
     );
 
     #[must_use]
+    #[allow(clippy::fn_params_excessive_bools)]
     pub fn new(
         white_can_castle_king_side: bool,
         white_can_castle_queen_side: bool,

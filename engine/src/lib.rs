@@ -1,3 +1,15 @@
+#![deny(clippy::all)]
+#![warn(clippy::pedantic)]
+
+// TODO: reduce these
+#![allow(clippy::missing_panics_doc)]
+#![allow(clippy::cast_possible_truncation)]
+#![allow(clippy::cast_possible_wrap)]
+#![allow(clippy::cast_sign_loss)]
+#![allow(clippy::too_many_lines)]
+#![allow(clippy::missing_errors_doc)]
+#![allow(clippy::module_name_repetitions)]
+
 pub mod board;
 pub mod move_generator;
 pub mod perft;

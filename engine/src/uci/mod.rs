@@ -187,7 +187,7 @@ uciok",
         };
         let (depth, best_move, evaluation) = search.iterative_deepening(
             &mut |depth, (best_move, evaluation)| {
-                output_info(depth, best_move.decode(), evaluation)
+                output_info(depth, best_move.decode(), evaluation);
             },
             &mut || search_start.miliseconds() > think_time,
         );

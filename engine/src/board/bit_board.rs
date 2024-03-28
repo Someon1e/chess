@@ -25,20 +25,20 @@ impl fmt::Display for BitBoard {
 }
 
 impl BitBoard {
-    pub const NOT_A_FILE: BitBoard = Self(!0x101010101010101);
-    pub const NOT_H_FILE: BitBoard = Self(!(0x101010101010101 << 7));
+    pub const NOT_A_FILE: BitBoard = Self(!0x0101_0101_0101_0101);
+    pub const NOT_H_FILE: BitBoard = Self(!(0x0101_0101_0101_0101 << 7));
 
-    pub const RANK_1: BitBoard = Self(0b11111111);
+    pub const RANK_1: BitBoard = Self(0xFF);
 
     // TODO: Rewrite as Self::RANK_X << 8;
     // currently cannot call non-const operator in constants
-    pub const RANK_2: BitBoard = Self(0b11111111 << 8);
-    pub const RANK_3: BitBoard = Self(0b11111111 << 16);
-    pub const RANK_4: BitBoard = Self(0b11111111 << 24);
-    pub const RANK_5: BitBoard = Self(0b11111111 << 32);
-    pub const RANK_6: BitBoard = Self(0b11111111 << 40);
-    pub const RANK_7: BitBoard = Self(0b11111111 << 48);
-    pub const RANK_8: BitBoard = Self(0b11111111 << 56);
+    pub const RANK_2: BitBoard = Self(0xFF << 8);
+    pub const RANK_3: BitBoard = Self(0xFF << 16);
+    pub const RANK_4: BitBoard = Self(0xFF << 24);
+    pub const RANK_5: BitBoard = Self(0xFF << 32);
+    pub const RANK_6: BitBoard = Self(0xFF << 40);
+    pub const RANK_7: BitBoard = Self(0xFF << 48);
+    pub const RANK_8: BitBoard = Self(0xFF << 56);
 
     pub const EMPTY: Self = Self(0);
     pub const FULL: Self = Self(!0);

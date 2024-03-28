@@ -28,5 +28,5 @@ pub const TRANSPOSITION_CAPACITY: usize = {
     const MEGABYTES: usize = 32;
 
     const MEMORY_OF_ONE_ENTRY_IN_BYTES: usize = core::mem::size_of::<Option<NodeValue>>();
-    (MEGABYTES * 1000000) / MEMORY_OF_ONE_ENTRY_IN_BYTES
+    (MEGABYTES * 1_000_000) / MEMORY_OF_ONE_ENTRY_IN_BYTES
 };

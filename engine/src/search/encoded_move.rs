@@ -36,9 +36,11 @@ impl EncodedMove {
         self == Self::NONE
     }
 
+    #[allow(clippy::unreadable_literal)]
     pub fn from(self) -> Square {
         Square::from_index((self.0 & 0b111111) as i8)
     }
+    #[allow(clippy::unreadable_literal)]
     pub fn to(self) -> Square {
         Square::from_index(((self.0 >> 6) & 0b111111) as i8)
     }

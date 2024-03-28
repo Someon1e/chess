@@ -17,6 +17,7 @@ use self::slider_lookup::{
     get_bishop_moves, get_rook_moves, relevant_bishop_blockers, relevant_rook_blockers,
 };
 
+#[allow(clippy::struct_excessive_bools)]
 pub struct MoveGenerator {
     white_to_move: bool,
 
@@ -430,6 +431,8 @@ impl MoveGenerator {
     fn king_attack_bit_board(square: Square) -> BitBoard {
         king_moves_at_square()[square.usize()]
     }
+
+    #[allow(clippy::unreadable_literal)]
     fn gen_king(&self, add_move: &mut dyn FnMut(Move), captures_only: bool) {
         let mut king_moves = Self::king_attack_bit_board(self.friendly_king_square)
             & !self.friendly_piece_bit_board
