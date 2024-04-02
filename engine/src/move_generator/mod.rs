@@ -11,7 +11,7 @@ pub mod slider_lookup;
 
 use self::move_data::{Flag, Move};
 use self::precomputed::{
-    king_moves_at_square, knight_moves_at_square, pawn_attacks, SQUARES_FROM_EDGE,
+    king_moves_at_square, knight_moves_at_square, PAWN_ATTACKS, SQUARES_FROM_EDGE,
 };
 use self::slider_lookup::{
     get_bishop_moves, get_rook_moves, relevant_bishop_blockers, relevant_rook_blockers,
@@ -68,9 +68,9 @@ impl MoveGenerator {
     }
     fn pawn_attack_bit_board(from: Square, white: bool) -> BitBoard {
         if white {
-            pawn_attacks().white_pawn_attacks_at_square[from.usize()]
+            PAWN_ATTACKS.white_pawn_attacks_at_square[from.usize()]
         } else {
-            pawn_attacks().black_pawn_attacks_at_square[from.usize()]
+            PAWN_ATTACKS.black_pawn_attacks_at_square[from.usize()]
         }
     }
     fn gen_pawns(&self, add_move: &mut dyn FnMut(Move), captures_only: bool) {

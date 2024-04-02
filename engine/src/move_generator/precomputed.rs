@@ -92,31 +92,41 @@ pub fn king_moves_at_square() -> &'static [BitBoard; 64] {
     COMPUTATION.get_or_init(calculate_king_moves_at_square)
 }
 
-fn calculate_pawn_attacks() -> PawnAttacks {
+pub const PAWN_ATTACKS: PawnAttacks = {
     let mut white_pawn_attacks_at_square = [BitBoard::EMPTY; 64];
     let mut black_pawn_attacks_at_square = [BitBoard::EMPTY; 64];
 
-    for index in 0..64 {
+    let mut index = 0;
+    loop {
         let square = Square::from_index(index as i8);
+        let square_bit = 1 << index;
 
-        let white_pawn_attacks = &mut white_pawn_attacks_at_square[index];
-        let black_pawn_attacks = &mut black_pawn_attacks_at_square[index];
+        let mut white_pawn_attacks = 0;
+        let mut black_pawn_attacks = 0;
 
-        if BitBoard::NOT_A_FILE.get(&square) {
-            if !BitBoard::RANK_8.get(&square) {
-                white_pawn_attacks.set(&square.up(1).left(1));
+        if 18374403900871474942u64 & square_bit != 0 { // not a file
+            if (!18374686479671623680u64) & square_bit != 0 { // not 8th rank
+                white_pawn_attacks |= 1 << square.up(1).left(1).index();
             }
-            if !BitBoard::RANK_1.get(&square) {
-                black_pawn_attacks.set(&square.down(1).left(1));
+            if (!255) & square_bit != 0 { // not 1st rank
+                black_pawn_attacks |= 1 << square.down(1).left(1).index();
             }
         }
-        if BitBoard::NOT_H_FILE.get(&square) {
-            if !BitBoard::RANK_8.get(&square) {
-                white_pawn_attacks.set(&square.up(1).right(1));
+        if 9187201950435737471u64 & square_bit != 0 { // not h file
+            if (!18374686479671623680u64) & square_bit != 0 { // not 8th rank
+                white_pawn_attacks |= 1 << square.up(1).right(1).index();
             }
-            if !BitBoard::RANK_1.get(&square) {
-                black_pawn_attacks.set(&square.down(1).right(1));
+            if (!255) & square_bit != 0 { // not 1st rank
+                black_pawn_attacks |= 1 << square.down(1).right(1).index();
             }
+        }
+
+        white_pawn_attacks_at_square[index] = BitBoard::new(white_pawn_attacks);
+        black_pawn_attacks_at_square[index] = BitBoard::new(black_pawn_attacks);
+
+        index += 1;
+        if index == 64 {
+            break;
         }
     }
 
@@ -124,9 +134,4 @@ fn calculate_pawn_attacks() -> PawnAttacks {
         white_pawn_attacks_at_square,
         black_pawn_attacks_at_square,
     }
-}
-
-pub fn pawn_attacks() -> &'static PawnAttacks {
-    static COMPUTATION: OnceLock<PawnAttacks> = OnceLock::new();
-    COMPUTATION.get_or_init(calculate_pawn_attacks)
-}
+};
