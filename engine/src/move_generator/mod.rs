@@ -11,7 +11,7 @@ pub mod slider_lookup;
 
 use self::move_data::{Flag, Move};
 use self::precomputed::{
-    king_moves_at_square, knight_moves_at_square, PAWN_ATTACKS, SQUARES_FROM_EDGE,
+    knight_moves_at_square, KING_MOVES_AT_SQUARE, PAWN_ATTACKS, SQUARES_FROM_EDGE,
 };
 use self::slider_lookup::{
     get_bishop_moves, get_rook_moves, relevant_bishop_blockers, relevant_rook_blockers,
@@ -429,7 +429,7 @@ impl MoveGenerator {
     }
 
     fn king_attack_bit_board(square: Square) -> BitBoard {
-        king_moves_at_square()[square.usize()]
+        KING_MOVES_AT_SQUARE[square.usize()]
     }
 
     #[allow(clippy::unreadable_literal)]

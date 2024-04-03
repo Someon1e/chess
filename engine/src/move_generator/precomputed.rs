@@ -71,26 +71,25 @@ pub fn knight_moves_at_square() -> &'static [BitBoard; 64] {
     COMPUTATION.get_or_init(calculate_knight_moves_at_square)
 }
 
-fn calculate_king_moves_at_square() -> [BitBoard; 64] {
+pub const KING_MOVES_AT_SQUARE: [BitBoard; 64] = {
     let mut king_moves_at_square = [BitBoard::EMPTY; 64];
-    for index in 0..64 {
-        let square = Square::from_index(index as i8);
+    let mut index = 0;
+    loop {
+        let square_bit = 1 << index;
 
-        let king_moves = &mut king_moves_at_square[index];
-        for (direction_index, direction) in DIRECTIONS.iter().enumerate() {
-            if SQUARES_FROM_EDGE[index][direction_index] != 0 {
-                let move_to = square.offset(*direction);
+        let left = (square_bit & 0x7F7F7F7F7F7F7F7F) << 1;
+        let right = (square_bit & 0xFEFEFEFEFEFEFEFE) >> 1;
+        let left_right = left | right;
+        let attacks = left_right | (left_right | square_bit) >> 8 | (left_right | square_bit) << 8;
+        king_moves_at_square[index] = BitBoard::new(attacks);
 
-                king_moves.set(&move_to);
-            }
+        index += 1;
+        if index == 64 {
+            break;
         }
     }
     king_moves_at_square
-}
-pub fn king_moves_at_square() -> &'static [BitBoard; 64] {
-    static COMPUTATION: OnceLock<[BitBoard; 64]> = OnceLock::new();
-    COMPUTATION.get_or_init(calculate_king_moves_at_square)
-}
+};
 
 pub const PAWN_ATTACKS: PawnAttacks = {
     let mut white_pawn_attacks_at_square = [BitBoard::EMPTY; 64];
@@ -104,19 +103,25 @@ pub const PAWN_ATTACKS: PawnAttacks = {
         let mut white_pawn_attacks = 0;
         let mut black_pawn_attacks = 0;
 
-        if 18374403900871474942u64 & square_bit != 0 { // not a file
-            if (!18374686479671623680u64) & square_bit != 0 { // not 8th rank
+        if 0xFEFEFEFEFEFEFEFEu64 & square_bit != 0 {
+            // not a file
+            if (!0xFF00000000000000u64) & square_bit != 0 {
+                // not 8th rank
                 white_pawn_attacks |= 1 << square.up(1).left(1).index();
             }
-            if (!255) & square_bit != 0 { // not 1st rank
+            if (!0xFF) & square_bit != 0 {
+                // not 1st rank
                 black_pawn_attacks |= 1 << square.down(1).left(1).index();
             }
         }
-        if 9187201950435737471u64 & square_bit != 0 { // not h file
-            if (!18374686479671623680u64) & square_bit != 0 { // not 8th rank
+        if 0x7F7F7F7F7F7F7F7Fu64 & square_bit != 0 {
+            // not h file
+            if (!0xFF00000000000000u64) & square_bit != 0 {
+                // not 8th rank
                 white_pawn_attacks |= 1 << square.up(1).right(1).index();
             }
-            if (!255) & square_bit != 0 { // not 1st rank
+            if (!0xFF) & square_bit != 0 {
+                // not 1st rank
                 black_pawn_attacks |= 1 << square.down(1).right(1).index();
             }
         }
