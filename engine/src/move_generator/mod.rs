@@ -66,7 +66,7 @@ impl MoveGenerator {
             });
         }
     }
-    fn pawn_attack_bit_board(from: Square, white: bool) -> BitBoard {
+    const fn pawn_attack_bit_board(from: Square, white: bool) -> BitBoard {
         if white {
             PAWN_ATTACKS.white_pawn_attacks_at_square[from.usize()]
         } else {
@@ -428,7 +428,7 @@ impl MoveGenerator {
         bishop_attacks
     }
 
-    fn king_attack_bit_board(square: Square) -> BitBoard {
+    const fn king_attack_bit_board(square: Square) -> BitBoard {
         KING_MOVES_AT_SQUARE[square.usize()]
     }
 
