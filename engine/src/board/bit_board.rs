@@ -112,12 +112,13 @@ impl BitBoard {
     /// ```
     /// use engine::board::bit_board::BitBoard;
     ///
+    /// assert!(!BitBoard::new(0).more_than_one_bit_set());
     /// assert!(!BitBoard::new(1).more_than_one_bit_set());
     /// assert!(BitBoard::new(0b111).more_than_one_bit_set());
     /// ```
     #[must_use]
     pub fn more_than_one_bit_set(&self) -> bool {
-        (*self & Self(self.0 - 1)).is_not_empty()
+        (*self & Self(self.0.wrapping_sub(1))).is_not_empty()
     }
 
     /// Returns whether there are any bits set in both bitboards.
