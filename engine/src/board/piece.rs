@@ -67,6 +67,9 @@ impl Piece {
         }
     }
 
+    /// # Errors
+    ///
+    /// Will return `Err` if `character` is not `'p', 'n', 'b', 'r', 'q', 'k', 'P', 'N', 'B', 'R', 'Q', or 'K'`
     pub const fn from_fen_char(character: &char) -> Result<Self, &str> {
         match character {
             'P' => Ok(Self::WhitePawn),
