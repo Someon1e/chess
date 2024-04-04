@@ -36,6 +36,9 @@ pub fn all_rays() -> &'static [[BitBoard; 8]; 65] {
     COMPUTATION.get_or_init(calculate_all_rays)
 }
 
+/// # Panics
+///
+/// Should not panic
 pub fn iterate_combinations(squares: BitBoard) -> impl core::iter::Iterator<Item = BitBoard> {
     let mut next = Some(BitBoard::EMPTY);
     core::iter::from_fn(move || {

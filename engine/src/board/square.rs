@@ -222,6 +222,9 @@ impl Square {
     ///
     /// assert_eq!(Square::from_notation("a1"), Square::from_index(0));
     /// ```
+    /// # Panics
+    ///
+    /// Will panic if the notation is invalid
     #[must_use]
     pub fn from_notation(notation: &str) -> Self {
         let file = notation.as_bytes().first().expect("Invalid notation") - b'a';

@@ -28,6 +28,9 @@ pub fn encode_move(move_data: Move) -> String {
     encoded
 }
 
+/// # Panics
+///
+/// Will panic if there is no friendly piece at `from`
 #[must_use]
 pub fn decode_move(board: &Board, from: Square, to: Square, promotion: Flag) -> Move {
     let piece = board
@@ -74,6 +77,10 @@ uciok",
     pub fn isready(&self) {
         (self.out)("readyok");
     }
+
+    /// # Panics
+    ///
+    /// Will panic if there are invalid moves
     pub fn position(&mut self, args: &mut SplitWhitespace) {
         self.moves.clear();
 
@@ -115,6 +122,9 @@ uciok",
         });
     }
 
+    /// # Panics
+    ///
+    /// Will panic if there are missing parameters
     pub fn go(&mut self, args: &mut SplitWhitespace) {
         let mut parameters = GoParameters::empty();
         parameters.parse(args);

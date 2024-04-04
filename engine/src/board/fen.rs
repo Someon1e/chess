@@ -9,6 +9,9 @@ use super::{
 
 impl Board {
     /// Creates a Board from Forsyth-Edwards Notation
+    /// # Panics
+    ///
+    /// Will panic if the FEN is invalid
     #[must_use]
     pub fn from_fen(fen: &str) -> Self {
         let mut components = fen.split_whitespace();
@@ -98,6 +101,9 @@ impl Board {
     }
 
     /// Gets the Forsyth-Edwards Notation of the Board
+    /// # Panics
+    ///
+    /// Should not panic
     #[must_use]
     pub fn to_fen(&self) -> String {
         let mut fen = String::with_capacity(87);
