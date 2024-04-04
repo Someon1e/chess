@@ -1,4 +1,4 @@
-use std::str::SplitWhitespace;
+use core::str::SplitWhitespace;
 
 pub struct GoParameters {
     pub white_time: Option<u128>,
