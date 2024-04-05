@@ -18,6 +18,7 @@ use self::slider_lookup::{
 };
 
 #[allow(clippy::struct_excessive_bools)]
+/// Legal move generator
 pub struct MoveGenerator {
     white_to_move: bool,
 
@@ -551,6 +552,8 @@ impl MoveGenerator {
         }
         (orthogonal_pin_rays, diagonal_pin_rays)
     }
+
+    /// Creates a move generator for the current position
     #[must_use]
     pub fn new(board: &Board) -> Self {
         let white_to_move = board.white_to_move;
@@ -735,6 +738,7 @@ impl MoveGenerator {
         }
     }
 
+    /// Generates all friendly piece moves
     pub fn gen(&self, add_move: &mut dyn FnMut(Move), captures_only: bool) {
         self.gen_king(add_move, captures_only);
         if self.is_in_double_check {
@@ -755,6 +759,8 @@ impl MoveGenerator {
             self.gen_rook(from, add_move, captures_only);
         }
     }
+
+    /// Calculates whether the side to move is in check
     #[must_use]
     pub fn calculate_is_in_check(board: &Board) -> bool {
         let (friendly_pieces, enemy_pieces) = if board.white_to_move {
@@ -823,22 +829,32 @@ impl MoveGenerator {
 
         false
     }
+
+    /// Returns whether the side to move is in check
     #[must_use]
     pub const fn is_in_check(&self) -> bool {
         self.is_in_check
     }
+
+    /// Returns the enemy pawn attacks
     #[must_use]
     pub const fn enemy_pawn_attacks(&self) -> BitBoard {
         self.enemy_pawn_attacks
     }
+
+    /// Returns the enemy piece bit board
     #[must_use]
     pub const fn enemy_piece_bit_board(&self) -> BitBoard {
         self.enemy_piece_bit_board
     }
+
+    /// Returns the friendly pawns bit board
     #[must_use]
     pub const fn friendly_pawns(&self) -> BitBoard {
         self.friendly_pawns
     }
+
+    /// Returns the friendly piece bit board
     #[must_use]
     pub const fn friendly_pieces(&self) -> BitBoard {
         self.friendly_piece_bit_board

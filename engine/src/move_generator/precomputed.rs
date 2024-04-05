@@ -1,9 +1,6 @@
 use std::sync::OnceLock;
 
-use crate::board::{
-    bit_board::BitBoard,
-    square::Square,
-};
+use crate::board::{bit_board::BitBoard, square::Square};
 
 pub struct PawnAttacks {
     pub white_pawn_attacks_at_square: [BitBoard; 64],
