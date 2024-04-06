@@ -43,7 +43,7 @@ impl BitBoard {
     pub const EMPTY: Self = Self(0);
     pub const FULL: Self = Self(!0);
 
-    /// Bit board from a 64 bit numebr.
+    /// Bit board from a 64 bit number.
     #[must_use]
     pub const fn new(bits: u64) -> Self {
         Self(bits)

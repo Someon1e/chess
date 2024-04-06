@@ -7,7 +7,7 @@ use std::io::stdin;
 use core::cell::RefCell;
 use engine::uci::UCIProcessor;
 
-// Max time for thinking
+/// Max time for thinking
 const MAX_TIME: u128 = 20 * 1000;
 
 #[cfg(target_arch = "wasm32")]
