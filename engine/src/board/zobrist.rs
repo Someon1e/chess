@@ -3,11 +3,19 @@ use super::square::Square;
 
 use core::ops::Rem;
 
+/// Filled with random numbers
 #[derive(Debug)]
 pub struct ZobristRandoms {
+    /// Random integers for every piece for every square
     pub piece_arrays: [[u64; 64]; 12],
+
+    /// Random integer
     pub side_to_move: u64,
+
+    /// Random integers for every file
     pub en_passant_square_file: [u64; 8],
+
+    /// Random integers for every castling rights state
     pub castling_rights: [u64; 16],
 }
 
@@ -20,20 +28,25 @@ const ZOBRIST_RANDOMS: ZobristRandoms = ZobristRandoms { piece_arrays: [[1310141
 pub struct Zobrist(u64);
 
 impl Zobrist {
+    /// Empty hash
     pub const EMPTY: Self = Self(0);
 
+    /// Toggles en passant square from hash
     pub fn xor_en_passant(&mut self, en_passant_square: &Square) {
         self.0 ^= ZOBRIST_RANDOMS.en_passant_square_file[en_passant_square.file() as usize];
     }
 
+    /// Toggles castling rights from hash
     pub fn xor_castling_rights(&mut self, castling_rights: &CastlingRights) {
         self.0 ^= ZOBRIST_RANDOMS.castling_rights[castling_rights.internal_value() as usize];
     }
 
+    /// Toggles piece from hash
     pub fn xor_piece(&mut self, piece_index: usize, square_index: usize) {
         self.0 ^= ZOBRIST_RANDOMS.piece_arrays[piece_index][square_index];
     }
 
+    /// Toggles side to move from hash
     pub fn flip_side_to_move(&mut self) {
         self.0 ^= ZOBRIST_RANDOMS.side_to_move;
     }
