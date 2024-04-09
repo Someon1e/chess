@@ -59,6 +59,7 @@ impl Eval {
         (middle_game_score * middle_game_phase + end_game_score * end_game_phase) / total_phase
     }
 
+    /// Returns an estimated score of the position for the side playing
     #[must_use]
     pub fn evaluate(
         middle_game_piece_square_tables: &[EvalNumber; 384],
