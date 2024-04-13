@@ -69,6 +69,7 @@ impl Search {
         }
     }
 
+    /// Returns the current board
     #[must_use]
     pub const fn board(&self) -> &Board {
         &self.board
@@ -422,6 +423,8 @@ impl Search {
 
         best_score
     }
+
+    /// Repeatedly searches the board, increasing depth by one each time. Stops when depth_completed returns true.
     #[must_use]
     pub fn depth_by_depth(
         &mut self,
@@ -449,10 +452,14 @@ impl Search {
         }
         (depth, self.best_move, self.best_score)
     }
+
+    /// Returns whether a score means forced check mate.
     #[must_use]
     pub const fn score_is_checkmate(score: EvalNumber) -> bool {
         score.abs() >= CHECKMATE_SCORE
     }
+
+    /// Repeatedly searches the board, increasing depth by one each time. Stops when should_cancel returns true.
     #[must_use]
     pub fn iterative_deepening(
         &mut self,
