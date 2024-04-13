@@ -1,22 +1,47 @@
 // TODO: Less repetition here
 
+/// A piece
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum Piece {
+    /// A white pawn.
     WhitePawn,
+
+    /// A white knight.
     WhiteKnight,
+
+    /// A white bishop.
     WhiteBishop,
+
+    /// A white rook.
     WhiteRook,
+
+    /// A white queen.
     WhiteQueen,
+
+    /// A white king.
     WhiteKing,
+
+    /// A black pawn.
     BlackPawn,
+
+    /// A black knight.
     BlackKnight,
+
+    /// A black bishop.
     BlackBishop,
+
+    /// A black rook.
     BlackRook,
+
+    /// A black queen.
     BlackQueen,
+
+    /// A black king.
     BlackKing,
 }
 
 impl Piece {
+    /// All pieces.
     pub const ALL_PIECES: [Self; 12] = [
         Self::WhitePawn,
         Self::WhiteKnight,
@@ -31,6 +56,8 @@ impl Piece {
         Self::BlackQueen,
         Self::BlackKing,
     ];
+
+    /// Every white piece.
     pub const WHITE_PIECES: [Self; 6] = [
         Self::WhitePawn,
         Self::WhiteKnight,
@@ -39,6 +66,8 @@ impl Piece {
         Self::WhiteQueen,
         Self::WhiteKing,
     ];
+
+    /// Every black piece.
     pub const BLACK_PIECES: [Self; 6] = [
         Self::BlackPawn,
         Self::BlackKnight,
