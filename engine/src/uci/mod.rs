@@ -30,7 +30,7 @@ pub fn encode_move(move_data: Move) -> String {
 
 /// # Panics
 ///
-/// Will panic if there is no friendly piece at `from`
+/// Will panic if there is no friendly piece at `from`.
 #[must_use]
 pub fn decode_move(board: &Board, from: Square, to: Square, promotion: Flag) -> Move {
     let piece = board

@@ -453,7 +453,7 @@ impl Search {
         (depth, self.best_move, self.best_score)
     }
 
-    /// Returns whether a score means forced check mate.
+    /// Returns whether a score means forced checkmate.
     #[must_use]
     pub const fn score_is_checkmate(score: EvalNumber) -> bool {
         score.abs() >= CHECKMATE_SCORE

@@ -28,7 +28,7 @@ pub const DIRECTIONS: [Direction; 8] = [
 ];
 
 impl Square {
-    /// Returns the square from the index
+    /// Returns the square from the index.
     ///
     /// # Examples
     ///
@@ -44,7 +44,7 @@ impl Square {
         Self(index)
     }
 
-    /// Returns the square from rank number and file number
+    /// Returns the square from rank number and file number.
     ///
     /// # Examples
     ///
@@ -60,7 +60,7 @@ impl Square {
         Self(rank * 8 + file)
     }
 
-    /// Ranks up from white's perspective
+    /// Ranks up from white's perspective.
     ///
     /// # Examples
     ///
@@ -74,7 +74,7 @@ impl Square {
         self.offset(UP_OFFSET * number)
     }
 
-    /// Ranks down from white's perspective
+    /// Ranks down from white's perspective.
     ///
     /// # Examples
     ///
@@ -88,7 +88,7 @@ impl Square {
         self.offset(DOWN_OFFSET * number)
     }
 
-    /// Files left from white's perspective
+    /// Files left from white's perspective.
     ///
     /// # Examples
     ///
@@ -102,7 +102,7 @@ impl Square {
         self.offset(LEFT_OFFSET * number)
     }
 
-    /// Files right from white's perspective
+    /// Files right from white's perspective.
     ///
     /// # Examples
     ///
@@ -121,7 +121,7 @@ impl Square {
         Self(self.index() + offset)
     }
 
-    /// Returns 63 >= square >= 0
+    /// Returns 63 >= square >= 0.
     ///
     /// # Examples
     ///
@@ -148,7 +148,7 @@ impl Square {
         self.0 as usize
     }
 
-    /// Returns the square if viewed on flipped board
+    /// Returns the square if viewed on flipped board.
     ///
     /// # Examples
     ///
@@ -163,7 +163,7 @@ impl Square {
         Self(self.index() ^ 56)
     }
 
-    /// Returns the square if viewed on flipped board
+    /// Returns the square if viewed on flipped board.
     ///
     /// # Examples
     ///
@@ -178,7 +178,7 @@ impl Square {
         self.index() & 0b111
     }
 
-    /// Returns the rank of the square
+    /// Returns the rank of the square.
     ///
     /// # Examples
     ///
@@ -193,7 +193,7 @@ impl Square {
         self.index() >> 3
     }
 
-    /// Returns the notation of the square
+    /// Returns the notation of the square.
     ///
     /// # Examples
     ///
@@ -211,7 +211,7 @@ impl Square {
         format!("{file_char}{rank_number}")
     }
 
-    /// Returns the square from the algebraic notation
+    /// Returns the square from the algebraic notation.
     /// Rank (or row) 1 is the end of the board where white begins; black begins at rank 8.
     /// The files (or columns) are lettered from white's left to right.
     ///
@@ -224,7 +224,7 @@ impl Square {
     /// ```
     /// # Panics
     ///
-    /// Will panic if the notation is invalid
+    /// Will panic if the notation is invalid.
     #[must_use]
     pub fn from_notation(notation: &str) -> Self {
         let file = notation.as_bytes().first().expect("Invalid notation") - b'a';

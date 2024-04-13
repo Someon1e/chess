@@ -3,33 +3,33 @@ use core::fmt;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Flag {
-    /// A standard move
+    /// A standard move.
     None,
 
-    /// A pawn promoting to a queen
+    /// A pawn promoting to a queen.
     QueenPromotion,
 
-    /// A pawn promoting to a rook
+    /// A pawn promoting to a rook.
     RookPromotion,
 
-    /// A pawn promoting to a bishop
+    /// A pawn promoting to a bishop.
     BishopPromotion,
 
-    /// A pawn promoting to a knight
+    /// A pawn promoting to a knight.
     KnightPromotion,
 
-    /// En passant
+    /// En passant.
     EnPassant,
 
-    /// A pawn moving two squares up
+    /// A pawn moving two squares up.
     PawnTwoUp,
 
-    /// The king castling
+    /// The king castling.
     Castle,
 }
 
 impl Flag {
-    /// Every flag
+    /// Every flag.
     pub const ALL: [Self; 8] = [
         Self::None,
         Self::QueenPromotion,
@@ -41,7 +41,7 @@ impl Flag {
         Self::Castle,
     ];
 
-    /// Every promotion flag
+    /// Every promotion flag.
     pub const PROMOTIONS: [Self; 4] = [
         Self::QueenPromotion,
         Self::RookPromotion,
@@ -49,7 +49,7 @@ impl Flag {
         Self::KnightPromotion,
     ];
 
-    /// Returns the piece being promoted into if it is a promotion flag, otherwise returns None
+    /// Returns the piece being promoted into if it is a promotion flag, otherwise returns None.
     ///
     /// # Examples
     ///
@@ -99,10 +99,10 @@ impl Flag {
 /// A piece move
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub struct Move {
-    /// Square the piece is moving from
+    /// Square the piece is moving from.
     pub from: Square,
 
-    /// Square the piece is moving to
+    /// Square the piece is moving to.
     pub to: Square,
 
     /// Type of move
