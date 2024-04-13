@@ -25,22 +25,43 @@ impl fmt::Display for BitBoard {
 }
 
 impl BitBoard {
+    /// Bit board with all bits set except the A file
     pub const NOT_A_FILE: Self = Self(!0x0101_0101_0101_0101);
+
+    /// Bit board with all bits set except the H file
     pub const NOT_H_FILE: Self = Self(!(0x0101_0101_0101_0101 << 7));
 
+    /// Bit board with only the first rank set
     pub const RANK_1: Self = Self(0xFF);
 
     // TODO: Rewrite as Self::RANK_X << 8;
     // currently cannot call non-const operator in constants
+
+    /// Bit board with only the second rank set
     pub const RANK_2: Self = Self(0xFF << 8);
+
+    /// Bit board with only the third rank set
     pub const RANK_3: Self = Self(0xFF << 16);
+
+    /// Bit board with only the fourth rank set
     pub const RANK_4: Self = Self(0xFF << 24);
+
+    /// Bit board with only the fifth rank set
     pub const RANK_5: Self = Self(0xFF << 32);
+
+    /// Bit board with only the sixth rank set
     pub const RANK_6: Self = Self(0xFF << 40);
+
+    /// Bit board with only the seventh rank set
     pub const RANK_7: Self = Self(0xFF << 48);
+
+    /// Bit board with only the eighth rank set
     pub const RANK_8: Self = Self(0xFF << 56);
 
+    /// Bit board with no bits set
     pub const EMPTY: Self = Self(0);
+
+    /// Bit board with all bits set
     pub const FULL: Self = Self(!0);
 
     /// Bit board from a 64 bit number.
