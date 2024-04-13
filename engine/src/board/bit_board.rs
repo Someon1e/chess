@@ -2,6 +2,7 @@ use super::square::Square;
 use core::fmt;
 use core::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not, Shl, Shr};
 
+/// 64 bit number where each bit represents a square.
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub struct BitBoard(u64);
 

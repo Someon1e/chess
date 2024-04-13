@@ -30,6 +30,7 @@ fn perft(board: &mut Board, depth: u16) -> usize {
     move_count
 }
 
+/// Starts a perft test.
 pub fn perft_root(board: &mut Board, depth: u16, log: fn(&str)) -> usize {
     let mut move_count = 0;
     MoveGenerator::new(board).gen(

@@ -4,8 +4,9 @@ use crate::board::square::{Square, DIRECTIONS};
 use crate::board::Board;
 
 mod maker;
-pub mod move_data;
 mod precomputed;
+pub mod move_data;
+
 pub mod slider_keys;
 pub mod slider_lookup;
 

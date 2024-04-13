@@ -105,7 +105,7 @@ pub struct Move {
     /// Square the piece is moving to.
     pub to: Square,
 
-    /// Type of move
+    /// Type of move.
     pub flag: Flag,
 }
 

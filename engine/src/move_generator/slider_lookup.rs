@@ -31,6 +31,7 @@ fn calculate_all_rays() -> [[BitBoard; 8]; 65] {
     }
     rays
 }
+
 pub fn all_rays() -> &'static [[BitBoard; 8]; 65] {
     static COMPUTATION: OnceLock<[[BitBoard; 8]; 65]> = OnceLock::new();
     COMPUTATION.get_or_init(calculate_all_rays)
@@ -38,7 +39,7 @@ pub fn all_rays() -> &'static [[BitBoard; 8]; 65] {
 
 /// # Panics
 ///
-/// Should not panic
+/// Should not panic.
 pub fn iterate_combinations(squares: BitBoard) -> impl core::iter::Iterator<Item = BitBoard> {
     let mut next = Some(BitBoard::EMPTY);
     core::iter::from_fn(move || {
@@ -160,6 +161,7 @@ fn rook_lookup() -> &'static Vec<BitBoard> {
         .get_or_init(|| init_lookup(ROOK_TABLE_SIZE, &ROOK_KEYS, relevant_rook_blockers(), 0))
 }
 
+/// Returns possible rook moves at a square given blockers which are relevant.
 #[must_use]
 pub fn get_rook_moves(square: Square, relevant_blockers: BitBoard) -> BitBoard {
     let key = ROOK_KEYS[square.usize()];
@@ -179,6 +181,7 @@ fn bishop_lookup() -> &'static Vec<BitBoard> {
     })
 }
 
+/// Returns possible bishop moves at a square given blockers which are relevant.
 #[must_use]
 pub fn get_bishop_moves(square: Square, relevant_blockers: BitBoard) -> BitBoard {
     let key = BISHOP_KEYS[square.usize()];

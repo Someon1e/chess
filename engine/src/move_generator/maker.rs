@@ -3,6 +3,7 @@ use crate::board::{game_state::GameState, piece::Piece, square::Square, Board};
 use super::move_data::{Flag, Move};
 
 impl Board {
+    /// Skips the turn
     pub fn make_null_move(&mut self) -> GameState {
         let old_state = self.game_state;
 
@@ -18,6 +19,8 @@ impl Board {
         self.game_state.en_passant_square = None;
         old_state
     }
+
+    /// Unskips the turn
     pub fn unmake_null_move(&mut self, old_state: &GameState) {
         self.game_state = *old_state;
         self.white_to_move = !self.white_to_move;
@@ -25,8 +28,8 @@ impl Board {
 
     /// # Panics
     ///
-    /// Will panic if there is no friendly piece at `from`
-    /// Will panic if it is en passant and `self.game_state.en_passant_square` is `None`
+    /// Will panic if there is no friendly piece at `from`.
+    /// Will panic if it is en passant and `self.game_state.en_passant_square` is `None`.
     pub fn make_move(&mut self, move_data: &Move) -> GameState {
         let old_state = self.game_state;
 
@@ -163,8 +166,8 @@ impl Board {
 
     /// # Panics
     ///
-    /// Will panic if there is no friendly piece at `move_data.to`
-    /// Will panic if it is en passant and `self.game_state.captured` is `None`
+    /// Will panic if there is no friendly piece at `move_data.to`.
+    /// Will panic if it is en passant and `self.game_state.captured` is `None`.
     pub fn unmake_move(&mut self, move_data: &Move, old_state: &GameState) {
         let capture = self.game_state.captured;
         self.game_state = *old_state;

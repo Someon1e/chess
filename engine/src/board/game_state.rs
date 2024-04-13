@@ -67,6 +67,7 @@ impl CastlingRights {
         data |= u8::from(black_can_castle_queen_side) << Self::BLACK_QUEEN_SIDE_OFFSET;
         Self(data)
     }
+
     #[must_use]
     pub fn from_fen_section(castling_rights: &str) -> Self {
         if castling_rights == "-" {
@@ -80,10 +81,13 @@ impl CastlingRights {
             )
         }
     }
+
+    /// Returns whether no sides can castle.
     #[must_use]
     pub const fn is_none(&self) -> bool {
         self.0 == 0
     }
+
     #[must_use]
     pub const fn internal_value(&self) -> u8 {
         self.0
@@ -92,11 +96,14 @@ impl CastlingRights {
 
 #[derive(Copy, Clone)]
 pub struct GameState {
+    /// The square which can be captured by en passant.
     pub en_passant_square: Option<Square>,
 
     pub castling_rights: CastlingRights,
 
     pub half_move_clock: u64,
+
+    /// The last captured piece.
     pub captured: Option<Piece>,
 
     pub zobrist_key: Zobrist,

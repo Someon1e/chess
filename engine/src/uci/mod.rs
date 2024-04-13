@@ -12,6 +12,7 @@ use crate::{
 
 use self::go_params::GoParameters;
 
+/// Encodes a move in algebraic notation.
 #[must_use]
 pub fn encode_move(move_data: Move) -> String {
     let mut encoded = String::with_capacity(4);
@@ -61,6 +62,7 @@ pub struct UCIProcessor {
 
     pub search: Option<Search>,
 
+    /// Called with UCI output.
     pub out: fn(&str),
 }
 

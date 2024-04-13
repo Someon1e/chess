@@ -1,3 +1,5 @@
+//! Chess move generator and engine
+
 #![deny(clippy::all)]
 #![warn(clippy::pedantic)]
 #![warn(clippy::nursery)]
@@ -7,13 +9,22 @@
 #![allow(clippy::cast_sign_loss)]
 #![allow(clippy::too_many_lines)]
 #![allow(clippy::module_name_repetitions)]
+#![warn(missing_docs)]
 
+/// Represents a chess position.
 pub mod board;
+
+/// Generates moves in a chess position.
 pub mod move_generator;
-pub mod perft;
+
+/// Finds the best outcome in a chess position.
 pub mod search;
-mod timer;
+
+/// Universal Chess Protocol
 pub mod uci;
+
+pub mod perft;
+mod timer;
 
 #[cfg(test)]
 mod tests {

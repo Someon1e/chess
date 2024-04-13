@@ -31,6 +31,7 @@ const USE_INTERNAL_ITERATIVE_REDUCTION: bool = true;
 const USE_PVS: bool = true;
 const USE_KILLER_MOVE: bool = true;
 
+/// Looks for the best outcome in a position.
 pub struct Search {
     board: Board,
 
@@ -69,7 +70,7 @@ impl Search {
         }
     }
 
-    /// Returns the current board
+    /// Returns the current board.
     #[must_use]
     pub const fn board(&self) -> &Board {
         &self.board
@@ -155,10 +156,14 @@ impl Search {
         }
         best_score
     }
+
+    /// Adds the position into the repetition table and makes a move.
     pub fn make_move(&mut self, move_data: &Move) -> GameState {
         self.repetition_table.push(self.board.zobrist_key());
         self.board.make_move(move_data)
     }
+
+    /// Unmakes a move, then removes the position from the repetition table.
     pub fn unmake_move(&mut self, move_data: &Move, old_state: &GameState) {
         self.board.unmake_move(move_data, old_state);
 

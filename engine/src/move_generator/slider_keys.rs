@@ -1,7 +1,9 @@
 #[derive(Debug, Clone, Copy)]
 pub struct Key {
     pub magic: u64,
+
     pub shift: u8,
+
     pub offset: u32,
 }
 
@@ -329,6 +331,7 @@ pub const ROOK_KEYS: [Key; 64] = [
     },
 ];
 
+/// Size of the rook move look up table.
 pub const ROOK_TABLE_SIZE: usize = 88064;
 
 #[allow(clippy::unreadable_literal)]
@@ -655,4 +658,5 @@ pub const BISHOP_KEYS: [Key; 64] = [
     },
 ];
 
+/// Size of the bishop move look up table.
 pub const BISHOP_TABLE_SIZE: usize = 4800;
