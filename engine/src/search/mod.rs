@@ -438,7 +438,7 @@ impl Search {
         best_score
     }
 
-    /// Repeatedly searches the board, increasing depth by one each time. Stops when depth_completed returns true.
+    /// Repeatedly searches the board, increasing depth by one each time. Stops when `depth_completed` returns true.
     #[must_use]
     pub fn depth_by_depth(
         &mut self,
@@ -473,7 +473,7 @@ impl Search {
         score.abs() >= CHECKMATE_SCORE
     }
 
-    /// Repeatedly searches the board, increasing depth by one each time. Stops when should_cancel returns true.
+    /// Repeatedly searches the board, increasing depth by one each time. Stops when `should_cancel` returns true.
     #[must_use]
     pub fn iterative_deepening(
         &mut self,

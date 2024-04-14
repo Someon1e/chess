@@ -23,7 +23,7 @@ macro_rules! define_castling_rights {
     };
 }
 
-/// Encodes castling rights
+/// Encodes castling rights.
 #[derive(Copy, Clone)]
 pub struct CastlingRights(u8);
 impl CastlingRights {

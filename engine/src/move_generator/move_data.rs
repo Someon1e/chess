@@ -97,7 +97,7 @@ impl Flag {
     }
 }
 
-/// A piece move
+/// A piece move.
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub struct Move {
     /// Square the piece is moving from.
