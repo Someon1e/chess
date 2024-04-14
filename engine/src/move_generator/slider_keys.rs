@@ -1,12 +1,17 @@
+/// Magic key.
 #[derive(Debug, Clone, Copy)]
 pub struct Key {
+    /// Multiplied with the bit board.
     pub magic: u64,
 
+    /// The right shift after multiply by `magic`.
     pub shift: u8,
 
+    /// Offset in the look up table index
     pub offset: u32,
 }
 
+/// Rook magic keys.
 #[allow(clippy::unreadable_literal)]
 pub const ROOK_KEYS: [Key; 64] = [
     Key {
@@ -331,9 +336,10 @@ pub const ROOK_KEYS: [Key; 64] = [
     },
 ];
 
-/// Size of the rook move look up table.
+/// Size of the rook move lookup table.
 pub const ROOK_TABLE_SIZE: usize = 88064;
 
+/// Bishop magic keys.
 #[allow(clippy::unreadable_literal)]
 pub const BISHOP_KEYS: [Key; 64] = [
     Key {
@@ -658,5 +664,5 @@ pub const BISHOP_KEYS: [Key; 64] = [
     },
 ];
 
-/// Size of the bishop move look up table.
+/// Size of the bishop move lookup table.
 pub const BISHOP_TABLE_SIZE: usize = 4800;

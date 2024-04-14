@@ -2,8 +2,10 @@ use crate::board::{piece::Piece, Board};
 
 use super::eval_data::EvalNumber;
 
+/// Evaluation functions.
 pub struct Eval;
 impl Eval {
+    /// Gets the phase.
     #[must_use]
     pub fn get_phase(board: &Board, phases: &[EvalNumber; 5]) -> EvalNumber {
         let mut phase = 0;

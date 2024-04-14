@@ -21,7 +21,7 @@ impl EncodedMove {
         Self(data)
     }
 
-    /// Decodes from, to, and flag
+    /// Decodes from, to, and flag.
     pub const fn decode(self) -> Move {
         Move {
             from: self.from(),

@@ -54,12 +54,18 @@ pub fn decode_move(board: &Board, from: Square, to: Square, promotion: Flag) -> 
     Move { from, to, flag }
 }
 
+/// Handles UCI input and output.
 pub struct UCIProcessor {
+    /// Maximum time to search, in milliseconds.
     pub max_thinking_time: u128,
 
-    pub moves: Vec<(Square, Square, Flag)>,
+    /// FEN to be used.
     pub fen: Option<String>,
 
+    /// Moves to be played after FEN.
+    pub moves: Vec<(Square, Square, Flag)>,
+
+    /// Search instance.
     pub search: Option<Search>,
 
     /// Called with UCI output.
@@ -67,6 +73,7 @@ pub struct UCIProcessor {
 }
 
 impl UCIProcessor {
+    /// Outputs `id` command, `option` commands, and `uciok`
     pub fn uci(&self) {
         (self.out)(
             "id name chess
@@ -76,13 +83,15 @@ option name Threads type spin default 1 min 1 max 1
 uciok",
         );
     }
+
+    /// This should output `readyok`.
     pub fn isready(&self) {
         (self.out)("readyok");
     }
 
     /// # Panics
     ///
-    /// Will panic if there are invalid moves
+    /// Will panic if there are invalid moves.
     pub fn position(&mut self, args: &mut SplitWhitespace) {
         self.moves.clear();
 
@@ -126,7 +135,7 @@ uciok",
 
     /// # Panics
     ///
-    /// Will panic if there are missing parameters
+    /// Will panic if there are missing parameters.
     pub fn go(&mut self, args: &mut SplitWhitespace) {
         let mut parameters = GoParameters::empty();
         parameters.parse(args);

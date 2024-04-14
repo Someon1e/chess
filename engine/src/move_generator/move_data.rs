@@ -1,6 +1,7 @@
 use crate::board::{piece::Piece, square::Square};
 use core::fmt;
 
+/// Extra move data.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Flag {
     /// A standard move.

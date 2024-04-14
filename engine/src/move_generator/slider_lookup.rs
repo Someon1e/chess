@@ -32,6 +32,7 @@ fn calculate_all_rays() -> [[BitBoard; 8]; 65] {
     rays
 }
 
+/// Lookup table for all eight rays at a square.
 pub fn all_rays() -> &'static [[BitBoard; 8]; 65] {
     static COMPUTATION: OnceLock<[[BitBoard; 8]; 65]> = OnceLock::new();
     COMPUTATION.get_or_init(calculate_all_rays)
@@ -52,6 +53,7 @@ pub fn iterate_combinations(squares: BitBoard) -> impl core::iter::Iterator<Item
     })
 }
 
+/// Finds relevant rook (`direction_offset` = 0) or bishop (`direction_offset` = 4) blockers.
 #[must_use]
 pub fn rook_or_bishop_blockers(from: Square, direction_offset: usize) -> BitBoard {
     let square_index = from.usize();
@@ -86,6 +88,7 @@ pub fn rook_or_bishop_blockers(from: Square, direction_offset: usize) -> BitBoar
     moves
 }
 
+/// Computes rook (`direction_offset` = 0) or bishop (`direction_offset` = 4) moves.
 #[must_use]
 pub fn gen_rook_or_bishop(from: Square, blockers: &BitBoard, direction_offset: usize) -> BitBoard {
     let mut moves = BitBoard::EMPTY;
@@ -124,10 +127,13 @@ fn calculate_blockers_for_each_square(direction_offset: usize) -> [BitBoard; 64]
     blockers
 }
 
+/// Lookup table for relevant rook blockers.
 pub fn relevant_rook_blockers() -> &'static [BitBoard; 64] {
     static COMPUTATION: OnceLock<[BitBoard; 64]> = OnceLock::new();
     COMPUTATION.get_or_init(|| calculate_blockers_for_each_square(0))
 }
+
+/// Lookup table for relevant bishop blockers.
 pub fn relevant_bishop_blockers() -> &'static [BitBoard; 64] {
     static COMPUTATION: OnceLock<[BitBoard; 64]> = OnceLock::new();
     COMPUTATION.get_or_init(|| calculate_blockers_for_each_square(4))

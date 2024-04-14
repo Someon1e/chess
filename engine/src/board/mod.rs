@@ -1,15 +1,21 @@
 use core::fmt::Display;
 
+/// Implements bit boards.
 pub mod bit_board;
+
+/// Implements FEN notation.
 pub mod fen;
+
+/// Game state.
 pub mod game_state;
 
 /// Handles pieces.
 pub mod piece;
 
-/// Handles squares.
+/// Abstraction for squares.
 pub mod square;
 
+/// Zobrist key.
 pub mod zobrist;
 
 use bit_board::BitBoard;

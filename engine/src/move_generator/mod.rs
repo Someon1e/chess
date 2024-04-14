@@ -5,9 +5,14 @@ use crate::board::Board;
 
 mod maker;
 mod precomputed;
+
+/// Move data.
 pub mod move_data;
 
+/// Magic keys used for slider lookup.
 pub mod slider_keys;
+
+/// Handles slider look up.
 pub mod slider_lookup;
 
 use self::move_data::{Flag, Move};
@@ -18,8 +23,8 @@ use self::slider_lookup::{
     get_bishop_moves, get_rook_moves, relevant_bishop_blockers, relevant_rook_blockers,
 };
 
+/// Legal move generator.
 #[allow(clippy::struct_excessive_bools)]
-/// Legal move generator
 pub struct MoveGenerator {
     white_to_move: bool,
 

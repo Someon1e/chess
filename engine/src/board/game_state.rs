@@ -3,21 +3,27 @@ use crate::board::square::Square;
 use super::{piece::Piece, zobrist::Zobrist};
 
 macro_rules! define_castling_rights {
+    // TODO: better documentation here
     ($getter:ident, $setter:ident, $unsetter:ident, $offset:expr) => {
+        /// Get.
         #[must_use]
         pub const fn $getter(&self) -> bool {
             self.0 & (1 << $offset) != 0
         }
 
+        /// Set.
         pub fn $setter(&mut self) {
             self.0 |= 1 << $offset;
         }
 
+        /// Unset.
         pub fn $unsetter(&mut self) {
             self.0 &= !(1 << $offset);
         }
     };
 }
+
+/// Encodes castling rights
 #[derive(Copy, Clone)]
 pub struct CastlingRights(u8);
 impl CastlingRights {
@@ -32,6 +38,7 @@ impl CastlingRights {
         unset_white_king_side,
         Self::WHITE_KING_SIDE_OFFSET
     );
+
     define_castling_rights!(
         get_white_queen_side,
         set_white_queen_side,
@@ -51,6 +58,7 @@ impl CastlingRights {
         Self::BLACK_QUEEN_SIDE_OFFSET
     );
 
+    /// Creates castling rights.
     #[must_use]
     #[allow(clippy::fn_params_excessive_bools)]
     pub fn new(
@@ -68,6 +76,7 @@ impl CastlingRights {
         Self(data)
     }
 
+    /// Parses castling rights from the section of a FEN string.
     #[must_use]
     pub fn from_fen_section(castling_rights: &str) -> Self {
         if castling_rights == "-" {
@@ -88,23 +97,28 @@ impl CastlingRights {
         self.0 == 0
     }
 
+    /// Returns the u8 internal representation.
     #[must_use]
     pub const fn internal_value(&self) -> u8 {
         self.0
     }
 }
 
+/// Game state.
 #[derive(Copy, Clone)]
 pub struct GameState {
     /// The square which can be captured by en passant.
     pub en_passant_square: Option<Square>,
 
+    /// Castling rights.
     pub castling_rights: CastlingRights,
 
+    /// Half move clock.
     pub half_move_clock: u64,
 
     /// The last captured piece.
     pub captured: Option<Piece>,
 
+    /// Zobrist key.
     pub zobrist_key: Zobrist,
 }

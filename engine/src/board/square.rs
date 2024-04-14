@@ -1,6 +1,7 @@
 use super::bit_board::BitBoard;
 use core::fmt;
 
+/// Squares.
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
 pub struct Square(i8);
 
@@ -10,12 +11,14 @@ impl fmt::Display for Square {
     }
 }
 
+/// A direction.
 pub type Direction = i8;
 
 const UP_OFFSET: Direction = 8;
 const DOWN_OFFSET: Direction = -8;
 const LEFT_OFFSET: Direction = -1;
 const RIGHT_OFFSET: Direction = 1;
+/// All directions.
 pub const DIRECTIONS: [Direction; 8] = [
     RIGHT_OFFSET,
     UP_OFFSET,
@@ -116,6 +119,7 @@ impl Square {
         self.offset(RIGHT_OFFSET * number)
     }
 
+    /// Adds to index.
     #[must_use]
     pub const fn offset(&self, offset: i8) -> Self {
         Self(self.index() + offset)
@@ -139,10 +143,13 @@ impl Square {
         self.index() >= 0 && self.index() < 64
     }
 
+    /// Returns the index of the square.
     #[must_use]
     pub const fn index(&self) -> i8 {
         self.0
     }
+
+    /// Returns the index of the square as an usize.
     #[must_use]
     pub const fn usize(&self) -> usize {
         self.0 as usize

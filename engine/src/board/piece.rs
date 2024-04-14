@@ -1,6 +1,6 @@
 // TODO: Less repetition here
 
-/// A piece
+/// A piece.
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum Piece {
     /// A white pawn.
@@ -77,6 +77,7 @@ impl Piece {
         Self::BlackKing,
     ];
 
+    /// Converts a piece into a FEN character.
     #[must_use]
     pub const fn to_fen_char(self) -> char {
         match self {
@@ -96,6 +97,8 @@ impl Piece {
         }
     }
 
+    /// Tries to convert a FEN character into the piece.
+    ///
     /// # Errors
     ///
     /// Will return `Err` if `character` is not `'p', 'n', 'b', 'r', 'q', 'k', 'P', 'N', 'B', 'R', 'Q', or 'K'`.

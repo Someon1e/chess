@@ -1,8 +1,10 @@
 mod encoded_move;
-pub mod eval;
 mod eval_data;
 mod move_ordering;
 mod transposition;
+
+/// Handles evaluation.
+pub mod eval;
 
 use crate::{
     board::{game_state::GameState, zobrist::Zobrist, Board},
@@ -19,7 +21,9 @@ use self::{
 
 type Ply = u8;
 
+/// Score of having checkmated the opponent.
 pub const IMMEDIATE_CHECKMATE_SCORE: EvalNumber = -EvalNumber::MAX + 1;
+
 const CHECKMATE_SCORE: EvalNumber = IMMEDIATE_CHECKMATE_SCORE.abs() - (Ply::MAX as EvalNumber);
 
 const NOT_LATE_MOVES: usize = 3;
@@ -50,6 +54,7 @@ pub struct Search {
 }
 
 impl Search {
+    /// Create a new search.
     #[must_use]
     pub fn new(board: Board) -> Self {
         Self {
@@ -76,21 +81,13 @@ impl Search {
         &self.board
     }
 
+    /// A new position.
     pub fn new_board(&mut self, board: Board) {
         self.board = board;
         self.repetition_table.clear();
     }
 
-    pub fn clear_cache_for_new_game(&mut self) {
-        self.transposition_table.fill(None);
-        for side in &mut self.history_heuristic {
-            for from in side {
-                for to in from {
-                    *to = 0;
-                }
-            }
-        }
-    }
+    /// Another search.
     pub fn clear_for_new_search(&mut self) {
         #[cfg(test)]
         {
@@ -106,6 +103,18 @@ impl Search {
         }
         self.best_move = EncodedMove::NONE;
         self.best_score = -EvalNumber::MAX;
+    }
+
+    /// A new match.
+    pub fn clear_cache_for_new_game(&mut self) {
+        self.transposition_table.fill(None);
+        for side in &mut self.history_heuristic {
+            for from in side {
+                for to in from {
+                    *to = 0;
+                }
+            }
+        }
     }
 
     #[must_use]

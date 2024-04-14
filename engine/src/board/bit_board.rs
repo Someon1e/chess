@@ -36,7 +36,7 @@ impl BitBoard {
     pub const RANK_1: Self = Self(0xFF);
 
     // TODO: Rewrite as Self::RANK_X << 8;
-    // currently cannot call non-const operator in constants
+    // currently cannot call non-const operator in constants.
 
     /// Bit board with only the second rank set.
     pub const RANK_2: Self = Self(0xFF << 8);
@@ -266,6 +266,7 @@ impl BitBoard {
         Self(self.0.wrapping_sub(d.0) & d.0)
     }
 
+    /// Multiplies by `magic`, then right shifts by `shift`.
     #[must_use]
     pub const fn magic_index(&self, magic: u64, shift: u8) -> usize {
         let hash = self.0.wrapping_mul(magic);

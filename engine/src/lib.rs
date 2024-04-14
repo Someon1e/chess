@@ -3,13 +3,13 @@
 #![deny(clippy::all)]
 #![warn(clippy::pedantic)]
 #![warn(clippy::nursery)]
+#![warn(missing_docs)]
 // TODO: reduce these
 #![allow(clippy::cast_possible_truncation)]
 #![allow(clippy::cast_possible_wrap)]
 #![allow(clippy::cast_sign_loss)]
 #![allow(clippy::too_many_lines)]
 #![allow(clippy::module_name_repetitions)]
-#![warn(missing_docs)]
 
 /// Represents a chess position.
 pub mod board;
@@ -20,10 +20,12 @@ pub mod move_generator;
 /// Finds the best outcome in a chess position.
 pub mod search;
 
-/// Universal Chess Protocol
+/// Universal Chess Protocol.
 pub mod uci;
 
+/// Perft testing.
 pub mod perft;
+
 mod timer;
 
 #[cfg(test)]

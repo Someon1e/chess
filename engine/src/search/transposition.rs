@@ -9,7 +9,7 @@ pub struct NodeValue {
     pub node_type: NodeType,
     pub value: EvalNumber,
 
-    /// The best move found
+    /// The best move found.
     pub transposition_move: EncodedMove,
 }
 
@@ -17,10 +17,10 @@ pub struct NodeValue {
 pub enum NodeType {
     Exact,
 
-    /// Lower bound
+    /// Lower bound.
     Beta,
 
-    /// Upper bound
+    /// Upper bound.
     Alpha,
 }
 

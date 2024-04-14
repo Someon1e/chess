@@ -9,6 +9,7 @@ use super::{
 
 impl Board {
     /// Creates a Board from Forsyth-Edwards Notation.
+    ///
     /// # Panics
     ///
     /// Will panic if the FEN is invalid.
@@ -101,6 +102,7 @@ impl Board {
     }
 
     /// Gets the Forsyth-Edwards Notation of the Board.
+    ///
     /// # Panics
     ///
     /// Should not panic.
