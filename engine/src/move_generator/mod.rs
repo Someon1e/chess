@@ -559,7 +559,7 @@ impl MoveGenerator {
         (orthogonal_pin_rays, diagonal_pin_rays)
     }
 
-    /// Creates a move generator for the current position
+    /// Creates a move generator for the current position.
     #[must_use]
     pub fn new(board: &Board) -> Self {
         let white_to_move = board.white_to_move;
