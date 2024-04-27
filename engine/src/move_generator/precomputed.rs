@@ -2,11 +2,6 @@ use std::sync::OnceLock;
 
 use crate::board::{bit_board::BitBoard, square::Square};
 
-pub struct PawnAttacks {
-    pub white_pawn_attacks_at_square: [BitBoard; 64],
-    pub black_pawn_attacks_at_square: [BitBoard; 64],
-}
-
 const fn min(a: i8, b: i8) -> i8 {
     if a > b {
         b
@@ -86,54 +81,4 @@ pub const KING_MOVES_AT_SQUARE: [BitBoard; 64] = {
         }
     }
     king_moves_at_square
-};
-
-pub const PAWN_ATTACKS: PawnAttacks = {
-    let mut white_pawn_attacks_at_square = [BitBoard::EMPTY; 64];
-    let mut black_pawn_attacks_at_square = [BitBoard::EMPTY; 64];
-
-    let mut index = 0;
-    loop {
-        let square = Square::from_index(index as i8);
-        let square_bit = 1 << index;
-
-        let mut white_pawn_attacks = 0;
-        let mut black_pawn_attacks = 0;
-
-        if 0xFEFE_FEFE_FEFE_FEFE_u64 & square_bit != 0 {
-            // not a file
-            if (!0xFF00_0000_0000_0000_u64) & square_bit != 0 {
-                // not 8th rank
-                white_pawn_attacks |= 1 << square.up(1).left(1).index();
-            }
-            if (!0xFF) & square_bit != 0 {
-                // not 1st rank
-                black_pawn_attacks |= 1 << square.down(1).left(1).index();
-            }
-        }
-        if 0x7F7F_7F7F_7F7F_7F7F_u64 & square_bit != 0 {
-            // not h file
-            if (!0xFF00_0000_0000_0000_u64) & square_bit != 0 {
-                // not 8th rank
-                white_pawn_attacks |= 1 << square.up(1).right(1).index();
-            }
-            if (!0xFF) & square_bit != 0 {
-                // not 1st rank
-                black_pawn_attacks |= 1 << square.down(1).right(1).index();
-            }
-        }
-
-        white_pawn_attacks_at_square[index] = BitBoard::new(white_pawn_attacks);
-        black_pawn_attacks_at_square[index] = BitBoard::new(black_pawn_attacks);
-
-        index += 1;
-        if index == 64 {
-            break;
-        }
-    }
-
-    PawnAttacks {
-        white_pawn_attacks_at_square,
-        black_pawn_attacks_at_square,
-    }
 };

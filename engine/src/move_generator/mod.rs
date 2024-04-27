@@ -4,6 +4,7 @@ use crate::board::square::{Square, DIRECTIONS};
 use crate::board::Board;
 
 mod maker;
+mod pawn_move_generator;
 mod precomputed;
 
 /// Move data.
@@ -16,9 +17,8 @@ pub mod slider_keys;
 pub mod slider_lookup;
 
 use self::move_data::{Flag, Move};
-use self::precomputed::{
-    knight_moves_at_square, KING_MOVES_AT_SQUARE, PAWN_ATTACKS, SQUARES_FROM_EDGE,
-};
+use self::pawn_move_generator::PawnMoveGenerator;
+use self::precomputed::{knight_moves_at_square, KING_MOVES_AT_SQUARE, SQUARES_FROM_EDGE};
 use self::slider_lookup::{
     get_bishop_moves, get_rook_moves, relevant_bishop_blockers, relevant_rook_blockers,
 };
@@ -64,200 +64,8 @@ pub struct MoveGenerator {
 }
 
 impl MoveGenerator {
-    fn gen_promotions(add_move: &mut dyn FnMut(Move), from: Square, to: Square) {
-        for promotion in Flag::PROMOTIONS {
-            add_move(Move {
-                from,
-                to,
-                flag: promotion,
-            });
-        }
-    }
-    const fn pawn_attack_bit_board(from: Square, white: bool) -> BitBoard {
-        if white {
-            PAWN_ATTACKS.white_pawn_attacks_at_square[from.usize()]
-        } else {
-            PAWN_ATTACKS.black_pawn_attacks_at_square[from.usize()]
-        }
-    }
     fn gen_pawns(&self, add_move: &mut dyn FnMut(Move), captures_only: bool) {
-        let promotion_rank = if self.white_to_move {
-            BitBoard::RANK_8
-        } else {
-            BitBoard::RANK_1
-        };
-
-        {
-            // Captures
-
-            let non_orthogonally_pinned_pawns = self.friendly_pawns & !self.orthogonal_pin_rays;
-
-            let not_on_the_right_edge = if self.white_to_move {
-                BitBoard::NOT_H_FILE
-            } else {
-                BitBoard::NOT_A_FILE
-            };
-            let not_on_the_left_edge = if self.white_to_move {
-                BitBoard::NOT_A_FILE
-            } else {
-                BitBoard::NOT_H_FILE
-            };
-            let capture_right_offset = if self.white_to_move { -9 } else { 9 };
-            let capture_left_offset = if self.white_to_move { -7 } else { 7 };
-
-            let can_capture = self.enemy_piece_bit_board & self.check_mask;
-            let mut capture_right = if self.white_to_move {
-                (non_orthogonally_pinned_pawns & not_on_the_right_edge) << 9
-            } else {
-                (non_orthogonally_pinned_pawns & not_on_the_right_edge) >> 9
-            } & can_capture;
-
-            let mut capture_left = if self.white_to_move {
-                (non_orthogonally_pinned_pawns & not_on_the_left_edge) << 7
-            } else {
-                (non_orthogonally_pinned_pawns & not_on_the_left_edge) >> 7
-            } & can_capture;
-
-            macro_rules! captures {
-                ($captures:expr, $offset:expr) => {
-                    while $captures.is_not_empty() {
-                        let capture = $captures.pop_square();
-                        let from = capture.offset($offset);
-
-                        let is_diagonally_pinned = self.diagonal_pin_rays.get(&from);
-
-                        if is_diagonally_pinned && !self.diagonal_pin_rays.get(&capture) {
-                            continue;
-                        }
-                        if promotion_rank.get(&capture) {
-                            Self::gen_promotions(add_move, from, capture)
-                        } else {
-                            add_move(Move {
-                                from,
-                                to: capture,
-                                flag: Flag::None,
-                            });
-                        }
-                    }
-                };
-            }
-
-            captures!(capture_right, capture_right_offset);
-            captures!(capture_left, capture_left_offset);
-        }
-
-        if let Some(en_passant_square) = self.en_passant_square {
-            // En passant
-
-            let capture_position = en_passant_square.down(if self.white_to_move { 1 } else { -1 });
-            if self.check_mask.get(&capture_position) {
-                let mut pawns_able_to_en_passant = self.friendly_pawns
-                    & {
-                        // Generate attacks for an imaginary enemy pawn at the en passant square
-                        // The up-left and up-right of en_passant_square are squares that we can en passant from
-                        Self::pawn_attack_bit_board(en_passant_square, !self.white_to_move)
-                    }
-                    & !self.orthogonal_pin_rays;
-                'en_passant_check: while pawns_able_to_en_passant.is_not_empty() {
-                    let from = pawns_able_to_en_passant.pop_square();
-
-                    if self.diagonal_pin_rays.get(&from)
-                        && !self.diagonal_pin_rays.get(&en_passant_square)
-                    {
-                        continue;
-                    }
-
-                    if self.friendly_king_square.rank() == from.rank() {
-                        // Check if en passant will reveal a check
-                        // Not covered by pin rays because enemy pawn was blocking
-                        // Check by pretending the king is a rook to find enemy queens/rooks that are not obstructed
-                        let unblocked = get_rook_moves(
-                            self.friendly_king_square,
-                            (self.occupied_squares
-                                ^ from.bit_board()
-                                ^ capture_position.bit_board())
-                                & relevant_rook_blockers()[self.friendly_king_square.usize()],
-                        );
-
-                        if unblocked.overlaps(&self.enemy_rooks_and_queens_bit_board) {
-                            continue 'en_passant_check;
-                        }
-                    }
-
-                    add_move(Move {
-                        from,
-                        to: en_passant_square,
-                        flag: Flag::EnPassant,
-                    });
-                }
-            }
-        }
-
-        if captures_only {
-            return;
-        }
-
-        let single_push = if self.white_to_move {
-            (self.friendly_pawns & !self.diagonal_pin_rays) << 8
-        } else {
-            (self.friendly_pawns & !self.diagonal_pin_rays) >> 8
-        } & self.empty_squares;
-        let one_down_offset = if self.white_to_move { -8 } else { 8 };
-
-        {
-            // Move pawn one square up
-
-            let mut push_promotions = single_push & self.push_mask & promotion_rank;
-
-            let mut single_push_no_promotions = single_push & self.push_mask & !push_promotions;
-
-            while single_push_no_promotions.is_not_empty() {
-                let move_to = single_push_no_promotions.pop_square();
-                let from = move_to.offset(one_down_offset);
-                if !self.orthogonal_pin_rays.get(&from) || self.orthogonal_pin_rays.get(&move_to) {
-                    add_move(Move {
-                        from,
-                        to: move_to,
-                        flag: Flag::None,
-                    });
-                }
-            }
-            while push_promotions.is_not_empty() {
-                let move_to = push_promotions.pop_square();
-                let from = move_to.offset(one_down_offset);
-                if !self.orthogonal_pin_rays.get(&from) || self.orthogonal_pin_rays.get(&move_to) {
-                    Self::gen_promotions(add_move, from, move_to);
-                }
-            }
-        }
-
-        {
-            // Move pawn two squares up
-            let double_push = if self.white_to_move {
-                single_push << 8
-            } else {
-                single_push >> 8
-            } & self.push_mask;
-            let double_down_offset = one_down_offset * 2;
-            let mut double_push = double_push
-                & self.empty_squares
-                & if self.white_to_move {
-                    BitBoard::RANK_4
-                } else {
-                    BitBoard::RANK_5
-                };
-            while double_push.is_not_empty() {
-                let move_to = double_push.pop_square();
-                let from = move_to.offset(double_down_offset);
-                if !self.orthogonal_pin_rays.get(&from) || self.orthogonal_pin_rays.get(&move_to) {
-                    add_move(Move {
-                        from,
-                        to: move_to,
-                        flag: Flag::PawnTwoUp,
-                    });
-                }
-            }
-        }
+        PawnMoveGenerator::generate(self, add_move, captures_only)
     }
 }
 
@@ -361,7 +169,7 @@ impl MoveGenerator {
             check_mask |= orthogonal_attacker;
         }
 
-        let pawn_check = Self::pawn_attack_bit_board(king_square, white_to_move);
+        let pawn_check = PawnMoveGenerator::attack_bit_board(king_square, white_to_move);
         let pawn_attacker = pawn_check & enemy_pawns;
         if pawn_attacker.is_not_empty() {
             check_mask |= pawn_attacker;
@@ -807,7 +615,7 @@ impl MoveGenerator {
 
         let king_square = friendly_king.first_square();
 
-        let pawn_check = Self::pawn_attack_bit_board(king_square, board.white_to_move);
+        let pawn_check = PawnMoveGenerator::attack_bit_board(king_square, board.white_to_move);
         let pawn_attacker = pawn_check & enemy_pawns;
         if pawn_attacker.is_not_empty() {
             return true;
