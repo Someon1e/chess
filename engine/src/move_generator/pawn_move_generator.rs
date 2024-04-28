@@ -111,19 +111,19 @@ impl PawnMoveGenerator {
             let capture_left_offset = if move_generator.white_to_move { -7 } else { 7 };
 
             let can_capture = move_generator.enemy_piece_bit_board & move_generator.check_mask;
-            let mut capture_right = if move_generator.white_to_move {
+            let capture_right = if move_generator.white_to_move {
                 (non_orthogonally_pinned_pawns & not_on_the_right_edge) << 9
             } else {
                 (non_orthogonally_pinned_pawns & not_on_the_right_edge) >> 9
             } & can_capture;
 
-            let mut capture_left = if move_generator.white_to_move {
+            let capture_left = if move_generator.white_to_move {
                 (non_orthogonally_pinned_pawns & not_on_the_left_edge) << 7
             } else {
                 (non_orthogonally_pinned_pawns & not_on_the_left_edge) >> 7
             } & can_capture;
 
-            macro_rules! captures {
+            macro_rules! promotion_captures {
                 ($captures:expr, $offset:expr) => {
                     while $captures.is_not_empty() {
                         let capture = $captures.pop_square();
@@ -134,21 +134,40 @@ impl PawnMoveGenerator {
                         if is_diagonally_pinned && !move_generator.diagonal_pin_rays.get(&capture) {
                             continue;
                         }
-                        if promotion_rank.get(&capture) {
-                            Self::gen_promotions(add_move, from, capture)
-                        } else {
-                            add_move(Move {
-                                from,
-                                to: capture,
-                                flag: Flag::None,
-                            });
-                        }
+                        Self::gen_promotions(add_move, from, capture)
                     }
                 };
             }
 
-            captures!(capture_right, capture_right_offset);
-            captures!(capture_left, capture_left_offset);
+            macro_rules! captures_no_promotions {
+                ($captures:expr, $offset:expr) => {
+                    while $captures.is_not_empty() {
+                        let capture = $captures.pop_square();
+                        let from = capture.offset($offset);
+
+                        let is_diagonally_pinned = move_generator.diagonal_pin_rays.get(&from);
+
+                        if is_diagonally_pinned && !move_generator.diagonal_pin_rays.get(&capture) {
+                            continue;
+                        }
+                        add_move(Move {
+                            from,
+                            to: capture,
+                            flag: Flag::None,
+                        });
+                    }
+                };
+            }
+
+            let mut capture_right_promotions = capture_right & promotion_rank;
+            let mut capture_right_no_promotions = capture_right & !capture_right_promotions;
+            promotion_captures!(capture_right_promotions, capture_right_offset);
+            captures_no_promotions!(capture_right_no_promotions, capture_right_offset);
+
+            let mut capture_left_promotions = capture_left & promotion_rank;
+            let mut capture_left_no_promotions = capture_left & !capture_left_promotions;
+            promotion_captures!(capture_left_promotions, capture_left_offset);
+            captures_no_promotions!(capture_left_no_promotions, capture_left_offset);
         }
 
         if let Some(en_passant_square) = move_generator.en_passant_square {
