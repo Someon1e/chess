@@ -59,33 +59,24 @@ pub fn rook_or_bishop_blockers(from: Square, direction_offset: usize) -> BitBoar
     let square_index = from.usize();
     let squares_from_edge = SQUARES_FROM_EDGE[square_index];
 
-    let mut moves = BitBoard::EMPTY;
+    let rays = &all_rays()[square_index];
 
-    let rays = &all_rays()[from.usize()];
-
-    let mut ray = rays[direction_offset];
-    ray.unset(&from.offset(DIRECTIONS[direction_offset] * squares_from_edge[direction_offset]));
-    moves |= ray;
-
-    let mut ray = rays[direction_offset + 1];
-    ray.unset(
-        &from.offset(DIRECTIONS[direction_offset + 1] * squares_from_edge[direction_offset + 1]),
-    );
-    moves |= ray;
-
-    let mut ray = rays[direction_offset + 2];
-    ray.unset(
-        &from.offset(DIRECTIONS[direction_offset + 2] * squares_from_edge[direction_offset + 2]),
-    );
-    moves |= ray;
-
-    let mut ray = rays[direction_offset + 3];
-    ray.unset(
-        &from.offset(DIRECTIONS[direction_offset + 3] * squares_from_edge[direction_offset + 3]),
-    );
-    moves |= ray;
-
-    moves
+    rays[direction_offset]
+        & !from
+            .offset(DIRECTIONS[direction_offset] * squares_from_edge[direction_offset])
+            .bit_board()
+        | rays[direction_offset + 1]
+            & !from
+                .offset(DIRECTIONS[direction_offset + 1] * squares_from_edge[direction_offset + 1])
+                .bit_board()
+        | rays[direction_offset + 2]
+            & !from
+                .offset(DIRECTIONS[direction_offset + 2] * squares_from_edge[direction_offset + 2])
+                .bit_board()
+        | rays[direction_offset + 3]
+            & !from
+                .offset(DIRECTIONS[direction_offset + 3] * squares_from_edge[direction_offset + 3])
+                .bit_board()
 }
 
 /// Computes rook (`direction_offset` = 0) or bishop (`direction_offset` = 4) moves.
