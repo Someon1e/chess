@@ -1,11 +1,7 @@
 use engine::{
     board::{bit_board::BitBoard, square::Square},
-    move_generator::{
-        slider_keys::Key,
-        slider_lookup::{
-            gen_rook_or_bishop, iterate_combinations, relevant_bishop_blockers,
-            relevant_rook_blockers,
-        },
+    move_generator::slider_lookup::{
+        gen_rook_or_bishop, iterate_combinations, relevant_bishop_blockers, relevant_rook_blockers,
     },
 };
 
@@ -38,12 +34,6 @@ fn find_magics(relevant_blockers: &[BitBoard; 64], direction_offset: usize) {
 
     let mut best_magics = [0; 64];
     let mut best_index_bits = [0; 64];
-    let mut keys = [Key {
-        magic: 0,
-        shift: 0,
-        offset: 0,
-    }; 64];
-    let mut length = 0;
 
     for square_index in 0..64 {
         let square = Square::from_index(square_index as i8);
@@ -55,25 +45,24 @@ fn find_magics(relevant_blockers: &[BitBoard; 64], direction_offset: usize) {
         loop {
             let magic = random.next_u64() & random.next_u64() & random.next_u64();
             let filled = fill_magic_table(square, blockers, magic, index_bits, direction_offset);
-            if let Ok(filled) = filled {
-                keys[square_index] = Key {
-                    magic,
-                    shift: 64 - index_bits,
-                    offset: length,
-                };
+            if filled.is_ok() {
+                best_index_bits[square_index] = index_bits;
                 best_magics[square_index] = magic;
 
-                length += filled.len() as u32;
                 break;
             }
         }
     }
-    println!("{keys:?} {length}");
+    let mut length = 0;
+    for (magic, index_bits) in best_magics.iter().zip(best_index_bits) {
+        let shift = 64 - index_bits;
+        println!("Key {{shift: {shift}, magic: {magic:#04X}, offset: {length}}},");
+        length += 1 << index_bits;
+    }
+    println!("{length}");
 
     loop {
         let mut did_improve = false;
-
-        length = 0;
 
         for square_index in 0..64 {
             let square = Square::from_index(square_index as i8);
@@ -102,6 +91,7 @@ fn find_magics(relevant_blockers: &[BitBoard; 64], direction_offset: usize) {
                 62 => 0x0003ffef27eebe74,
                 63 => 0x7645FFFECBFEA79E,
                 */
+
                 /* Bishop
                 0 => 0xffedf9fd7cfcffff,
                 1 => 0xfc0962854a77f576,
@@ -131,32 +121,28 @@ fn find_magics(relevant_blockers: &[BitBoard; 64], direction_offset: usize) {
                 _ => random.next_u64() & random.next_u64() & random.next_u64(),
             };
             let filled = fill_magic_table(square, blockers, magic, index_bits, direction_offset);
-            if let Ok(filled) = filled {
+            if filled.is_ok() {
                 did_improve = true;
 
-                keys[square_index] = Key {
-                    magic,
-                    shift: 64 - index_bits,
-                    offset: length,
-                };
                 best_magics[square_index] = magic;
                 best_index_bits[square_index] = index_bits;
-
-                length += filled.len() as u32;
                 continue;
             }
-
-            keys[square_index].offset = length;
-            length += 1 << previous_index_bits;
         }
         if did_improve {
-            println!("{keys:?} {length}");
+            let mut length = 0;
+            for (magic, index_bits) in best_magics.iter().zip(best_index_bits) {
+                let shift = 64 - index_bits;
+                println!("Key {{shift: {shift}, magic: {magic:#04X}, offset: {length}}},");
+                length += 1 << index_bits;
+            }
+            println!("{length}");
         }
     }
 }
 
 fn main() {
-    if true {
+    if false {
         find_magics(relevant_rook_blockers(), 0);
     } else {
         find_magics(relevant_bishop_blockers(), 4);
