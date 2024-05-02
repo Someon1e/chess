@@ -11,7 +11,7 @@ use std::{fs::File, io::BufReader};
 fn parse_data_set() -> Vec<(Board, f64)> {
     let file = File::open("dataset/positions.txt").expect("Failed to open file");
     let data_set = BufReader::new(file);
-    let mut parsed = Vec::with_capacity(100_000);
+    let mut parsed = Vec::with_capacity(1_000_000);
 
     for data in data_set.lines() {
         let Result::Ok(data) = data else {
@@ -31,6 +31,7 @@ fn parse_data_set() -> Vec<(Board, f64)> {
         let board = Board::from_fen(fen);
         parsed.push((board, result));
     }
+    parsed.shrink_to_fit();
 
     parsed
 }
@@ -366,6 +367,9 @@ fn main() {
     let time = Instant::now();
 
     let data_set = parse_data_set();
+
+    println!("Parsed dataset in {} seconds", time.elapsed().as_secs_f64());
+    return;
 
     let k = find_k(
         &data_set,
