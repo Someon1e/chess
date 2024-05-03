@@ -65,7 +65,7 @@ pub struct MoveGenerator {
 
 impl MoveGenerator {
     fn gen_pawns(&self, add_move: &mut dyn FnMut(Move), captures_only: bool) {
-        PawnMoveGenerator::generate(self, add_move, captures_only)
+        PawnMoveGenerator::generate(self, add_move, captures_only);
     }
 }
 
