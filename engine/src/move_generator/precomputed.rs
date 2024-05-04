@@ -1,5 +1,3 @@
-use std::sync::OnceLock;
-
 use crate::board::{bit_board::BitBoard, square::Square};
 
 const fn min(a: i8, b: i8) -> i8 {
@@ -38,30 +36,34 @@ pub const SQUARES_FROM_EDGE: [[i8; 8]; 64] = {
     squares_from_edge
 };
 
-fn calculate_knight_moves_at_square() -> [BitBoard; 64] {
+pub const KNIGHT_MOVES_AT_SQUARE: [BitBoard; 64] = {
     let mut knight_moves_at_square = [BitBoard::EMPTY; 64];
 
-    for (index, knight_moves) in knight_moves_at_square.iter_mut().enumerate() {
-        let square = Square::from_index(index as i8);
-        for knight_jump_offset in [15, 17, -17, -15, 10, -6, 6, -10] {
-            let move_to = square.offset(knight_jump_offset);
-            if move_to.within_bounds()
-                && square
-                    .file()
-                    .abs_diff(move_to.file())
-                    .max(square.rank().abs_diff(move_to.rank()))
-                    == 2
-            {
-                knight_moves.set(&move_to);
-            }
+    let mut index = 0;
+    loop {
+        let knight = 1 << index;
+
+        let left_1 = (knight >> 1) & 0x7f7f7f7f7f7f7f7f;
+        let left_2 = (knight >> 2) & 0x3f3f3f3f3f3f3f3f;
+        let right_1 = (knight << 1) & 0xfefefefefefefefe;
+        let right_2 = (knight << 2) & 0xfcfcfcfcfcfcfcfc;
+        let left_and_right_1 = left_1 | right_1;
+        let left_and_right_2 = left_2 | right_2;
+        knight_moves_at_square[index] = BitBoard::new(
+            (left_and_right_1 << 16)
+                | (left_and_right_1 >> 16)
+                | (left_and_right_2 << 8)
+                | (left_and_right_2 >> 8),
+        );
+
+        index += 1;
+        if index == 64 {
+            break;
         }
     }
+
     knight_moves_at_square
-}
-pub fn knight_moves_at_square() -> &'static [BitBoard; 64] {
-    static COMPUTATION: OnceLock<[BitBoard; 64]> = OnceLock::new();
-    COMPUTATION.get_or_init(calculate_knight_moves_at_square)
-}
+};
 
 pub const KING_MOVES_AT_SQUARE: [BitBoard; 64] = {
     let mut king_moves_at_square = [BitBoard::EMPTY; 64];
