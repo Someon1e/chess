@@ -239,25 +239,25 @@ impl PawnMoveGenerator {
                 single_push & move_generator.push_mask & !push_promotions;
 
             while single_push_no_promotions.is_not_empty() {
-                let move_to = single_push_no_promotions.pop_square();
-                let from = move_to.offset(one_down_offset);
+                let to = single_push_no_promotions.pop_square();
+                let from = to.offset(one_down_offset);
                 if !move_generator.orthogonal_pin_rays.get(&from)
-                    || move_generator.orthogonal_pin_rays.get(&move_to)
+                    || move_generator.orthogonal_pin_rays.get(&to)
                 {
                     add_move(Move {
                         from,
-                        to: move_to,
+                        to,
                         flag: Flag::None,
                     });
                 }
             }
             while push_promotions.is_not_empty() {
-                let move_to = push_promotions.pop_square();
-                let from = move_to.offset(one_down_offset);
+                let to = push_promotions.pop_square();
+                let from = to.offset(one_down_offset);
                 if !move_generator.orthogonal_pin_rays.get(&from)
-                    || move_generator.orthogonal_pin_rays.get(&move_to)
+                    || move_generator.orthogonal_pin_rays.get(&to)
                 {
-                    Self::gen_promotions(add_move, from, move_to);
+                    Self::gen_promotions(add_move, from, to);
                 }
             }
         }
@@ -278,14 +278,14 @@ impl PawnMoveGenerator {
                     BitBoard::RANK_5
                 };
             while double_push.is_not_empty() {
-                let move_to = double_push.pop_square();
-                let from = move_to.offset(double_down_offset);
+                let to = double_push.pop_square();
+                let from = to.offset(double_down_offset);
                 if !move_generator.orthogonal_pin_rays.get(&from)
-                    || move_generator.orthogonal_pin_rays.get(&move_to)
+                    || move_generator.orthogonal_pin_rays.get(&to)
                 {
                     add_move(Move {
                         from,
-                        to: move_to,
+                        to,
                         flag: Flag::PawnTwoUp,
                     });
                 }

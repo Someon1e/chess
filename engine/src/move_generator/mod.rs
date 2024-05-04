@@ -87,10 +87,10 @@ impl MoveGenerator {
             let from = non_pinned_knights.pop_square();
             let mut knight_moves = Self::knight_attack_bit_board(from) & mask;
             while knight_moves.is_not_empty() {
-                let move_to = knight_moves.pop_square();
+                let to = knight_moves.pop_square();
                 add_move(Move {
                     from,
-                    to: move_to,
+                    to,
                     flag: Flag::None,
                 });
             }
@@ -112,10 +112,10 @@ impl MoveGenerator {
         }
 
         while legal_moves.is_not_empty() {
-            let move_to = legal_moves.pop_square();
+            let to = legal_moves.pop_square();
             add_move(Move {
                 from,
-                to: move_to,
+                to,
                 flag: Flag::None,
             });
         }
@@ -133,10 +133,10 @@ impl MoveGenerator {
         }
 
         while legal_moves.is_not_empty() {
-            let move_to = legal_moves.pop_square();
+            let to = legal_moves.pop_square();
             add_move(Move {
                 from,
-                to: move_to,
+                to,
                 flag: Flag::None,
             });
         }
@@ -256,10 +256,10 @@ impl MoveGenerator {
             king_moves &= self.enemy_piece_bit_board;
         }
         while king_moves.is_not_empty() {
-            let move_to = king_moves.pop_square();
+            let to = king_moves.pop_square();
             add_move(Move {
                 from: self.friendly_king_square,
-                to: move_to,
+                to,
                 flag: Flag::None,
             });
         }
@@ -270,7 +270,7 @@ impl MoveGenerator {
 
         let cannot_castle_into = self.occupied_squares | self.king_danger_bit_board;
         if self.king_side {
-            let move_to = self.friendly_king_square.right(2);
+            let to = self.friendly_king_square.right(2);
             let castle_mask = if self.white_to_move {
                 BitBoard::new(0b01100000)
             } else {
@@ -280,13 +280,13 @@ impl MoveGenerator {
             if !(castle_mask.overlaps(&cannot_castle_into)) {
                 add_move(Move {
                     from: self.friendly_king_square,
-                    to: move_to,
+                    to,
                     flag: Flag::Castle,
                 });
             }
         }
         if self.queen_side {
-            let move_to = self.friendly_king_square.left(2);
+            let to = self.friendly_king_square.left(2);
             let castle_block_mask = if self.white_to_move {
                 BitBoard::new(0b00001110)
             } else {
@@ -302,7 +302,7 @@ impl MoveGenerator {
                 if !castle_mask.overlaps(&cannot_castle_into) {
                     add_move(Move {
                         from: self.friendly_king_square,
-                        to: move_to,
+                        to,
                         flag: Flag::Castle,
                     });
                 }
@@ -332,10 +332,10 @@ impl MoveGenerator {
             let mut ray = BitBoard::EMPTY;
             let mut is_friendly_piece_on_ray = false;
             for count in 1..=*distance_from_edge {
-                let move_to = friendly_king_square.offset(direction * count);
-                ray.set(&move_to);
+                let to = friendly_king_square.offset(direction * count);
+                ray.set(&to);
 
-                if friendly_piece_bit_board.get(&move_to) {
+                if friendly_piece_bit_board.get(&to) {
                     // Friendly piece blocks ray
 
                     if is_friendly_piece_on_ray {
@@ -344,11 +344,11 @@ impl MoveGenerator {
                         break;
                     }
                     is_friendly_piece_on_ray = true;
-                } else if enemy_piece_bit_board.get(&move_to) {
+                } else if enemy_piece_bit_board.get(&to) {
                     let can_pin = if is_rook_movement {
-                        enemy_orthogonal.get(&move_to)
+                        enemy_orthogonal.get(&to)
                     } else {
-                        enemy_diagonal.get(&move_to)
+                        enemy_diagonal.get(&to)
                     };
                     if !can_pin {
                         break;
