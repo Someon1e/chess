@@ -43,10 +43,10 @@ pub const KNIGHT_MOVES_AT_SQUARE: [BitBoard; 64] = {
     loop {
         let knight = 1 << index;
 
-        let left_1 = (knight >> 1) & 0x7f7f7f7f7f7f7f7f;
-        let left_2 = (knight >> 2) & 0x3f3f3f3f3f3f3f3f;
-        let right_1 = (knight << 1) & 0xfefefefefefefefe;
-        let right_2 = (knight << 2) & 0xfcfcfcfcfcfcfcfc;
+        let left_1 = (knight >> 1) & 0x7F7F_7F7F_7F7F_7F7F;
+        let left_2 = (knight >> 2) & 0x3F3F_3F3F_3F3F_3F3F;
+        let right_1 = (knight << 1) & 0xFEFE_FEFE_FEFE_FEFE;
+        let right_2 = (knight << 2) & 0xFCFC_FCFC_FCFC_FCFC;
         let left_and_right_1 = left_1 | right_1;
         let left_and_right_2 = left_2 | right_2;
         knight_moves_at_square[index] = BitBoard::new(

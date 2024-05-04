@@ -70,7 +70,7 @@ impl MoveGenerator {
 }
 
 impl MoveGenerator {
-    fn knight_attack_bit_board(square: Square) -> BitBoard {
+    const fn knight_attack_bit_board(square: Square) -> BitBoard {
         KNIGHT_MOVES_AT_SQUARE[square.usize()]
     }
 
