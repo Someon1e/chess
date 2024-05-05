@@ -255,14 +255,14 @@ impl Search {
 
         if is_not_pv_node && !move_generator.is_in_check() {
             // Static null move pruning (also known as reverse futility pruning)
-            if USE_STATIC_NULL_MOVE_PRUNING && ply_remaining < 7 {
+            if USE_STATIC_NULL_MOVE_PRUNING && ply_remaining < 5 {
                 let static_eval = Eval::evaluate(
                     &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLES,
                     &eval_data::END_GAME_PIECE_SQUARE_TABLES,
                     &eval_data::PHASES,
                     &self.board,
                 );
-                if static_eval - i32::from(ply_remaining) * 80 > beta {
+                if static_eval - i32::from(ply_remaining) * 60 > beta {
                     return static_eval;
                 }
             }
@@ -348,7 +348,7 @@ impl Search {
 
             if !normal_search {
                 // Late move reduction
-                let r = 2 + ply_remaining / 9 + index as Ply / 15;
+                let r = 2 + ply_remaining / 10 + index as Ply / 9;
                 score = -self.negamax(
                     should_cancel,
                     ply_remaining.saturating_sub(r),
