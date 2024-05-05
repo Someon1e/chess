@@ -97,7 +97,7 @@ impl Search {
         for side in &mut self.history_heuristic {
             for from in side {
                 for to in from {
-                    *to /= 10;
+                    *to /= 9;
                 }
             }
         }
@@ -325,6 +325,7 @@ impl Search {
         let mut node_type = NodeType::Alpha;
         let (mut transposition_move, mut best_score) = (EncodedMove::NONE, -EvalNumber::MAX);
 
+        let mut quiets_evaluated: Vec<EncodedMove> = Vec::new();
         let mut index = 0;
         loop {
             let encoded_move_data =
@@ -409,15 +410,26 @@ impl Search {
                                 self.killer_moves[usize::from(ply_from_root)] = encoded_move_data;
                             }
 
-                            self.history_heuristic[usize::from(self.board.white_to_move)]
-                                [move_data.from.usize()][move_data.to.usize()] +=
-                                MoveGuessNum::from(ply_remaining)
-                                    * MoveGuessNum::from(ply_remaining);
+                            let history = MoveGuessNum::from(ply_remaining)
+                                * MoveGuessNum::from(ply_remaining);
+
+                            let history_side =
+                                &mut self.history_heuristic[usize::from(self.board.white_to_move)];
+
+                            history_side[move_data.from.usize()][move_data.to.usize()] += history;
+
+                            for previous_quiet in quiets_evaluated {
+                                history_side[previous_quiet.from().usize()]
+                                    [previous_quiet.to().usize()] -= history;
+                            }
                         }
                         node_type = NodeType::Beta;
                         break;
                     }
                 }
+            }
+            if !is_capture {
+                quiets_evaluated.push(encoded_move_data)
             }
 
             index += 1;
