@@ -2,7 +2,7 @@ use crate::board::{bit_board::BitBoard, square::Square};
 
 use super::{
     move_data::{Flag, Move},
-    slider_lookup::{get_rook_moves, relevant_rook_blockers},
+    slider_lookup::{get_rook_moves, RELEVANT_ROOK_BLOCKERS},
     MoveGenerator,
 };
 
@@ -201,7 +201,7 @@ impl PawnMoveGenerator {
                             (move_generator.occupied_squares
                                 ^ from.bit_board()
                                 ^ capture_position.bit_board())
-                                & relevant_rook_blockers()
+                                & RELEVANT_ROOK_BLOCKERS
                                     [move_generator.friendly_king_square.usize()],
                         );
 
