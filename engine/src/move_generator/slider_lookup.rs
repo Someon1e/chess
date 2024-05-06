@@ -13,30 +13,44 @@ use super::{
     slider_keys::{Key, BISHOP_KEYS},
 };
 
-fn calculate_all_rays() -> [[BitBoard; 8]; 65] {
+const ALL_RAYS: [[BitBoard; 8]; 65] = {
     let mut rays = [[BitBoard::EMPTY; 8]; 65];
-    for square_index in 0..64 {
-        let from = Square::from_index(square_index as i8);
-        for (direction_index, (direction, distance_from_edge)) in DIRECTIONS
-            .iter()
-            .zip(SQUARES_FROM_EDGE[square_index])
-            .enumerate()
-        {
-            let ray = &mut rays[square_index][direction_index];
-            for count in 1..=distance_from_edge {
+    let mut index = 0;
+    loop {
+        let from = Square::from_index(index as i8);
+
+        let mut direction_index = 0;
+        loop {
+            let direction = DIRECTIONS[direction_index];
+            let distance_from_edge = SQUARES_FROM_EDGE[index][direction_index];
+
+            let mut count = 0;
+            let mut bit_board = 0;
+            loop {
+                if count == distance_from_edge {
+                    break;
+                }
+
+                count += 1;
+
                 let move_to = from.offset(direction * count);
-                ray.set(&move_to);
+                bit_board |= 1 << move_to.index();
             }
+            rays[index][direction_index] = BitBoard::new(bit_board);
+
+            direction_index += 1;
+            if direction_index == DIRECTIONS.len() {
+                break;
+            }
+        }
+
+        index += 1;
+        if index == 64 {
+            break;
         }
     }
     rays
-}
-
-/// Lookup table for all eight rays at a square.
-pub fn all_rays() -> &'static [[BitBoard; 8]; 65] {
-    static COMPUTATION: OnceLock<[[BitBoard; 8]; 65]> = OnceLock::new();
-    COMPUTATION.get_or_init(calculate_all_rays)
-}
+};
 
 /// # Panics
 ///
@@ -59,7 +73,7 @@ pub fn rook_or_bishop_blockers(from: Square, direction_offset: usize) -> BitBoar
     let square_index = from.usize();
     let squares_from_edge = SQUARES_FROM_EDGE[square_index];
 
-    let rays = &all_rays()[square_index];
+    let rays = ALL_RAYS[square_index];
 
     rays[direction_offset]
         & !from
@@ -84,26 +98,26 @@ pub fn rook_or_bishop_blockers(from: Square, direction_offset: usize) -> BitBoar
 pub fn gen_rook_or_bishop(from: Square, blockers: &BitBoard, direction_offset: usize) -> BitBoard {
     let mut moves = BitBoard::EMPTY;
 
-    let rays = &all_rays()[from.usize()];
+    let rays = &ALL_RAYS[from.usize()];
 
     let mut ray = rays[direction_offset];
     let blocker = ray & *blockers;
-    ray ^= all_rays()[blocker.first_square().usize()][direction_offset];
+    ray ^= ALL_RAYS[blocker.first_square().usize()][direction_offset];
     moves |= ray;
 
     let mut ray = rays[direction_offset + 1];
     let blocker = ray & *blockers;
-    ray ^= all_rays()[blocker.first_square().usize()][direction_offset + 1];
+    ray ^= ALL_RAYS[blocker.first_square().usize()][direction_offset + 1];
     moves |= ray;
 
     let mut ray = rays[direction_offset + 2];
     let blocker = ray & *blockers;
-    ray ^= all_rays()[(blocker | BitBoard::new(1)).last_square().usize()][direction_offset + 2];
+    ray ^= ALL_RAYS[(blocker | BitBoard::new(1)).last_square().usize()][direction_offset + 2];
     moves |= ray;
 
     let mut ray = rays[direction_offset + 3];
     let blocker = ray & *blockers;
-    ray ^= all_rays()[(blocker | BitBoard::new(1)).last_square().usize()][direction_offset + 3];
+    ray ^= ALL_RAYS[(blocker | BitBoard::new(1)).last_square().usize()][direction_offset + 3];
     moves |= ray;
 
     moves
