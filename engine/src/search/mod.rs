@@ -1332,14 +1332,15 @@ mod tests {
         let mut failures = 0;
         let mut successes = 0;
         let mut total_times_evaluation_was_called = 0;
+        println!("Number | Position | Times eval was called");
         for (position, success, times_evaluation_was_called) in receiver.iter() {
             if success {
                 successes += 1;
                 total_times_evaluation_was_called += times_evaluation_was_called;
-                println!("\x1b[92mSuccess #{successes} {position}\x1b[0m");
+                println!("\x1b[92mSuccess #{successes:<4} {position:<72} {times_evaluation_was_called:>8}\x1b[0m");
             } else {
                 failures += 1;
-                println!("\x1b[91mFailure #{failures} {position}\x1b[0m");
+                println!("\x1b[91mFailure #{failures:<4} {position}\x1b[0m");
             };
             if successes + failures == OBVIOUS_POSITIONS_RANDOMISED.len() {
                 break;
