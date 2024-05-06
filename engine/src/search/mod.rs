@@ -1336,10 +1336,10 @@ mod tests {
             if success {
                 successes += 1;
                 total_times_evaluation_was_called += times_evaluation_was_called;
-                println!("Success #{successes} {position}");
+                println!("\x1b[92mSuccess #{successes} {position}\x1b[0m");
             } else {
                 failures += 1;
-                println!("Failure #{failures} {position}");
+                println!("\x1b[91mFailure #{failures} {position}\x1b[0m");
             };
             if successes + failures == OBVIOUS_POSITIONS_RANDOMISED.len() {
                 break;
