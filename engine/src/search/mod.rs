@@ -429,7 +429,7 @@ impl Search {
                 }
             }
             if !is_capture {
-                quiets_evaluated.push(encoded_move_data)
+                quiets_evaluated.push(encoded_move_data);
             }
 
             index += 1;

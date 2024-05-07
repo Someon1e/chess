@@ -83,7 +83,7 @@ pub const fn rook_or_bishop_blockers(from: Square, direction_offset: usize) -> B
 
     let rays = ALL_RAYS[square_index];
 
-    return BitBoard::new(
+    BitBoard::new(
         rays[direction_offset] & !(1 << from.offset(DIRECTIONS[direction_offset] * squares_from_edge[direction_offset]).index())
             | rays[direction_offset + 1] & !(1 << from.offset(DIRECTIONS[direction_offset + 1] * squares_from_edge[direction_offset + 1]).index())
             | rays[direction_offset + 2] & !(1 << from.offset(DIRECTIONS[direction_offset + 2] * squares_from_edge[direction_offset + 2]).index())
