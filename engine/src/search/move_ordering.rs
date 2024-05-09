@@ -20,10 +20,10 @@ const MAX_LEGAL_MOVES: usize = 218;
 const MAX_CAPTURES: usize = 74;
 
 const HASH_MOVE_BONUS: MoveGuessNum = MoveGuessNum::MAX;
-const QUEEN_PROMOTION_BONUS: MoveGuessNum = 40_000_000;
-const CAPTURE_BONUS: MoveGuessNum = 40_000_000;
-const KILLER_MOVE_BONUS: MoveGuessNum = 20_000_000;
-const KNIGHT_PROMOTION_BONUS: MoveGuessNum = 10_000_000;
+const QUEEN_PROMOTION_BONUS: MoveGuessNum = 50_000_000;
+const CAPTURE_BONUS: MoveGuessNum = 50_000_000;
+const KILLER_MOVE_BONUS: MoveGuessNum = 30_000_000;
+const KNIGHT_PROMOTION_BONUS: MoveGuessNum = 20_000_000;
 const ROOK_PROMOTION_BONUS: MoveGuessNum = 0;
 const BISHOP_PROMOTION_BONUS: MoveGuessNum = 0;
 
@@ -122,10 +122,10 @@ impl MoveOrderer {
     fn guess_capture_value(search: &Search, move_data: Move) -> MoveGuessNum {
         let mut score = match move_data.flag {
             Flag::EnPassant => return 0,
+            Flag::BishopPromotion => return -1,
+            Flag::RookPromotion => return -1,
 
-            Flag::BishopPromotion => 300,
-            Flag::KnightPromotion => 1700,
-            Flag::RookPromotion => 500,
+            Flag::KnightPromotion => 1300,
             Flag::QueenPromotion => 1900,
 
             Flag::None => 0,
@@ -133,13 +133,12 @@ impl MoveOrderer {
             _ => unreachable!(),
         };
 
-        let moving_from = move_data.from;
-        let moving_to = move_data.to;
+        let capturing = search.board.enemy_piece_at(move_data.to).unwrap();
+        let capturing_value = PIECE_VALUES[capturing as usize];
 
-        let moving_piece = search.board.friendly_piece_at(moving_from).unwrap();
-        let capturing = search.board.enemy_piece_at(moving_to).unwrap();
+        score += capturing_value;
 
-        score += PIECE_VALUES[capturing as usize];
+        let moving_piece = search.board.friendly_piece_at(move_data.from).unwrap();
         score -= PIECE_VALUES[moving_piece as usize];
 
         score
