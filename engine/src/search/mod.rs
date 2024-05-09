@@ -44,7 +44,7 @@ pub struct Search {
     transposition_table: Vec<Option<NodeValue>>,
 
     killer_moves: [EncodedMove; 32],
-    history_heuristic: [[[MoveGuessNum; 64]; 64]; 2],
+    history_heuristic: [[MoveGuessNum; 64 * 64]; 2],
 
     best_move: EncodedMove,
     best_score: EvalNumber,
@@ -65,7 +65,7 @@ impl Search {
             transposition_table: vec![None; TRANSPOSITION_CAPACITY],
 
             killer_moves: [EncodedMove::NONE; 32],
-            history_heuristic: [[[0; 64]; 64]; 2],
+            history_heuristic: [[0; 64 * 64]; 2],
 
             best_move: EncodedMove::NONE,
             best_score: -EvalNumber::MAX,
@@ -95,10 +95,8 @@ impl Search {
         }
         self.killer_moves.fill(EncodedMove::NONE);
         for side in &mut self.history_heuristic {
-            for from in side {
-                for to in from {
-                    *to /= 9;
-                }
+            for value in side {
+                *value /= 9;
             }
         }
         self.best_move = EncodedMove::NONE;
@@ -109,11 +107,7 @@ impl Search {
     pub fn clear_cache_for_new_game(&mut self) {
         self.transposition_table.fill(None);
         for side in &mut self.history_heuristic {
-            for from in side {
-                for to in from {
-                    *to = 0;
-                }
-            }
+            side.fill(0);
         }
     }
 
@@ -416,11 +410,10 @@ impl Search {
                             let history_side =
                                 &mut self.history_heuristic[usize::from(self.board.white_to_move)];
 
-                            history_side[move_data.from.usize()][move_data.to.usize()] += history;
+                            history_side[encoded_move_data.without_flag() as usize] += history;
 
                             for previous_quiet in quiets_evaluated {
-                                history_side[previous_quiet.from().usize()]
-                                    [previous_quiet.to().usize()] -= history;
+                                history_side[previous_quiet.without_flag() as usize] -= history;
                             }
                         }
                         node_type = NodeType::Beta;

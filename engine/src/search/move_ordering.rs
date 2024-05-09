@@ -56,7 +56,7 @@ impl MoveOrderer {
         match move_data.flag {
             Flag::EnPassant | Flag::Castle => {
                 return search.history_heuristic[usize::from(search.board.white_to_move)]
-                    [moving_from.usize()][moving_to.usize()]
+                    [moving_from.usize() + moving_to.usize() * 64]
             }
 
             Flag::BishopPromotion => return BISHOP_PROMOTION_BONUS,
@@ -81,7 +81,7 @@ impl MoveOrderer {
         } else {
             score += MoveGuessNum::from(
                 search.history_heuristic[usize::from(search.board.white_to_move)]
-                    [moving_from.usize()][moving_to.usize()],
+                    [moving_from.usize() + moving_to.usize() * 64],
             );
         }
         score

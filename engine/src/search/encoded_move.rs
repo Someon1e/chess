@@ -14,7 +14,7 @@ impl EncodedMove {
 
         // Squares are 6 bits each
         data |= move_data.from.index() as u16;
-        data |= (move_data.to.index() as u16) << 6;
+        data |= (move_data.to.index() as u16) * 64;
 
         data |= (move_data.flag as u16) << 12;
 
@@ -47,6 +47,10 @@ impl EncodedMove {
 
     pub const fn flag(&self) -> &Flag {
         &Flag::ALL[((self.0 >> 12) & 0b1111) as usize]
+    }
+
+    pub const fn without_flag(&self) -> u16 {
+        self.0 & 0b111111_111111
     }
 }
 
