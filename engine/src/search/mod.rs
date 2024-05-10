@@ -60,7 +60,7 @@ impl Search {
         Self {
             board,
 
-            repetition_table: Vec::with_capacity(5),
+            repetition_table: Vec::with_capacity(16),
 
             transposition_table: vec![None; TRANSPOSITION_CAPACITY],
 
@@ -163,6 +163,7 @@ impl Search {
     /// Adds the position into the repetition table and makes a move.
     pub fn make_move(&mut self, move_data: &Move) -> GameState {
         self.repetition_table.push(self.board.zobrist_key());
+
         self.board.make_move(move_data)
     }
 
@@ -171,12 +172,13 @@ impl Search {
         self.board.unmake_move(move_data, old_state);
 
         let zobrist_key = self.board.zobrist_key();
-        for (index, other_key) in self.repetition_table.iter().enumerate().rev() {
+        for (index, other_key) in self.repetition_table.iter().enumerate().rev().step_by(2) {
             if *other_key == zobrist_key {
-                self.repetition_table.swap_remove(index);
-                break;
+                self.repetition_table.remove(index);
+                return;
             }
         }
+        unreachable!()
     }
     fn negamax(
         &mut self,
