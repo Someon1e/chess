@@ -49,7 +49,7 @@ impl EncodedMove {
         &Flag::ALL[((self.0 >> 12) & 0b1111) as usize]
     }
 
-    pub const fn without_flag(&self) -> u16 {
+    pub const fn without_flag(self) -> u16 {
         self.0 & 0b111111_111111
     }
 }

@@ -212,7 +212,7 @@ impl Search {
         // Get value from transposition table
         if let Some(saved) = self.transposition_table[zobrist_index] {
             // Check if it's actually the same position
-            if saved.zobrist_key == zobrist_key {
+            if saved.zobrist_key_32 == zobrist_key.lower_u32() {
                 // Check if the saved depth is as high as the depth now
                 if saved.ply_remaining >= ply_remaining {
                     let node_type = &saved.node_type;
@@ -435,7 +435,7 @@ impl Search {
 
         // Save to transposition table
         self.transposition_table[zobrist_index] = Some(NodeValue {
-            zobrist_key,
+            zobrist_key_32: zobrist_key.lower_u32(),
             ply_remaining,
             node_type,
             value: best_score,

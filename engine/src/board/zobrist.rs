@@ -50,6 +50,12 @@ impl Zobrist {
     pub fn flip_side_to_move(&mut self) {
         self.0 ^= ZOBRIST_RANDOMS.side_to_move;
     }
+
+    /// Take lower 32 bits from hash.
+    #[must_use]
+    pub const fn lower_u32(&self) -> u32 {
+        self.0 as u32
+    }
 }
 
 impl Rem<usize> for Zobrist {
