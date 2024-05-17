@@ -171,10 +171,15 @@ impl Board {
     }
 }
 
-#[test]
-fn test_fen_encoding() {
-    for (_, _, fen) in crate::tests::TEST_FENS {
-        let board = Board::from_fen(fen);
-        assert_eq!(fen, board.to_fen());
+#[cfg(test)]
+mod tests {
+    use crate::board::Board;
+
+    #[test]
+    fn test_fen_encoding() {
+        for (_, _, fen) in crate::tests::TEST_FENS {
+            let board = Board::from_fen(fen);
+            assert_eq!(fen, board.to_fen());
+        }
     }
 }
