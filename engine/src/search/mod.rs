@@ -1,13 +1,14 @@
 mod encoded_move;
 mod eval_data;
 mod move_ordering;
+mod repetition_table;
 mod transposition;
 
 /// Handles evaluation.
 pub mod eval;
 
 use crate::{
-    board::{game_state::GameState, zobrist::Zobrist, Board},
+    board::{game_state::GameState, Board},
     move_generator::{move_data::Move, MoveGenerator},
 };
 
@@ -16,6 +17,7 @@ use self::{
     eval::Eval,
     eval_data::EvalNumber,
     move_ordering::{MoveGuessNum, MoveOrderer},
+    repetition_table::RepetitionTable,
     transposition::{NodeType, NodeValue, TRANSPOSITION_CAPACITY},
 };
 
@@ -39,7 +41,7 @@ const USE_KILLER_MOVE: bool = true;
 pub struct Search {
     board: Board,
 
-    repetition_table: Vec<Zobrist>,
+    repetition_table: RepetitionTable,
 
     transposition_table: Vec<Option<NodeValue>>,
 
@@ -60,7 +62,7 @@ impl Search {
         Self {
             board,
 
-            repetition_table: Vec::with_capacity(16),
+            repetition_table: RepetitionTable::new(),
 
             transposition_table: vec![None; TRANSPOSITION_CAPACITY],
 
@@ -171,14 +173,7 @@ impl Search {
     pub fn unmake_move(&mut self, move_data: &Move, old_state: &GameState) {
         self.board.unmake_move(move_data, old_state);
 
-        let zobrist_key = self.board.zobrist_key();
-        for (index, other_key) in self.repetition_table.iter().enumerate().rev().step_by(2) {
-            if *other_key == zobrist_key {
-                self.repetition_table.remove(index);
-                return;
-            }
-        }
-        unreachable!()
+        assert_eq!(self.repetition_table.pop(), self.board.zobrist_key());
     }
     fn negamax(
         &mut self,
@@ -196,7 +191,7 @@ impl Search {
         let zobrist_key = self.board.zobrist_key();
 
         // Check for repetition
-        if ply_from_root != 0 && self.repetition_table.contains(&zobrist_key) {
+        if ply_from_root != 0 && self.repetition_table.contains(zobrist_key) {
             return 0;
         }
 
