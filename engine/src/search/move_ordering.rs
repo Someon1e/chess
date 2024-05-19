@@ -55,7 +55,7 @@ impl MoveOrderer {
         let mut score = 0;
         match move_data.flag {
             Flag::EnPassant | Flag::Castle => {
-                return search.history_heuristic[usize::from(search.board.white_to_move)]
+                return search.quiet_history[usize::from(search.board.white_to_move)]
                     [moving_from.usize() + moving_to.usize() * 64]
             }
 
@@ -80,7 +80,7 @@ impl MoveOrderer {
             score -= potential_value_loss;
         } else {
             score += MoveGuessNum::from(
-                search.history_heuristic[usize::from(search.board.white_to_move)]
+                search.quiet_history[usize::from(search.board.white_to_move)]
                     [moving_from.usize() + moving_to.usize() * 64],
             );
         }

@@ -46,7 +46,7 @@ pub struct Search {
     transposition_table: Vec<Option<NodeValue>>,
 
     killer_moves: [EncodedMove; 32],
-    history_heuristic: [[MoveGuessNum; 64 * 64]; 2],
+    quiet_history: [[MoveGuessNum; 64 * 64]; 2],
 
     best_move: EncodedMove,
     best_score: EvalNumber,
@@ -67,7 +67,7 @@ impl Search {
             transposition_table: vec![None; TRANSPOSITION_CAPACITY],
 
             killer_moves: [EncodedMove::NONE; 32],
-            history_heuristic: [[0; 64 * 64]; 2],
+            quiet_history: [[0; 64 * 64]; 2],
 
             best_move: EncodedMove::NONE,
             best_score: -EvalNumber::MAX,
@@ -96,7 +96,7 @@ impl Search {
             self.times_evaluation_was_called = 0;
         }
         self.killer_moves.fill(EncodedMove::NONE);
-        for side in &mut self.history_heuristic {
+        for side in &mut self.quiet_history {
             for value in side {
                 *value /= 9;
             }
@@ -108,7 +108,7 @@ impl Search {
     /// A new match.
     pub fn clear_cache_for_new_game(&mut self) {
         self.transposition_table.fill(None);
-        for side in &mut self.history_heuristic {
+        for side in &mut self.quiet_history {
             side.fill(0);
         }
     }
@@ -405,7 +405,7 @@ impl Search {
                                 * MoveGuessNum::from(ply_remaining);
 
                             let history_side =
-                                &mut self.history_heuristic[usize::from(self.board.white_to_move)];
+                                &mut self.quiet_history[usize::from(self.board.white_to_move)];
 
                             history_side[encoded_move_data.without_flag() as usize] += history;
 
