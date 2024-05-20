@@ -23,7 +23,6 @@ impl RepetitionTable {
         self.positions
             .iter()
             .rev()
-            .step_by(2)
             .any(|other_key| *other_key == zobrist_key)
     }
 
