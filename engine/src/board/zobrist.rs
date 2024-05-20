@@ -61,7 +61,7 @@ impl Zobrist {
 impl Rem<usize> for Zobrist {
     type Output = usize;
     fn rem(self, rhs: usize) -> Self::Output {
-        self.0 as usize % rhs
+        (self.0 % (rhs as u64)) as Self::Output
     }
 }
 
