@@ -28,6 +28,7 @@ impl Board {
             if character == '/' {
                 continue;
             }
+
             if let Some(digit) = character.to_digit(10) {
                 file += digit as i8;
             } else {
@@ -36,8 +37,10 @@ impl Board {
                 let square = &Square::from_coords(rank, file);
                 bit_boards[piece as usize].set(square);
                 zobrist_key.xor_piece(piece as usize, square.usize());
+
                 file += 1;
             }
+
             if file == 8 {
                 if rank == 0 {
                     break;

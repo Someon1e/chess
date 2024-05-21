@@ -322,6 +322,7 @@ impl MoveGenerator {
     ) -> (BitBoard, BitBoard) {
         let mut orthogonal_pin_rays = BitBoard::EMPTY;
         let mut diagonal_pin_rays = BitBoard::EMPTY;
+
         for (index, (direction, distance_from_edge)) in DIRECTIONS
             .iter()
             .zip(&SQUARES_FROM_EDGE[friendly_king_square.usize()])
@@ -364,6 +365,7 @@ impl MoveGenerator {
                 }
             }
         }
+
         (orthogonal_pin_rays, diagonal_pin_rays)
     }
 

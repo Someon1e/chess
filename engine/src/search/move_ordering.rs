@@ -152,6 +152,7 @@ impl MoveOrderer {
             move_data: EncodedMove::NONE,
             guess: 0,
         }; MAX_CAPTURES];
+
         let mut index = 0;
         move_generator.gen(
             &mut |move_data| {
@@ -178,6 +179,7 @@ impl MoveOrderer {
             move_data: EncodedMove::NONE,
             guess: 0,
         }; MAX_LEGAL_MOVES];
+
         let mut index = 0;
         move_generator.gen(
             &mut |move_data| {
@@ -222,12 +224,14 @@ mod tests {
     fn move_ordering_works() {
         let board = Board::from_fen("8/P6p/6r1/1q1n4/2P3R1/8/2K2k2/8 w - - 0 1");
         let move_generator = MoveGenerator::new(&board);
+
         let (mut move_guesses, move_count) = MoveOrderer::get_move_guesses(
             &Search::new(board),
             &move_generator,
             EncodedMove::NONE,
             EncodedMove::NONE,
         );
+
         let mut index = 0;
         let mut next_move = || {
             let move_guess =
@@ -236,6 +240,7 @@ mod tests {
             index += 1;
             (move_guess.move_data, index != move_count)
         };
+
         assert!(
             next_move().0.decode()
                 == Move {

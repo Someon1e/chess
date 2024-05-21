@@ -214,9 +214,12 @@ mod tests {
         let d4 = Square::from_notation("d4");
         let rook_blockers = rook_or_bishop_blockers(d4, 0);
         let bishop_blockers = rook_or_bishop_blockers(d4, 4);
+
         let blockers = rook_blockers | bishop_blockers;
-        let expected_number_of_combinations = 1 << blockers.count();
         println!("{blockers}");
+
+        let expected_number_of_combinations = 1 << blockers.count();
+
         let mut number_of_combinations = 0;
         for _ in iterate_combinations(blockers) {
             number_of_combinations += 1;
@@ -228,11 +231,11 @@ mod tests {
         let d4 = Square::from_notation("d4");
         let mut blockers = BitBoard::EMPTY;
         blockers.set(&Square::from_notation("h8"));
+
         println!("{}", blockers.last_square());
         println!("{}", blockers.first_square());
 
         let rook_moves = gen_rook_or_bishop(d4, &blockers, 4);
-
         println!("{}", rook_moves);
     }
     #[test]

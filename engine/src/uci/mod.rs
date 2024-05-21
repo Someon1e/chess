@@ -97,6 +97,7 @@ uciok",
 
         let mut startpos = true;
         let mut building_fen = String::new();
+
         while let Some(label) = args.next() {
             match label {
                 "startpos" => startpos = true,
@@ -126,6 +127,7 @@ uciok",
                 }
             }
         }
+        
         self.fen = Some(if startpos {
             Board::START_POSITION_FEN.to_owned()
         } else {

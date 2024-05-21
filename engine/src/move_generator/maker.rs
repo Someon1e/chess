@@ -9,14 +9,15 @@ impl Board {
 
         self.white_to_move = !self.white_to_move;
         self.game_state.zobrist_key.flip_side_to_move();
-        let en_passant_square = self.game_state.en_passant_square;
 
+        let en_passant_square = self.game_state.en_passant_square;
         if let Some(en_passant_square) = en_passant_square {
             self.game_state
                 .zobrist_key
                 .xor_en_passant(&en_passant_square);
         }
         self.game_state.en_passant_square = None;
+
         old_state
     }
 
