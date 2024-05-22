@@ -299,18 +299,17 @@ impl Search {
 
         if move_count == 0 {
             // No moves
-            if move_generator.is_in_check() {
+            let score = if move_generator.is_in_check() {
                 // Checkmate
-                if ply_from_root == 0 {
-                    self.best_score = IMMEDIATE_CHECKMATE_SCORE + EvalNumber::from(ply_from_root);
-                }
-                return IMMEDIATE_CHECKMATE_SCORE + EvalNumber::from(ply_from_root);
-            }
-            // Stalemate
+                IMMEDIATE_CHECKMATE_SCORE + EvalNumber::from(ply_from_root)
+            } else {
+                // Stalemate
+                0
+            };
             if ply_from_root == 0 {
-                self.best_score = 0;
+                self.best_score = score;
             }
-            return 0;
+            return score;
         }
 
         let mut node_type = NodeType::Alpha;
