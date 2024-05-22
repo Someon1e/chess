@@ -46,7 +46,7 @@ pub struct MoveGenerator {
 
     enemy_piece_bit_board: BitBoard,
 
-    enemy_rooks_and_queens_bit_board: BitBoard,
+    enemy_orthogonal: BitBoard,
 
     occupied_squares: BitBoard,
     empty_squares: BitBoard,
@@ -539,7 +539,7 @@ impl MoveGenerator {
             friendly_king_square,
             king_danger_bit_board,
             enemy_piece_bit_board,
-            enemy_rooks_and_queens_bit_board: enemy_rooks | enemy_queens,
+            enemy_orthogonal,
             occupied_squares,
             empty_squares,
             is_in_check,

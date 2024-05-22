@@ -205,7 +205,7 @@ impl PawnMoveGenerator {
                                     [move_generator.friendly_king_square.usize()],
                         );
 
-                        if unblocked.overlaps(&move_generator.enemy_rooks_and_queens_bit_board) {
+                        if unblocked.overlaps(&move_generator.enemy_orthogonal) {
                             continue 'en_passant_check;
                         }
                     }
