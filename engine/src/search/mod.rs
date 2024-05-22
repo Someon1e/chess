@@ -521,7 +521,7 @@ mod tests {
             eval_data::{self, EvalNumber},
             Search,
         },
-        timer::inner::Time,
+        timer::Time,
         uci,
     };
 

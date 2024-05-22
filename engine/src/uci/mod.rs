@@ -7,7 +7,7 @@ use crate::{
     move_generator::move_data::{Flag, Move},
     perft::perft_root,
     search::{Search, IMMEDIATE_CHECKMATE_SCORE},
-    timer::inner::Time,
+    timer::Time,
 };
 
 use self::go_params::GoParameters;
