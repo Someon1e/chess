@@ -127,7 +127,7 @@ uciok",
                 }
             }
         }
-        
+
         self.fen = Some(if startpos {
             Board::START_POSITION_FEN.to_owned()
         } else {

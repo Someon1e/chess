@@ -27,7 +27,7 @@ pub const SQUARES_FROM_EDGE: [[i8; 8]; 64] = {
             min(rank, file),         // down left
             min(rank, 7 - file),     // down right
         ];
-        
+
         index += 1;
         if index == 64 {
             break;

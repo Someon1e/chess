@@ -351,17 +351,15 @@ impl MoveGenerator {
                     } else {
                         enemy_diagonal.get(&to)
                     };
-                    if !can_pin {
-                        break;
-                    }
-                    if is_friendly_piece_on_ray {
+                    if can_pin && is_friendly_piece_on_ray {
                         // Friendly piece is blocking check, it is pinned
                         if is_rook_movement {
                             orthogonal_pin_rays |= ray;
                         } else {
                             diagonal_pin_rays |= ray;
                         }
-                    }
+                    };
+                    break;
                 }
             }
         }
