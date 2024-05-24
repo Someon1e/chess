@@ -112,6 +112,18 @@ pub struct Move {
 
 impl fmt::Display for Move {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "From {} to {}, Flag {:?}", self.from, self.to, self.flag)
+        if self.flag == Flag::None {
+            write!(
+                f,
+                "Move from {} to {}",
+                self.from, self.to
+            )
+        } else {
+            write!(
+                f,
+                "Move from {} to {}, flag = {:?}",
+                self.from, self.to, self.flag
+            )
+        }
     }
 }

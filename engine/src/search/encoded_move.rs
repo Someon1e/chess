@@ -56,13 +56,7 @@ impl EncodedMove {
 
 impl fmt::Display for EncodedMove {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "From {} to {}, Flag {:?}",
-            self.from(),
-            self.to(),
-            self.flag()
-        )
+        f.write_str(&self.decode().to_string())
     }
 }
 
