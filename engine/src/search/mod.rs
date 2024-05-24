@@ -1303,7 +1303,7 @@ mod tests {
                         if matches_solution(answer.0.decode()) {
                             true
                         } else {
-                            5000 < search_start.miliseconds()
+                            5000 < search_start.milliseconds()
                         }
                     });
 

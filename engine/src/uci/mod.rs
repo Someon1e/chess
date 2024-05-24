@@ -197,13 +197,13 @@ uciok",
                 (self.out)(&format!(
                     "info depth {depth} score mate {} time {} pv {}",
                     (evaluation - IMMEDIATE_CHECKMATE_SCORE).abs() * evaluation.signum(),
-                    search_start.miliseconds(),
+                    search_start.milliseconds(),
                     encode_move(best_move)
                 ));
             } else {
                 (self.out)(&format!(
                     "info depth {depth} score cp {evaluation} time {} pv {}",
-                    search_start.miliseconds(),
+                    search_start.milliseconds(),
                     encode_move(best_move)
                 ));
             }
@@ -212,7 +212,7 @@ uciok",
             &mut |depth, (best_move, evaluation)| {
                 output_info(depth, best_move.decode(), evaluation);
             },
-            &mut || search_start.miliseconds() > think_time,
+            &mut || search_start.milliseconds() > think_time,
         );
         output_info(depth, best_move.decode(), evaluation);
         (self.out)(&format!("bestmove {}", encode_move(best_move.decode())));
