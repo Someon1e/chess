@@ -46,10 +46,6 @@ impl Display for Board {
 }
 
 impl Board {
-    /// The starting position FEN in standard chess.
-    pub const START_POSITION_FEN: &'static str =
-        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-
     /// Returns a piece at a square.
     #[must_use]
     pub fn piece_at(&self, square: Square) -> Option<Piece> {

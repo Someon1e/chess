@@ -8,6 +8,10 @@ use super::{
 };
 
 impl Board {
+    /// The starting position FEN in standard chess.
+    pub const START_POSITION_FEN: &'static str =
+        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
     /// Creates a Board from Forsyth-Edwards Notation.
     ///
     /// # Panics
