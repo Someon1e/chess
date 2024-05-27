@@ -574,7 +574,7 @@ impl MoveGenerator {
         }
     }
 
-    /// Calculates whether the side to move is in check
+    /// Calculates whether the side to move is in check.
     #[must_use]
     pub fn calculate_is_in_check(board: &Board) -> bool {
         let (friendly_pieces, enemy_pieces) = if board.white_to_move {
@@ -644,31 +644,31 @@ impl MoveGenerator {
         false
     }
 
-    /// Returns whether the side to move is in check
+    /// Returns whether the side to move is in check.
     #[must_use]
     pub const fn is_in_check(&self) -> bool {
         self.is_in_check
     }
 
-    /// Returns the enemy pawn attacks
+    /// Returns the enemy pawn attacks.
     #[must_use]
     pub const fn enemy_pawn_attacks(&self) -> BitBoard {
         self.enemy_pawn_attacks
     }
 
-    /// Returns the enemy piece bit board
+    /// Returns the enemy piece bit board.
     #[must_use]
     pub const fn enemy_piece_bit_board(&self) -> BitBoard {
         self.enemy_piece_bit_board
     }
 
-    /// Returns the friendly pawns bit board
+    /// Returns the friendly pawns bit board.
     #[must_use]
     pub const fn friendly_pawns(&self) -> BitBoard {
         self.friendly_pawns
     }
 
-    /// Returns the friendly piece bit board
+    /// Returns the friendly piece bit board.
     #[must_use]
     pub const fn friendly_pieces(&self) -> BitBoard {
         self.friendly_piece_bit_board
