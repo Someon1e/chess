@@ -91,7 +91,7 @@ fn tune(
     end_game_piece_square_tables: &PieceSquareTable,
     phases: &[i32; 5],
 ) {
-    const PSQT_ADJUSTMENT_VALUE: i32 = 1;
+    const PSQT_ADJUSTMENT_VALUE: i16 = 1;
     const PHASE_ADJUSTMENT_VALUE: i32 = 1;
 
     let mut best_error = mean_square_error(

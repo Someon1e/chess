@@ -1,5 +1,5 @@
 pub type EvalNumber = i32;
-pub type PieceSquareTable = [EvalNumber; 384];
+pub type PieceSquareTable = [i16; 384];
 
 #[rustfmt::skip]
 pub const MIDDLE_GAME_PIECE_SQUARE_TABLES: PieceSquareTable = [

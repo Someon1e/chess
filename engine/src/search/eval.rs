@@ -41,7 +41,7 @@ impl Eval {
         end_game_piece_square_tables: &PieceSquareTable,
         piece_index: usize,
         square_index: usize,
-    ) -> (EvalNumber, EvalNumber) {
+    ) -> (i16, i16) {
         let middle_game_piece_score =
             middle_game_piece_square_tables[piece_index * 64 + square_index];
         let end_game_piece_score = end_game_piece_square_tables[piece_index * 64 + square_index];
@@ -91,8 +91,8 @@ impl Eval {
                     square.flip().usize(),
                 );
 
-                total_middle_game_score += middle_game_value;
-                total_end_game_score += end_game_value;
+                total_middle_game_score += i32::from(middle_game_value);
+                total_end_game_score += i32::from(end_game_value);
             }
         }
 
@@ -108,8 +108,8 @@ impl Eval {
                     square.usize(),
                 );
 
-                total_middle_game_score -= middle_game_value;
-                total_end_game_score -= end_game_value;
+                total_middle_game_score -= i32::from(middle_game_value);
+                total_end_game_score -= i32::from(end_game_value);
             }
         }
 
