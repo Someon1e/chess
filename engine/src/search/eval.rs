@@ -1,6 +1,6 @@
 use crate::board::{piece::Piece, Board};
 
-use super::eval_data::EvalNumber;
+use super::eval_data::{EvalNumber, PieceSquareTable};
 
 /// Evaluation functions.
 pub struct Eval;
@@ -37,8 +37,8 @@ impl Eval {
 
     #[must_use]
     const fn get_piece_value(
-        middle_game_piece_square_tables: &[EvalNumber; 384],
-        end_game_piece_square_tables: &[EvalNumber; 384],
+        middle_game_piece_square_tables: &PieceSquareTable,
+        end_game_piece_square_tables: &PieceSquareTable,
         piece_index: usize,
         square_index: usize,
     ) -> (EvalNumber, EvalNumber) {
@@ -64,8 +64,8 @@ impl Eval {
     /// Returns an estimated score of the position for the side playing.
     #[must_use]
     pub fn evaluate(
-        middle_game_piece_square_tables: &[EvalNumber; 384],
-        end_game_piece_square_tables: &[EvalNumber; 384],
+        middle_game_piece_square_tables: &PieceSquareTable,
+        end_game_piece_square_tables: &PieceSquareTable,
         phases: &[EvalNumber; 5],
         board: &Board,
     ) -> EvalNumber {

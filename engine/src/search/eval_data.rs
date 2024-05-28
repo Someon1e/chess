@@ -1,7 +1,8 @@
 pub type EvalNumber = i32;
+pub type PieceSquareTable = [EvalNumber; 384];
 
 #[rustfmt::skip]
-pub const MIDDLE_GAME_PIECE_SQUARE_TABLES: [EvalNumber; 384] = [
+pub const MIDDLE_GAME_PIECE_SQUARE_TABLES: PieceSquareTable = [
    0,   0,   0,   0,   0,   0,   0,   0,
  158, 180, 170, 195, 180, 163,  96,  76,
   79,  93, 124, 131, 134, 154, 135,  91,
@@ -63,7 +64,7 @@ pub const MIDDLE_GAME_PIECE_SQUARE_TABLES: [EvalNumber; 384] = [
 ];
 
 #[rustfmt::skip]
-pub const END_GAME_PIECE_SQUARE_TABLES: [EvalNumber; 384] = [
+pub const END_GAME_PIECE_SQUARE_TABLES: PieceSquareTable = [
    0,   0,   0,   0,   0,   0,   0,   0,
  252, 244, 241, 197, 194, 202, 242, 254,
  201, 207, 177, 156, 148, 135, 178, 176,

@@ -3,6 +3,7 @@
 
 use engine::board::Board;
 use engine::search::eval::Eval;
+use engine::search::eval_data::PieceSquareTable;
 use rayon::prelude::*;
 use std::io::BufRead;
 use std::time::Instant;
@@ -39,8 +40,8 @@ fn parse_data_set() -> Vec<(Board, f64)> {
 fn mean_square_error(
     data_set: &[(Board, f64)],
     k: f64,
-    middle_game_piece_square_tables: &[i32; 384],
-    end_game_piece_square_tables: &[i32; 384],
+    middle_game_piece_square_tables: &PieceSquareTable,
+    end_game_piece_square_tables: &PieceSquareTable,
     phases: &[i32; 5],
 ) -> f64 {
     let error: f64 = data_set
@@ -64,7 +65,7 @@ fn mean_square_error(
     error / data_set.len() as f64
 }
 
-fn pretty_piece_square_tables(piece_square_tables: [i32; 384]) -> String {
+fn pretty_piece_square_tables(piece_square_tables: PieceSquareTable) -> String {
     let mut output = String::new();
     output.push_str("[\n");
     for piece in 0..6 {
@@ -86,8 +87,8 @@ fn pretty_piece_square_tables(piece_square_tables: [i32; 384]) -> String {
 fn tune(
     data_set: &[(Board, f64)],
     k: f64,
-    middle_game_piece_square_tables: &[i32; 384],
-    end_game_piece_square_tables: &[i32; 384],
+    middle_game_piece_square_tables: &PieceSquareTable,
+    end_game_piece_square_tables: &PieceSquareTable,
     phases: &[i32; 5],
 ) {
     const PSQT_ADJUSTMENT_VALUE: i32 = 1;
@@ -106,8 +107,8 @@ fn tune(
         std::fs::write(
             "tuned.rs",
             format!(
-                "const MIDDLE_GAME_PIECE_SQUARE_TABLES: [i32; 384] = {};
-const END_GAME_PIECE_SQUARE_TABLES: [i32; 384] = {};
+                "const MIDDLE_GAME_PIECE_SQUARE_TABLES: PieceSquareTable = {};
+const END_GAME_PIECE_SQUARE_TABLES: PieceSquareTable = {};
 const PHASES: [i32; 5] = {:#?};",
                 pretty_piece_square_tables(psqt_1),
                 pretty_piece_square_tables(psqt_2),
@@ -134,7 +135,7 @@ const PHASES: [i32; 5] = {:#?};",
 
         for table_number in 0..2 {
             for index in 0..384 {
-                let mut new_psqts: [[i32; 384]; 2] = best_psqt;
+                let mut new_psqts: [PieceSquareTable; 2] = best_psqt;
                 new_psqts[table_number][index] += PSQT_ADJUSTMENT_VALUE;
 
                 let mut new_error =
@@ -193,8 +194,8 @@ const PHASES: [i32; 5] = {:#?};",
 
 fn find_k(
     data_set: &[(Board, f64)],
-    middle_game_piece_square_tables: &[i32; 384],
-    end_game_piece_square_tables: &[i32; 384],
+    middle_game_piece_square_tables: &PieceSquareTable,
+    end_game_piece_square_tables: &PieceSquareTable,
     phases: &[i32; 5],
 ) -> f64 {
     let mut min = -10.0;
@@ -233,7 +234,7 @@ fn find_k(
 
 fn main() {
     #[rustfmt::skip]
-    let middle_game_piece_square_tables: [i32; 384] = [
+    let middle_game_piece_square_tables: PieceSquareTable = [
        0,   0,   0,   0,   0,   0,   0,   0,
      120, 140, 170, 170, 170, 170, 140, 120,
       80, 110, 140, 130, 130, 140, 110,  80,
@@ -295,7 +296,7 @@ fn main() {
     ];
 
     #[rustfmt::skip]
-    let end_game_piece_square_tables: [i32; 384] = [
+    let end_game_piece_square_tables: PieceSquareTable = [
        0,   0,   0,   0,   0,   0,   0,   0,
      250, 240, 220, 200, 200, 220, 240, 250,
      190, 190, 150, 150, 150, 150, 190, 190,
