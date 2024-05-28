@@ -69,12 +69,14 @@ impl Eval {
         phases: &[EvalNumber; 5],
         board: &Board,
     ) -> EvalNumber {
-        let mut total_phase = 0;
-        total_phase += phases[0] * 16;
-        total_phase += phases[1] * 4;
-        total_phase += phases[2] * 4;
-        total_phase += phases[3] * 4;
-        total_phase += phases[4] * 2;
+        #[rustfmt::skip]
+        let total_phase = {
+            phases[0] * 16
+            + phases[1] * 4
+            + phases[2] * 4
+            + phases[3] * 4
+            + phases[4] * 2
+        };
 
         let mut total_middle_game_score = 0;
         let mut total_end_game_score = 0;
