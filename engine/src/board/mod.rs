@@ -33,7 +33,7 @@ pub struct Board {
     pub bit_boards: [BitBoard; 12],
 
     /// The number of full moves.
-    pub full_move_counter: u64,
+    pub full_move_counter: u32,
 
     /// State of the game.
     pub game_state: GameState,

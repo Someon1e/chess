@@ -114,7 +114,7 @@ pub struct GameState {
     pub castling_rights: CastlingRights,
 
     /// Half move clock.
-    pub half_move_clock: u64,
+    pub half_move_clock: u32,
 
     /// The last captured piece.
     pub captured: Option<Piece>,
