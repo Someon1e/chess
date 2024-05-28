@@ -113,11 +113,7 @@ pub struct Move {
 impl fmt::Display for Move {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.flag == Flag::None {
-            write!(
-                f,
-                "Move from {} to {}",
-                self.from, self.to
-            )
+            write!(f, "Move from {} to {}", self.from, self.to)
         } else {
             write!(
                 f,

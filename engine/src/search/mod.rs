@@ -1,11 +1,11 @@
 mod encoded_move;
-mod eval_data;
 mod move_ordering;
 mod repetition_table;
 mod transposition;
 
 /// Handles evaluation.
 pub mod eval;
+pub mod eval_data;
 
 use crate::{
     board::{game_state::GameState, Board},
