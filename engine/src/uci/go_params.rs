@@ -3,31 +3,48 @@ use core::str::SplitWhitespace;
 pub struct GoParameters {
     pub white_time: Option<u128>,
     pub black_time: Option<u128>,
+
     pub white_increment: Option<u128>,
     pub black_increment: Option<u128>,
-    pub moves_to_go: Option<u64>,
-    pub perft: bool,
-    pub depth: Option<u16>,
-    pub infinite: bool,
-    pub nodes: Option<u64>,
-    pub find_mate: Option<u64>,
+
     pub move_time_in_ms: Option<u128>,
+
+    pub nodes: Option<u64>,
+
+    pub moves_to_go: Option<u16>,
+
+    pub depth: Option<u16>,
+
+    pub find_mate: Option<u16>,
+
+    pub perft: bool,
+
+    pub infinite: bool,
 }
+
 impl GoParameters {
     #[must_use]
     pub const fn empty() -> Self {
         Self {
             white_time: None,
             black_time: None,
+
             white_increment: None,
             black_increment: None,
-            moves_to_go: None,
-            perft: false,
-            depth: None,
-            infinite: false,
-            nodes: None,
-            find_mate: None,
+
             move_time_in_ms: None,
+
+            nodes: None,
+
+            moves_to_go: None,
+
+            depth: None,
+
+            find_mate: None,
+
+            perft: false,
+
+            infinite: false,
         }
     }
     pub fn parse(&mut self, args: &mut SplitWhitespace) {
