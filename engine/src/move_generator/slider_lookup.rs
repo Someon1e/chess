@@ -150,7 +150,7 @@ fn init_lookup(
     keys: &[Key; 64],
     blockers: &[BitBoard; 64],
     direction_offset: usize,
-) -> Vec<BitBoard> {
+) -> Box<[BitBoard]> {
     let mut lookup = vec![BitBoard::EMPTY; size];
     for square_index in 0..64 {
         let square = Square::from_index(square_index);
@@ -163,12 +163,12 @@ fn init_lookup(
                 moves;
         }
     }
-    lookup
+    lookup.into_boxed_slice()
 }
 
 #[must_use]
-fn rook_lookup() -> &'static Vec<BitBoard> {
-    static COMPUTATION: OnceLock<Vec<BitBoard>> = OnceLock::new();
+fn rook_lookup() -> &'static Box<[BitBoard]> {
+    static COMPUTATION: OnceLock<Box<[BitBoard]>> = OnceLock::new();
     COMPUTATION.get_or_init(|| init_lookup(ROOK_TABLE_SIZE, &ROOK_KEYS, &RELEVANT_ROOK_BLOCKERS, 0))
 }
 
@@ -180,8 +180,8 @@ pub fn get_rook_moves(square: Square, relevant_blockers: BitBoard) -> BitBoard {
 }
 
 #[must_use]
-fn bishop_lookup() -> &'static Vec<BitBoard> {
-    static COMPUTATION: OnceLock<Vec<BitBoard>> = OnceLock::new();
+fn bishop_lookup() -> &'static Box<[BitBoard]> {
+    static COMPUTATION: OnceLock<Box<[BitBoard]>> = OnceLock::new();
     COMPUTATION.get_or_init(|| {
         init_lookup(
             BISHOP_TABLE_SIZE,
