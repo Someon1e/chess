@@ -193,20 +193,19 @@ uciok",
 
         let search_start = Time::now();
         let output_info = |depth, best_move, evaluation| {
-            if Search::score_is_checkmate(evaluation) {
-                (self.out)(&format!(
-                    "info depth {depth} score mate {} time {} pv {}",
-                    (evaluation - IMMEDIATE_CHECKMATE_SCORE).abs() * evaluation.signum(),
-                    search_start.milliseconds(),
-                    encode_move(best_move)
-                ));
+            let evaluation_info = if Search::score_is_checkmate(evaluation) {
+                format!(
+                    "score mate {}",
+                    (evaluation - IMMEDIATE_CHECKMATE_SCORE).abs() * evaluation.signum()
+                )
             } else {
-                (self.out)(&format!(
-                    "info depth {depth} score cp {evaluation} time {} pv {}",
-                    search_start.milliseconds(),
-                    encode_move(best_move)
-                ));
-            }
+                format!("score cp {}", evaluation)
+            };
+            let time = search_start.milliseconds();
+            let pv = encode_move(best_move);
+            (self.out)(&format!(
+                "info depth {depth} {evaluation_info} time {time} pv {pv}"
+            ));
         };
         let (depth, best_move, evaluation) = search.iterative_deepening(
             &mut |depth, (best_move, evaluation)| {
