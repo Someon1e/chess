@@ -3,7 +3,7 @@ use crate::{board::Board, move_generator::MoveGenerator, uci};
 #[cfg(test)]
 use crate::board::zobrist::Zobrist;
 
-fn perft(board: &mut Board, depth: u16) -> usize {
+fn perft(board: &mut Board, depth: u16) -> u64 {
     if depth == 0 {
         return 1;
     };
@@ -31,7 +31,7 @@ fn perft(board: &mut Board, depth: u16) -> usize {
 }
 
 /// Starts a perft test.
-pub fn perft_root(board: &mut Board, depth: u16, log: fn(&str)) -> usize {
+pub fn perft_root(board: &mut Board, depth: u16, log: fn(&str)) -> u64 {
     let mut move_count = 0;
     MoveGenerator::new(board).gen(
         &mut |move_data| {

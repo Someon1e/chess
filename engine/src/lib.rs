@@ -36,7 +36,7 @@ mod tests {
 
     use super::board::Board;
 
-    pub const TEST_FENS: [(u16, usize, &str); 25] = [
+    pub const TEST_FENS: [(u16, u64, &str); 25] = [
         (
             1,
             21,
@@ -92,7 +92,7 @@ mod tests {
         (6, 119060324, Board::START_POSITION_FEN),
     ];
 
-    fn debug_perft(fen: &str, depth: u16, expected_move_count: usize) {
+    fn debug_perft(fen: &str, depth: u16, expected_move_count: u64) {
         let start = Instant::now();
 
         let board = &mut Board::from_fen(fen);
