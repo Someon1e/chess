@@ -3,7 +3,7 @@ use super::square::Square;
 
 use core::ops::Rem;
 
-/// Filled with random numbers.
+/// Filled with random integers.
 #[derive(Debug)]
 pub struct ZobristRandoms {
     /// Random integers for every piece for every square.
