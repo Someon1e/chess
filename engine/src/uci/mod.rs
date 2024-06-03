@@ -226,7 +226,7 @@ uciok",
     /// a different game. This can be a new game the engine should play or a new game it should analyse but
     /// also the next position from a testsuite with positions only.
     pub fn ucinewgame(&mut self) {
-        // New game, so old data like transposition table will not help
+        // New game, so old data like the transposition table will not help
         if let Some(search) = &mut self.search {
             search.clear_cache_for_new_game();
         }
