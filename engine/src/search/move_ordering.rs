@@ -69,7 +69,7 @@ impl MoveOrderer {
 
         let moving_piece = search.board.friendly_piece_at(moving_from).unwrap();
 
-        // This won't take into account en passant
+        // This won't consider en passant
         if let Some(capturing) = search.board.enemy_piece_at(moving_to) {
             let mut potential_value_loss = PIECE_VALUES[moving_piece as usize];
             if !enemy_pawn_attacks.get(&moving_to) {
