@@ -1,4 +1,7 @@
-use crate::board::{piece::Piece, Board};
+use crate::{
+    board::{piece::Piece, Board},
+    consume_bit_board,
+};
 
 use super::eval_data::{EvalNumber, PieceSquareTable};
 
@@ -83,9 +86,7 @@ impl Eval {
 
         for piece in Piece::WHITE_PIECES {
             let mut bit_board = *board.get_bit_board(piece);
-            while bit_board.is_not_empty() {
-                let square = bit_board.pop_square();
-
+            consume_bit_board!(bit_board, square {
                 let (middle_game_value, end_game_value) = Self::get_piece_value(
                     middle_game_piece_square_tables,
                     end_game_piece_square_tables,
@@ -95,14 +96,12 @@ impl Eval {
 
                 total_middle_game_score += i32::from(middle_game_value);
                 total_end_game_score += i32::from(end_game_value);
-            }
+            })
         }
 
         for piece in Piece::BLACK_PIECES {
             let mut bit_board = *board.get_bit_board(piece);
-            while bit_board.is_not_empty() {
-                let square = bit_board.pop_square();
-
+            consume_bit_board!(bit_board, square {
                 let (middle_game_value, end_game_value) = Self::get_piece_value(
                     middle_game_piece_square_tables,
                     end_game_piece_square_tables,
@@ -112,7 +111,7 @@ impl Eval {
 
                 total_middle_game_score -= i32::from(middle_game_value);
                 total_end_game_score -= i32::from(end_game_value);
-            }
+            })
         }
 
         let phase = Self::get_phase(board, phases);

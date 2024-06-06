@@ -67,7 +67,7 @@ impl Rem<usize> for Zobrist {
 
 #[cfg(test)]
 mod tests {
-    use crate::board::Board;
+    use crate::{board::Board, consume_bit_board};
 
     impl crate::board::Zobrist {
         /// For debugging only.
@@ -77,10 +77,9 @@ mod tests {
 
             for (piece, bit_board) in board.bit_boards.iter().enumerate() {
                 let mut bit_board = *bit_board;
-                while bit_board.is_not_empty() {
-                    let square = bit_board.pop_square();
+                consume_bit_board!(bit_board, square {
                     key.xor_piece(piece, square.usize());
-                }
+                });
             }
 
             if !board.white_to_move {

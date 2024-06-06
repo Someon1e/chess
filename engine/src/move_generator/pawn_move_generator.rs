@@ -1,4 +1,7 @@
-use crate::board::{bit_board::BitBoard, square::Square};
+use crate::{
+    board::{bit_board::BitBoard, square::Square},
+    consume_bit_board,
+};
 
 use super::{
     move_data::{Flag, Move},
@@ -125,8 +128,7 @@ impl PawnMoveGenerator {
 
             macro_rules! promotion_captures {
                 ($captures:expr, $offset:expr) => {
-                    while $captures.is_not_empty() {
-                        let capture = $captures.pop_square();
+                    consume_bit_board!($captures, capture {
                         let from = capture.offset($offset);
 
                         let is_diagonally_pinned = move_generator.diagonal_pin_rays.get(&from);
@@ -135,14 +137,13 @@ impl PawnMoveGenerator {
                             continue;
                         }
                         Self::gen_promotions(add_move, from, capture)
-                    }
+                    });
                 };
             }
 
             macro_rules! captures_no_promotions {
                 ($captures:expr, $offset:expr) => {
-                    while $captures.is_not_empty() {
-                        let capture = $captures.pop_square();
+                    consume_bit_board!($captures, capture {
                         let from = capture.offset($offset);
 
                         let is_diagonally_pinned = move_generator.diagonal_pin_rays.get(&from);
@@ -155,7 +156,7 @@ impl PawnMoveGenerator {
                             to: capture,
                             flag: Flag::None,
                         });
-                    }
+                    });
                 };
             }
 
@@ -238,8 +239,7 @@ impl PawnMoveGenerator {
             let mut single_push_no_promotions =
                 single_push & move_generator.push_mask & !push_promotions;
 
-            while single_push_no_promotions.is_not_empty() {
-                let to = single_push_no_promotions.pop_square();
+            consume_bit_board!(single_push_no_promotions, to {
                 let from = to.offset(one_down_offset);
                 if !move_generator.orthogonal_pin_rays.get(&from)
                     || move_generator.orthogonal_pin_rays.get(&to)
@@ -250,16 +250,16 @@ impl PawnMoveGenerator {
                         flag: Flag::None,
                     });
                 }
-            }
-            while push_promotions.is_not_empty() {
-                let to = push_promotions.pop_square();
+            });
+
+            consume_bit_board!(push_promotions, to {
                 let from = to.offset(one_down_offset);
                 if !move_generator.orthogonal_pin_rays.get(&from)
                     || move_generator.orthogonal_pin_rays.get(&to)
                 {
                     Self::gen_promotions(add_move, from, to);
                 }
-            }
+            });
         }
 
         {
@@ -277,8 +277,8 @@ impl PawnMoveGenerator {
                 } else {
                     BitBoard::RANK_5
                 };
-            while double_push.is_not_empty() {
-                let to = double_push.pop_square();
+
+            consume_bit_board!(double_push, to {
                 let from = to.offset(double_down_offset);
                 if !move_generator.orthogonal_pin_rays.get(&from)
                     || move_generator.orthogonal_pin_rays.get(&to)
@@ -289,7 +289,7 @@ impl PawnMoveGenerator {
                         flag: Flag::PawnTwoUp,
                     });
                 }
-            }
+            });
         }
     }
 }

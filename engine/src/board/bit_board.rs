@@ -25,6 +25,17 @@ impl fmt::Display for BitBoard {
     }
 }
 
+/// Iterate a bit board by popping off squares.
+#[macro_export]
+macro_rules! consume_bit_board {
+    ($bit_board:expr, $name:ident $code:block) => {
+        while $bit_board.is_not_empty() {
+            let $name = $bit_board.pop_square();
+            $code
+        }
+    };
+}
+
 impl BitBoard {
     /// Bit board with all bits set except the A file.
     pub const NOT_A_FILE: Self = Self(!0x0101_0101_0101_0101);
