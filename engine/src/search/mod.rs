@@ -439,35 +439,6 @@ impl Search {
         best_score
     }
 
-    /// Repeatedly searches the board, increasing depth by one each time. Stops when `depth_completed` returns true.
-    #[must_use]
-    pub fn depth_by_depth(
-        &mut self,
-        depth_completed: &mut dyn FnMut(Ply, (EncodedMove, EvalNumber)) -> bool,
-    ) -> (Ply, EncodedMove, EvalNumber) {
-        let mut depth = 0;
-        loop {
-            depth += 1;
-            self.negamax(
-                &mut || false,
-                depth,
-                0,
-                false,
-                -EvalNumber::MAX,
-                EvalNumber::MAX,
-            );
-
-            if self.best_move.is_none() || Self::score_is_checkmate(self.best_score.abs()) {
-                return (depth, self.best_move, self.best_score);
-            }
-            let stop = depth_completed(depth, (self.best_move, self.best_score));
-            if stop {
-                break;
-            }
-        }
-        (depth, self.best_move, self.best_score)
-    }
-
     /// Returns whether a score means forced checkmate.
     #[must_use]
     pub const fn score_is_checkmate(score: EvalNumber) -> bool {
@@ -1299,12 +1270,8 @@ mod tests {
                     search.clear_for_new_search();
 
                     let search_start = Time::now();
-                    let result = search.depth_by_depth(&mut |_depth, answer| {
-                        if matches_solution(answer.0.decode()) {
-                            true
-                        } else {
-                            5000 < search_start.milliseconds()
-                        }
+                    let result = search.iterative_deepening(&mut |_, _| {}, &mut || {
+                        2000 < search_start.milliseconds()
                     });
 
                     sender
