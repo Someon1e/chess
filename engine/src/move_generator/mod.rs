@@ -472,7 +472,7 @@ impl MoveGenerator {
             consume_bit_board!(enemy_knights, from {
                 let knight_attacks = Self::knight_attack_bit_board(from);
                 king_danger_bit_board |= knight_attacks;
-            })
+            });
         }
         {
             let mut enemy_diagonal = enemy_diagonal;
@@ -563,7 +563,7 @@ impl MoveGenerator {
         let mut friendly_orthogonal = self.friendly_orthogonal & !self.diagonal_pin_rays;
         consume_bit_board!(friendly_orthogonal, from {
             self.gen_rook(from, add_move, captures_only);
-        })
+        });
     }
 
     /// Calculates whether the side to move is in check.

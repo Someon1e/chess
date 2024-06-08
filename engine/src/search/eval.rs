@@ -96,7 +96,7 @@ impl Eval {
 
                 total_middle_game_score += i32::from(middle_game_value);
                 total_end_game_score += i32::from(end_game_value);
-            })
+            });
         }
 
         for piece in Piece::BLACK_PIECES {
@@ -111,7 +111,7 @@ impl Eval {
 
                 total_middle_game_score -= i32::from(middle_game_value);
                 total_end_game_score -= i32::from(end_game_value);
-            })
+            });
         }
 
         let phase = Self::get_phase(board, phases);

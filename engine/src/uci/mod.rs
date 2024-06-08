@@ -199,7 +199,7 @@ uciok",
                     (evaluation - IMMEDIATE_CHECKMATE_SCORE).abs() * evaluation.signum()
                 )
             } else {
-                format!("score cp {}", evaluation)
+                format!("score cp {evaluation}")
             };
             let time = search_start.milliseconds();
             let pv = encode_move(best_move);
