@@ -15,6 +15,11 @@ pub enum MoveTime {
     Info(MoveTimeInfo),
 }
 
+pub enum SearchType {
+    None,
+    Perft,
+}
+
 pub struct GoParameters {
     pub nodes: Option<u64>,
 
@@ -22,7 +27,7 @@ pub struct GoParameters {
 
     pub find_mate: Option<u16>,
 
-    pub perft: bool,
+    pub search_type: SearchType,
 
     pub move_time: Option<MoveTime>,
 }
@@ -37,7 +42,7 @@ impl GoParameters {
 
             find_mate: None,
 
-            perft: false,
+            search_type: SearchType::None,
 
             move_time: None,
         }
@@ -82,7 +87,7 @@ impl GoParameters {
                     self.move_time = Some(MoveTime::Fixed(parse_number!().unwrap()));
                 }
                 "perft" => {
-                    self.perft = true;
+                    self.search_type = SearchType::Perft;
                     self.depth = parse_number!();
                 }
                 "infinite" => {
