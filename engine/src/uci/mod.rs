@@ -2,7 +2,7 @@ use core::str::SplitWhitespace;
 
 mod go_params;
 
-use go_params::MoveTime;
+use go_params::{SearchTime, SearchType};
 
 use crate::{
     board::{piece::Piece, square::Square, Board},
@@ -146,7 +146,7 @@ uciok",
 
         let mut board = Board::from_fen(self.fen.as_ref().unwrap());
 
-        if parameters.perft {
+        if matches!(parameters.search_type, SearchType::Perft) {
             for (from, to, promotion) in &self.moves {
                 board.make_move(&decode_move(&board, *from, *to, *promotion));
             }
@@ -174,9 +174,9 @@ uciok",
         }
 
         let think_time = match parameters.move_time.unwrap() {
-            MoveTime::Infinite => self.max_thinking_time,
-            MoveTime::Fixed(move_time) => move_time,
-            MoveTime::Info(info) => {
+            SearchTime::Infinite => self.max_thinking_time,
+            SearchTime::Fixed(move_time) => move_time,
+            SearchTime::Info(info) => {
                 let clock_time = (if search.board().white_to_move {
                     info.white_time
                 } else {
