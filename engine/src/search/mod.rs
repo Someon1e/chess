@@ -1,4 +1,5 @@
-mod encoded_move;
+pub mod encoded_move;
+
 mod move_ordering;
 mod repetition_table;
 mod transposition;
@@ -37,6 +38,9 @@ const USE_INTERNAL_ITERATIVE_REDUCTION: bool = true;
 const USE_PVS: bool = true;
 const USE_KILLER_MOVE: bool = true;
 
+pub type PvTable = [[EncodedMove; Ply::MAX as usize]; Ply::MAX as usize];
+pub type PvLength = [Ply; Ply::MAX as usize];
+
 /// Looks for the best outcome in a position.
 pub struct Search {
     board: Board,
@@ -48,8 +52,10 @@ pub struct Search {
     killer_moves: [EncodedMove; 32],
     quiet_history: [[MoveGuessNum; 64 * 64]; 2],
 
-    best_move: EncodedMove,
     best_score: EvalNumber,
+
+    pv_table: PvTable,
+    pv_length: PvLength,
 
     #[cfg(test)]
     times_evaluation_was_called: u32,
@@ -69,8 +75,10 @@ impl Search {
             killer_moves: [EncodedMove::NONE; 32],
             quiet_history: [[0; 64 * 64]; 2],
 
-            best_move: EncodedMove::NONE,
             best_score: -EvalNumber::MAX,
+
+            pv_table: [[EncodedMove::NONE; Ply::MAX as usize]; Ply::MAX as usize],
+            pv_length: [0; Ply::MAX as usize],
 
             #[cfg(test)]
             times_evaluation_was_called: 0,
@@ -101,8 +109,9 @@ impl Search {
                 *value /= 9;
             }
         }
-        self.best_move = EncodedMove::NONE;
-        self.best_score = -EvalNumber::MAX;
+        for pv in &mut self.pv_table {
+            pv.fill(EncodedMove::NONE);
+        };
     }
 
     /// A new match.
@@ -187,6 +196,8 @@ impl Search {
         mut alpha: EvalNumber,
         beta: EvalNumber,
     ) -> EvalNumber {
+        self.pv_length[ply_from_root as usize] = ply_from_root;
+
         // Get the zobrist key
         let zobrist_key = self.board.zobrist_key();
 
@@ -217,9 +228,18 @@ impl Search {
                         NodeType::Alpha => saved.value <= alpha,
                     } {
                         if ply_from_root == 0 {
-                            self.best_move = saved.transposition_move;
                             self.best_score = saved.value;
                         }
+                        self.pv_table[ply_from_root as usize][ply_from_root as usize] =
+                            saved.transposition_move;
+                        for next_ply in
+                            (ply_from_root + 1)..self.pv_length[ply_from_root as usize + 1]
+                        {
+                            self.pv_table[ply_from_root as usize][next_ply as usize] =
+                                self.pv_table[ply_from_root as usize + 1][next_ply as usize];
+                        }
+                        self.pv_length[ply_from_root as usize] =
+                            self.pv_length[ply_from_root as usize + 1];
 
                         return saved.value;
                     }
@@ -230,7 +250,7 @@ impl Search {
         }
         if ply_from_root == 0 {
             // Use iterative deepening move as hash move
-            hash_move = self.best_move;
+            hash_move = self.pv_table[0][0];
         }
         if USE_INTERNAL_ITERATIVE_REDUCTION && hash_move.is_none() && ply_remaining > 3 {
             // Internal iterative reduction
@@ -387,9 +407,19 @@ impl Search {
                     alpha = score;
 
                     if ply_from_root == 0 {
-                        self.best_move = encoded_move_data;
                         self.best_score = best_score;
                     }
+
+                    self.pv_table[ply_from_root as usize][ply_from_root as usize] =
+                        encoded_move_data;
+                    for next_ply in (ply_from_root + 1)..self.pv_length[ply_from_root as usize + 1]
+                    {
+                        self.pv_table[ply_from_root as usize][next_ply as usize] =
+                            self.pv_table[ply_from_root as usize + 1][next_ply as usize];
+                    }
+                    self.pv_length[ply_from_root as usize] =
+                        self.pv_length[ply_from_root as usize + 1];
+
                     node_type = NodeType::Exact;
 
                     if score >= beta {
@@ -449,9 +479,9 @@ impl Search {
     #[must_use]
     pub fn iterative_deepening(
         &mut self,
-        depth_completed: &mut dyn FnMut(Ply, (EncodedMove, EvalNumber)),
+        depth_completed: &mut dyn FnMut(Ply, (&PvTable, &PvLength, EvalNumber)),
         should_cancel: &mut dyn FnMut() -> bool,
-    ) -> (Ply, EncodedMove, EvalNumber) {
+    ) -> (Ply, PvTable, PvLength, EvalNumber) {
         let mut depth = 0;
         while !should_cancel() {
             depth += 1;
@@ -463,20 +493,21 @@ impl Search {
                 -EvalNumber::MAX,
                 EvalNumber::MAX,
             );
+
             if should_cancel() {
                 break;
             }
 
-            if self.best_move.is_none() || Self::score_is_checkmate(self.best_score) {
+            if self.pv_table[0][0].is_none() || Self::score_is_checkmate(self.best_score) {
                 break;
             }
-            depth_completed(depth, (self.best_move, self.best_score));
+            depth_completed(depth, (&self.pv_table, &self.pv_length, self.best_score));
 
             if depth == Ply::MAX {
                 break;
             }
         }
-        (depth, self.best_move, self.best_score)
+        (depth, self.pv_table, self.pv_length, self.best_score)
     }
 }
 
@@ -1277,7 +1308,7 @@ mod tests {
                     sender
                         .send((
                             position,
-                            matches_solution(result.1.decode()),
+                            matches_solution(result.1[0][0].decode()),
                             search.times_evaluation_was_called,
                         ))
                         .unwrap();

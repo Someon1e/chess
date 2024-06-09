@@ -6,7 +6,7 @@ use crate::{
     board::{piece::Piece, square::Square, Board},
     move_generator::move_data::{Flag, Move},
     perft::perft_root,
-    search::{Search, IMMEDIATE_CHECKMATE_SCORE},
+    search::{PvLength, PvTable, Search, IMMEDIATE_CHECKMATE_SCORE},
     timer::Time,
 };
 
@@ -192,7 +192,7 @@ uciok",
         };
 
         let search_start = Time::now();
-        let output_info = |depth, best_move, evaluation| {
+        let output_info = |depth, pv_table: &PvTable, pv_length: &PvLength, evaluation| {
             let evaluation_info = if Search::score_is_checkmate(evaluation) {
                 format!(
                     "score mate {}",
@@ -202,19 +202,26 @@ uciok",
                 format!("score cp {evaluation}")
             };
             let time = search_start.milliseconds();
-            let pv = encode_move(best_move);
+            let pv = pv_table[0]
+                .iter()
+                .take(pv_length[0] as usize)
+                .map(|encoded_move| " ".to_owned() + &encode_move(encoded_move.decode()))
+                .collect::<String>();
             (self.out)(&format!(
-                "info depth {depth} {evaluation_info} time {time} pv {pv}"
+                "info depth {depth} {evaluation_info} time {time} pv{pv}"
             ));
         };
-        let (depth, best_move, evaluation) = search.iterative_deepening(
-            &mut |depth, (best_move, evaluation)| {
-                output_info(depth, best_move.decode(), evaluation);
+        let (depth, pv_table, pv_length, evaluation) = search.iterative_deepening(
+            &mut |depth, (pv_table, pv_length, evaluation)| {
+                output_info(depth, pv_table, pv_length, evaluation);
             },
             &mut || search_start.milliseconds() > think_time,
         );
-        output_info(depth, best_move.decode(), evaluation);
-        (self.out)(&format!("bestmove {}", encode_move(best_move.decode())));
+        output_info(depth, &pv_table, &pv_length, evaluation);
+        (self.out)(&format!(
+            "bestmove {}",
+            encode_move(pv_table[0][0].decode())
+        ));
     }
 
     /// Stop calculating as soon as possible.
