@@ -70,11 +70,26 @@ impl GoParameters {
                     };
 
                     match label {
-                        "wtime" => move_time.white_time = parse_number!(),
-                        "btime" => move_time.black_time = parse_number!(),
-                        "winc" => move_time.white_increment = parse_number!(),
-                        "binc" => move_time.black_increment = parse_number!(),
-                        "movestogo" => move_time.moves_to_go = parse_number!(),
+                        "wtime" => {
+                            assert!(move_time.white_time.is_none(), "Overwritten wtime");
+                            move_time.white_time = parse_number!()
+                        }
+                        "btime" => {
+                            assert!(move_time.black_time.is_none(), "Overwritten btime");
+                            move_time.black_time = parse_number!()
+                        }
+                        "winc" => {
+                            assert!(move_time.white_increment.is_none(), "Overwritten winc");
+                            move_time.white_increment = parse_number!()
+                        }
+                        "binc" => {
+                            assert!(move_time.black_increment.is_none(), "Overwritten binc");
+                            move_time.black_increment = parse_number!()
+                        }
+                        "movestogo" => {
+                            assert!(move_time.moves_to_go.is_none(), "Overwritten movestogo");
+                            move_time.moves_to_go = parse_number!()
+                        }
 
                         _ => unreachable!(),
                     };
@@ -84,6 +99,7 @@ impl GoParameters {
                 "nodes" => self.nodes = parse_number!(),
                 "mate" => self.find_mate = parse_number!(),
                 "movetime" => {
+                    assert!(self.move_time.is_none(), "Malformed input");
                     self.move_time = Some(SearchTime::Fixed(parse_number!().unwrap()));
                 }
                 "perft" => {
