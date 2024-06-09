@@ -12,7 +12,7 @@ use crate::{
 
 use self::go_params::GoParameters;
 
-/// Encodes a move in algebraic notation.
+/// Encodes a move in coordinate notation.
 #[must_use]
 pub fn encode_move(move_data: Move) -> String {
     let mut encoded = String::with_capacity(4);

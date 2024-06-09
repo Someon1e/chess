@@ -218,7 +218,7 @@ impl Square {
         format!("{file_char}{rank_number}")
     }
 
-    /// Returns the square from the algebraic notation.
+    /// Returns the square from the coordinate notation.
     /// Rank (or row) 1 is the end of the board where white begins; black begins at rank 8.
     /// The files (or columns) are lettered from white's left to right.
     ///
