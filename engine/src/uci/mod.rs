@@ -2,6 +2,8 @@ use core::str::SplitWhitespace;
 
 mod go_params;
 
+use go_params::MoveTime;
+
 use crate::{
     board::{piece::Piece, square::Square, Board},
     move_generator::move_data::{Flag, Move},
@@ -171,24 +173,24 @@ uciok",
             search.make_move(&decode_move(search.board(), *from, *to, *promotion));
         }
 
-        let think_time = if parameters.infinite {
-            self.max_thinking_time
-        } else {
-            parameters.move_time_in_ms.unwrap_or_else(|| {
+        let think_time = match parameters.move_time.unwrap() {
+            MoveTime::Infinite => self.max_thinking_time,
+            MoveTime::Fixed(move_time) => move_time,
+            MoveTime::Info(info) => {
                 let clock_time = (if search.board().white_to_move {
-                    parameters.white_time
+                    info.white_time
                 } else {
-                    parameters.black_time
+                    info.black_time
                 })
                 .unwrap();
                 let increment = (if search.board().white_to_move {
-                    parameters.white_increment
+                    info.white_increment
                 } else {
-                    parameters.black_increment
+                    info.black_increment
                 })
                 .unwrap_or(0);
                 (clock_time / 20 + increment / 2).min(self.max_thinking_time)
-            })
+            }
         };
 
         let search_start = Time::now();

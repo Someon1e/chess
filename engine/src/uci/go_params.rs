@@ -1,17 +1,22 @@
 use core::str::SplitWhitespace;
 
-pub struct GoParameters {
+#[derive(Default)]
+pub struct MoveTimeInfo {
     pub white_time: Option<u128>,
     pub black_time: Option<u128>,
-
     pub white_increment: Option<u128>,
     pub black_increment: Option<u128>,
+    pub moves_to_go: Option<i16>,
+}
 
-    pub move_time_in_ms: Option<u128>,
+pub enum MoveTime {
+    Infinite,
+    Fixed(u128),
+    Info(MoveTimeInfo),
+}
 
+pub struct GoParameters {
     pub nodes: Option<u64>,
-
-    pub moves_to_go: Option<u16>,
 
     pub depth: Option<u16>,
 
@@ -19,24 +24,14 @@ pub struct GoParameters {
 
     pub perft: bool,
 
-    pub infinite: bool,
+    pub move_time: Option<MoveTime>,
 }
 
 impl GoParameters {
     #[must_use]
     pub const fn empty() -> Self {
         Self {
-            white_time: None,
-            black_time: None,
-
-            white_increment: None,
-            black_increment: None,
-
-            move_time_in_ms: None,
-
             nodes: None,
-
-            moves_to_go: None,
 
             depth: None,
 
@@ -44,7 +39,7 @@ impl GoParameters {
 
             perft: false,
 
-            infinite: false,
+            move_time: None,
         }
     }
     pub fn parse(&mut self, args: &mut SplitWhitespace) {
@@ -57,21 +52,42 @@ impl GoParameters {
             match label {
                 "searchmoves" => todo!(),
                 "ponder" => todo!("Pondering"),
-                "wtime" => self.white_time = parse_number!(),
-                "btime" => self.black_time = parse_number!(),
-                "winc" => self.white_increment = parse_number!(),
-                "binc" => self.black_increment = parse_number!(),
-                "movestogo" => self.moves_to_go = parse_number!(),
+
+                "wtime" | "btime" | "winc" | "binc" | "movestogo" => {
+                    if self.move_time.is_none() {
+                        self.move_time = Some(MoveTime::Info(MoveTimeInfo::default()))
+                    }
+
+                    let move_time = match self.move_time {
+                        Some(MoveTime::Info(ref mut info)) => info,
+                        None => unreachable!(),
+                        _ => panic!("Malformed input"),
+                    };
+
+                    match label {
+                        "wtime" => move_time.white_time = parse_number!(),
+                        "btime" => move_time.black_time = parse_number!(),
+                        "winc" => move_time.white_increment = parse_number!(),
+                        "binc" => move_time.black_increment = parse_number!(),
+                        "movestogo" => move_time.moves_to_go = parse_number!(),
+
+                        _ => unreachable!()
+                    };
+                }
+
                 "depth" => self.depth = parse_number!(),
                 "nodes" => self.nodes = parse_number!(),
                 "mate" => self.find_mate = parse_number!(),
-                "movetime" => self.move_time_in_ms = parse_number!(),
+                "movetime" => {
+                    self.move_time = Some(MoveTime::Fixed(parse_number!().unwrap()));
+                }
                 "perft" => {
                     self.perft = true;
                     self.depth = parse_number!();
                 }
                 "infinite" => {
-                    self.infinite = true;
+                    assert!(self.move_time.is_none(), "Malformed input");
+                    self.move_time = Some(MoveTime::Infinite);
                 }
                 _ => panic!("Unknown parameter"),
             }
