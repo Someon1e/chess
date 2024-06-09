@@ -1,7 +1,7 @@
 use core::str::SplitWhitespace;
 
 #[derive(Default)]
-pub struct MoveTimeInfo {
+pub struct SearchTimeInfo {
     pub white_time: Option<u128>,
     pub black_time: Option<u128>,
     pub white_increment: Option<u128>,
@@ -9,10 +9,10 @@ pub struct MoveTimeInfo {
     pub moves_to_go: Option<u16>,
 }
 
-pub enum MoveTime {
+pub enum SearchTime {
     Infinite,
     Fixed(u128),
-    Info(MoveTimeInfo),
+    Info(SearchTimeInfo),
 }
 
 pub enum SearchType {
@@ -29,7 +29,7 @@ pub struct GoParameters {
 
     pub search_type: SearchType,
 
-    pub move_time: Option<MoveTime>,
+    pub move_time: Option<SearchTime>,
 }
 
 impl GoParameters {
@@ -60,11 +60,11 @@ impl GoParameters {
 
                 "wtime" | "btime" | "winc" | "binc" | "movestogo" => {
                     if self.move_time.is_none() {
-                        self.move_time = Some(MoveTime::Info(MoveTimeInfo::default()))
+                        self.move_time = Some(SearchTime::Info(SearchTimeInfo::default()))
                     }
 
                     let move_time = match self.move_time {
-                        Some(MoveTime::Info(ref mut info)) => info,
+                        Some(SearchTime::Info(ref mut info)) => info,
                         None => unreachable!(),
                         _ => panic!("Malformed input"),
                     };
@@ -84,7 +84,7 @@ impl GoParameters {
                 "nodes" => self.nodes = parse_number!(),
                 "mate" => self.find_mate = parse_number!(),
                 "movetime" => {
-                    self.move_time = Some(MoveTime::Fixed(parse_number!().unwrap()));
+                    self.move_time = Some(SearchTime::Fixed(parse_number!().unwrap()));
                 }
                 "perft" => {
                     self.search_type = SearchType::Perft;
@@ -92,7 +92,7 @@ impl GoParameters {
                 }
                 "infinite" => {
                     assert!(self.move_time.is_none(), "Malformed input");
-                    self.move_time = Some(MoveTime::Infinite);
+                    self.move_time = Some(SearchTime::Infinite);
                 }
                 _ => panic!("Unknown parameter"),
             }
