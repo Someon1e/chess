@@ -66,7 +66,7 @@ impl GoParameters {
                     let move_time = match self.move_time {
                         Some(SearchTime::Info(ref mut info)) => info,
                         None => unreachable!(),
-                        _ => panic!("Malformed input"),
+                        _ => panic!("Conflicting move time"),
                     };
 
                     match label {
@@ -99,7 +99,7 @@ impl GoParameters {
                 "nodes" => self.nodes = parse_number!(),
                 "mate" => self.find_mate = parse_number!(),
                 "movetime" => {
-                    assert!(self.move_time.is_none(), "Malformed input");
+                    assert!(self.move_time.is_none(), "Conflicting move time");
                     self.move_time = Some(SearchTime::Fixed(parse_number!().unwrap()));
                 }
                 "perft" => {
@@ -107,7 +107,7 @@ impl GoParameters {
                     self.depth = parse_number!();
                 }
                 "infinite" => {
-                    assert!(self.move_time.is_none(), "Malformed input");
+                    assert!(self.move_time.is_none(), "Conflicting move time");
                     self.move_time = Some(SearchTime::Infinite);
                 }
                 _ => panic!("Unknown parameter"),
