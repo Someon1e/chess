@@ -111,7 +111,7 @@ impl Search {
         }
         for pv in &mut self.pv_table {
             pv.fill(EncodedMove::NONE);
-        };
+        }
     }
 
     /// A new match.

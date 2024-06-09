@@ -6,7 +6,7 @@ pub struct MoveTimeInfo {
     pub black_time: Option<u128>,
     pub white_increment: Option<u128>,
     pub black_increment: Option<u128>,
-    pub moves_to_go: Option<i16>,
+    pub moves_to_go: Option<u16>,
 }
 
 pub enum MoveTime {
@@ -71,7 +71,7 @@ impl GoParameters {
                         "binc" => move_time.black_increment = parse_number!(),
                         "movestogo" => move_time.moves_to_go = parse_number!(),
 
-                        _ => unreachable!()
+                        _ => unreachable!(),
                     };
                 }
 
