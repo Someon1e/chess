@@ -9,6 +9,7 @@ pub struct EncodedMove(u16);
 
 impl EncodedMove {
     /// Packs a move into 16 bits.
+    #[must_use]
     pub const fn new(move_data: Move) -> Self {
         let mut data: u16 = 0;
 
@@ -22,6 +23,7 @@ impl EncodedMove {
     }
 
     /// Decodes from, to, and flag.
+    #[must_use]
     pub const fn decode(self) -> Move {
         Move {
             from: self.from(),
@@ -32,23 +34,29 @@ impl EncodedMove {
 
     pub const NONE: Self = Self(0);
 
+    #[must_use]
     pub fn is_none(self) -> bool {
         self == Self::NONE
     }
 
+    #[must_use]
     #[allow(clippy::unreadable_literal)]
     pub const fn from(self) -> Square {
         Square::from_index((self.0 & 0b111111) as i8)
     }
+
+    #[must_use]
     #[allow(clippy::unreadable_literal)]
     pub const fn to(self) -> Square {
         Square::from_index(((self.0 >> 6) & 0b111111) as i8)
     }
 
+    #[must_use]
     pub const fn flag(&self) -> &Flag {
         &Flag::ALL[((self.0 >> 12) & 0b1111) as usize]
     }
 
+    #[must_use]
     pub const fn without_flag(self) -> u16 {
         self.0 & 0b111111_111111
     }

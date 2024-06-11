@@ -60,7 +60,7 @@ impl GoParameters {
 
                 "wtime" | "btime" | "winc" | "binc" | "movestogo" => {
                     if self.move_time.is_none() {
-                        self.move_time = Some(SearchTime::Info(SearchTimeInfo::default()))
+                        self.move_time = Some(SearchTime::Info(SearchTimeInfo::default()));
                     }
 
                     let move_time = match self.move_time {
@@ -72,23 +72,23 @@ impl GoParameters {
                     match label {
                         "wtime" => {
                             assert!(move_time.white_time.is_none(), "Overwritten wtime");
-                            move_time.white_time = parse_number!()
+                            move_time.white_time = parse_number!();
                         }
                         "btime" => {
                             assert!(move_time.black_time.is_none(), "Overwritten btime");
-                            move_time.black_time = parse_number!()
+                            move_time.black_time = parse_number!();
                         }
                         "winc" => {
                             assert!(move_time.white_increment.is_none(), "Overwritten winc");
-                            move_time.white_increment = parse_number!()
+                            move_time.white_increment = parse_number!();
                         }
                         "binc" => {
                             assert!(move_time.black_increment.is_none(), "Overwritten binc");
-                            move_time.black_increment = parse_number!()
+                            move_time.black_increment = parse_number!();
                         }
                         "movestogo" => {
                             assert!(move_time.moves_to_go.is_none(), "Overwritten movestogo");
-                            move_time.moves_to_go = parse_number!()
+                            move_time.moves_to_go = parse_number!();
                         }
 
                         _ => unreachable!(),
