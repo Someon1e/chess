@@ -12,7 +12,7 @@ use std::{fs::File, io::BufReader};
 fn parse_data_set() -> Vec<(Board, f64)> {
     let file = File::open("dataset/positions.txt").expect("Failed to open file");
     let data_set = BufReader::new(file);
-    let mut parsed = Vec::with_capacity(1_000_000);
+    let mut parsed = Vec::with_capacity(2_000_000);
 
     for data in data_set.lines() {
         let Result::Ok(data) = data else {
@@ -44,7 +44,7 @@ fn mean_square_error(
     end_game_piece_square_tables: &PieceSquareTable,
     phases: &[i32; 5],
 ) -> f64 {
-    let error: f64 = data_set
+    let total_square_error: f64 = data_set
         .par_iter()
         .map(|(board, result)| {
             let score = f64::from(
@@ -58,11 +58,12 @@ fn mean_square_error(
 
             let sigmoid = 1.0 / (1.0 + f64::powf(10.0, -k * score / 400.0));
 
-            (result - sigmoid) * (result - sigmoid)
+            let error = result - sigmoid;
+            error * error
         })
         .sum();
 
-    error / data_set.len() as f64
+    total_square_error / data_set.len() as f64
 }
 
 fn pretty_piece_square_tables(piece_square_tables: PieceSquareTable) -> String {
@@ -367,7 +368,10 @@ fn main() {
 
     let data_set_start_time = Instant::now();
     let data_set = parse_data_set();
-    println!("Parsed dataset in {} seconds", data_set_start_time.elapsed().as_secs_f64());
+    println!(
+        "Parsed dataset in {} seconds",
+        data_set_start_time.elapsed().as_secs_f64()
+    );
 
     let k_start_time = Instant::now();
     let k = find_k(
@@ -376,7 +380,10 @@ fn main() {
         &end_game_piece_square_tables,
         &phases,
     );
-    println!("Found k: {k} in {} seconds", k_start_time.elapsed().as_secs_f64());
+    println!(
+        "Found k: {k} in {} seconds",
+        k_start_time.elapsed().as_secs_f64()
+    );
 
     let tune_start_time = Instant::now();
     tune(
@@ -386,5 +393,8 @@ fn main() {
         &end_game_piece_square_tables,
         &phases,
     );
-    println!("Tuned in {} seconds", tune_start_time.elapsed().as_secs_f64());
+    println!(
+        "Tuned in {} seconds",
+        tune_start_time.elapsed().as_secs_f64()
+    );
 }
