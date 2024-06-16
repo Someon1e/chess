@@ -365,22 +365,20 @@ fn main() {
         400, // Queen
     ];
 
-    let time = Instant::now();
-
+    let data_set_start_time = Instant::now();
     let data_set = parse_data_set();
+    println!("Parsed dataset in {} seconds", data_set_start_time.elapsed().as_secs_f64());
 
-    println!("Parsed dataset in {} seconds", time.elapsed().as_secs_f64());
-    return;
-
+    let k_start_time = Instant::now();
     let k = find_k(
         &data_set,
         &middle_game_piece_square_tables,
         &end_game_piece_square_tables,
         &phases,
     );
+    println!("Found k: {k} in {} seconds", k_start_time.elapsed().as_secs_f64());
 
-    println!("Found k: {k} in {} seconds", time.elapsed().as_secs_f64());
-
+    let tune_start_time = Instant::now();
     tune(
         &data_set,
         k,
@@ -388,6 +386,5 @@ fn main() {
         &end_game_piece_square_tables,
         &phases,
     );
-
-    println!("Tuned in {} seconds", time.elapsed().as_secs_f64());
+    println!("Tuned in {} seconds", tune_start_time.elapsed().as_secs_f64());
 }
