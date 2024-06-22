@@ -12,15 +12,7 @@ const MAX_TIME: u128 = 20 * 1000;
 
 #[cfg(target_arch = "wasm32")]
 extern "C" {
-    fn print_char(c: u8);
-}
-
-#[cfg(target_arch = "wasm32")]
-fn print(output: &str) {
-    for &c in output.as_bytes() {
-        unsafe { print_char(c) }
-    }
-    unsafe { print_char('\n' as u8) }
+    fn print_string(output: *const u8, length: u32);
 }
 
 thread_local! {
@@ -33,7 +25,7 @@ thread_local! {
 
         out: |output: &str| {
             #[cfg(target_arch = "wasm32")]
-            print(output);
+            unsafe { print_string(output.as_ptr(), output.len() as u32) };
 
             #[cfg(not(target_arch = "wasm32"))]
             println!("{output}");
