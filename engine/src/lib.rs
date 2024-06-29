@@ -4,12 +4,6 @@
 #![warn(clippy::pedantic)]
 #![warn(clippy::nursery)]
 #![warn(missing_docs)]
-// TODO: reduce these
-#![allow(clippy::cast_possible_truncation)]
-#![allow(clippy::cast_possible_wrap)]
-#![allow(clippy::cast_sign_loss)]
-#![allow(clippy::too_many_lines)]
-#![allow(clippy::module_name_repetitions)]
 
 /// Represents a chess position.
 pub mod board;
