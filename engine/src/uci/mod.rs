@@ -8,7 +8,7 @@ use crate::{
     board::{piece::Piece, square::Square, Board},
     move_generator::move_data::{Flag, Move},
     perft::perft_root,
-    search::{PvLength, PvTable, Search, IMMEDIATE_CHECKMATE_SCORE},
+    search::{pv::Pv, Search, IMMEDIATE_CHECKMATE_SCORE},
     timer::Time,
 };
 
@@ -194,7 +194,7 @@ uciok",
         };
 
         let search_start = Time::now();
-        let output_info = |depth, pv_table: &PvTable, pv_length: &PvLength, evaluation| {
+        let output_info = |depth, pv: &Pv, evaluation| {
             let evaluation_info = if Search::score_is_checkmate(evaluation) {
                 format!(
                     "score mate {}",
@@ -204,25 +204,25 @@ uciok",
                 format!("score cp {evaluation}")
             };
             let time = search_start.milliseconds();
-            let pv = pv_table[0]
+            let pv_string = pv.pv_table[0]
                 .iter()
-                .take(pv_length[0] as usize)
+                .take(pv.pv_length[0] as usize)
                 .map(|encoded_move| " ".to_owned() + &encode_move(encoded_move.decode()))
                 .collect::<String>();
             (self.out)(&format!(
-                "info depth {depth} {evaluation_info} time {time} pv{pv}"
+                "info depth {depth} {evaluation_info} time {time} pv{pv_string}"
             ));
         };
-        let (depth, pv_table, pv_length, evaluation) = search.iterative_deepening(
-            &mut |depth, (pv_table, pv_length, evaluation)| {
-                output_info(depth, pv_table, pv_length, evaluation);
+        let (depth, evaluation) = search.iterative_deepening(
+            &mut |depth, (pv, evaluation)| {
+                output_info(depth, pv, evaluation);
             },
             &mut || search_start.milliseconds() > think_time,
         );
-        output_info(depth, &pv_table, &pv_length, evaluation);
+        output_info(depth, &search.pv, evaluation);
         (self.out)(&format!(
             "bestmove {}",
-            encode_move(pv_table[0][0].decode())
+            encode_move(search.pv.root_best_move().decode())
         ));
     }
 
