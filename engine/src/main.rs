@@ -8,7 +8,7 @@ use core::cell::RefCell;
 use engine::uci::UCIProcessor;
 
 /// Max time for thinking.
-const MAX_TIME: u128 = 20 * 1000;
+const MAX_TIME: u64 = 20 * 1000;
 
 #[cfg(target_arch = "wasm32")]
 extern "C" {

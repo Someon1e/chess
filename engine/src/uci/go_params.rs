@@ -2,16 +2,16 @@ use core::str::SplitWhitespace;
 
 #[derive(Default)]
 pub struct SearchTimeInfo {
-    pub white_time: Option<u128>,
-    pub black_time: Option<u128>,
-    pub white_increment: Option<u128>,
-    pub black_increment: Option<u128>,
+    pub white_time: Option<u64>,
+    pub black_time: Option<u64>,
+    pub white_increment: Option<u64>,
+    pub black_increment: Option<u64>,
     pub moves_to_go: Option<u16>,
 }
 
 pub enum SearchTime {
     Infinite,
-    Fixed(u128),
+    Fixed(u64),
     Info(SearchTimeInfo),
 }
 

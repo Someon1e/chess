@@ -14,9 +14,9 @@ mod inner {
                 start: unsafe { time() },
             }
         }
-        pub fn milliseconds(&self) -> u128 {
+        pub fn milliseconds(&self) -> u64 {
             let now = unsafe { time() };
-            ((now - self.start) * 1000.0) as u128
+            ((now - self.start) * 1000.0) as u64
         }
     }
 }
@@ -35,8 +35,8 @@ mod inner {
                 start: Instant::now(),
             }
         }
-        pub fn milliseconds(&self) -> u128 {
-            self.start.elapsed().as_millis()
+        pub fn milliseconds(&self) -> u64 {
+            self.start.elapsed().as_millis().try_into().unwrap()
         }
     }
 }

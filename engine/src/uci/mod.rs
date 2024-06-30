@@ -59,7 +59,7 @@ pub fn decode_move(board: &Board, from: Square, to: Square, promotion: Flag) -> 
 /// Handles UCI input and output.
 pub struct UCIProcessor {
     /// Maximum time to search, in milliseconds.
-    pub max_thinking_time: u128,
+    pub max_thinking_time: u64,
 
     /// FEN to be used.
     pub fen: Option<String>,
