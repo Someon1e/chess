@@ -463,7 +463,7 @@ impl Search {
         should_cancel: &mut dyn FnMut() -> bool,
     ) -> (Ply, EvalNumber) {
         let mut depth = 0;
-        while !should_cancel() {
+        loop {
             depth += 1;
             self.negamax(
                 should_cancel,
@@ -484,6 +484,10 @@ impl Search {
             depth_completed(depth, (&self.pv, self.best_score));
 
             if depth == Ply::MAX {
+                break;
+            }
+
+            if should_cancel() {
                 break;
             }
         }
