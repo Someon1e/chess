@@ -56,12 +56,10 @@ impl Zobrist {
     pub const fn lower_u32(&self) -> u32 {
         self.0 as u32
     }
-}
 
-impl Rem<usize> for Zobrist {
-    type Output = usize;
-    fn rem(self, rhs: usize) -> Self::Output {
-        (self.0 % (rhs as u64)) as Self::Output
+    #[must_use]
+    pub const fn distribute(&self, size: usize) -> u64 {
+        ((self.0 as u128 * size as u128) >> 64) as u64
     }
 }
 

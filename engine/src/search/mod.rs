@@ -203,7 +203,7 @@ impl Search {
         }
 
         // Turn zobrist key into an index into the transposition table
-        let zobrist_index = zobrist_key % self.transposition_table.len();
+        let zobrist_index = zobrist_key.distribute(self.transposition_table.len()) as usize;
 
         // This is the best move in this position according to previous searches
         let mut hash_move = EncodedMove::NONE;
