@@ -173,9 +173,9 @@ uciok",
             search.make_move(&decode_move(search.board(), *from, *to, *promotion));
         }
 
-        let think_time = match parameters.move_time.unwrap() {
-            SearchTime::Infinite => self.max_thinking_time,
-            SearchTime::Fixed(move_time) => move_time,
+        let (hard_time_limit, soft_time_limit) = match parameters.move_time.unwrap() {
+            SearchTime::Infinite => (self.max_thinking_time, self.max_thinking_time),
+            SearchTime::Fixed(move_time) => (move_time, move_time),
             SearchTime::Info(info) => {
                 let clock_time = (if search.board().white_to_move {
                     info.white_time
@@ -189,7 +189,12 @@ uciok",
                     info.black_increment
                 })
                 .unwrap_or(0);
-                (clock_time / 20 + increment / 2).min(self.max_thinking_time)
+                let hard_time_limit = (clock_time / 20 + increment / 2).min(self.max_thinking_time);
+
+                // TODO: check accuracy
+                let soft_time_limit = (hard_time_limit as f64 * 0.66) as u64;
+
+                (hard_time_limit, soft_time_limit)
             }
         };
 
@@ -214,11 +219,14 @@ uciok",
             ));
         };
         let (depth, evaluation) = search.iterative_deepening(
+            &search_start,
+            hard_time_limit,
+            soft_time_limit,
             &mut |depth, (pv, evaluation)| {
                 output_info(depth, pv, evaluation);
             },
-            &mut || search_start.milliseconds() > think_time,
         );
+
         output_info(depth, &search.pv, evaluation);
         (self.out)(&format!(
             "bestmove {}",

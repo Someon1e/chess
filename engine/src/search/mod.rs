@@ -15,6 +15,7 @@ use pv::Pv;
 use crate::{
     board::{game_state::GameState, Board},
     move_generator::{move_data::Move, MoveGenerator},
+    timer::Time,
 };
 
 use self::{
@@ -182,7 +183,9 @@ impl Search {
     }
     fn negamax(
         &mut self,
-        should_cancel: &mut dyn FnMut() -> bool,
+
+        timer: &Time,
+        hard_time_limit: u64,
 
         mut ply_remaining: Ply,
         ply_from_root: Ply,
@@ -278,7 +281,8 @@ impl Search {
                 let old_state = self.board.make_null_move();
 
                 let score = -self.negamax(
-                    should_cancel,
+                    timer,
+                    hard_time_limit,
                     ply_remaining - (3 + ply_remaining / 6),
                     ply_from_root + 1,
                     false,
@@ -348,7 +352,8 @@ impl Search {
                 // Late move reduction
                 let r = 2 + ply_remaining / 10 + index as Ply / 9;
                 score = -self.negamax(
-                    should_cancel,
+                    timer,
+                    hard_time_limit,
                     ply_remaining.saturating_sub(r),
                     ply_from_root + 1,
                     true,
@@ -363,7 +368,8 @@ impl Search {
 
             if USE_PVS && normal_search && index != 0 {
                 score = -self.negamax(
-                    should_cancel,
+                    timer,
+                    hard_time_limit,
                     ply_remaining - 1 + Ply::from(check_extension),
                     ply_from_root + 1,
                     true,
@@ -374,7 +380,8 @@ impl Search {
             }
             if normal_search {
                 score = -self.negamax(
-                    should_cancel,
+                    timer,
+                    hard_time_limit,
                     ply_remaining - 1 + Ply::from(check_extension),
                     ply_from_root + 1,
                     true,
@@ -384,9 +391,11 @@ impl Search {
             }
 
             self.unmake_move(&move_data, &old_state);
-            if should_cancel() {
+
+            if timer.milliseconds() > hard_time_limit {
                 return 0;
             }
+
             if score > best_score {
                 best_score = score;
                 transposition_move = encoded_move_data;
@@ -459,14 +468,19 @@ impl Search {
     #[must_use]
     pub fn iterative_deepening(
         &mut self,
+
+        timer: &Time,
+        hard_time_limit: u64,
+        soft_time_limit: u64,
+
         depth_completed: &mut dyn FnMut(Ply, (&Pv, EvalNumber)),
-        should_cancel: &mut dyn FnMut() -> bool,
     ) -> (Ply, EvalNumber) {
         let mut depth = 0;
         loop {
             depth += 1;
             self.negamax(
-                should_cancel,
+                timer,
+                hard_time_limit,
                 depth,
                 0,
                 false,
@@ -474,7 +488,7 @@ impl Search {
                 EvalNumber::MAX,
             );
 
-            if should_cancel() {
+            if timer.milliseconds() > soft_time_limit {
                 break;
             }
 
@@ -487,7 +501,7 @@ impl Search {
                 break;
             }
 
-            if should_cancel() {
+            if timer.milliseconds() > soft_time_limit {
                 break;
             }
         }
@@ -1285,9 +1299,8 @@ mod tests {
                     search.clear_for_new_search();
 
                     let search_start = Time::now();
-                    let result = search.iterative_deepening(&mut |_, _| {}, &mut || {
-                        2000 < search_start.milliseconds()
-                    });
+                    let result =
+                        search.iterative_deepening(&search_start, 2000, 2000, &mut |_, _| {});
 
                     sender
                         .send((
