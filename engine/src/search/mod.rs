@@ -475,6 +475,8 @@ impl Search {
 
         depth_completed: &mut dyn FnMut(Ply, (&Pv, EvalNumber)),
     ) -> (Ply, EvalNumber) {
+        assert!(hard_time_limit >= soft_time_limit);
+
         let mut depth = 0;
         loop {
             depth += 1;
