@@ -1,8 +1,6 @@
 use super::game_state::CastlingRights;
 use super::square::Square;
 
-use core::ops::Rem;
-
 /// Filled with random integers.
 #[derive(Debug)]
 pub struct ZobristRandoms {
