@@ -339,6 +339,14 @@ impl Search {
 
             let is_capture = move_generator.enemy_piece_bit_board().get(&move_data.to);
             let old_state = self.make_move(&move_data);
+            #[cfg(target_feature = "sse")]
+            {
+                use core::arch::x86_64::{_MM_HINT_NTA, _mm_prefetch};
+                let index = self.board.zobrist_key().distribute(self.transposition_table.len()) as usize;
+                unsafe {
+                    _mm_prefetch::<{ _MM_HINT_NTA }>(self.transposition_table.as_ptr().add(index) as *const i8);
+                }
+            }
 
             // Search deeper when in check
             let check_extension = MoveGenerator::calculate_is_in_check(&self.board);
