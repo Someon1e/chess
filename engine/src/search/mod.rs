@@ -134,9 +134,10 @@ impl Search {
         );
         if best_score > alpha {
             alpha = best_score;
-        }
-        if alpha >= beta {
-            return best_score;
+
+            if best_score >= beta {
+                return best_score;
+            }
         }
 
         let move_generator = MoveGenerator::new(&self.board);
@@ -157,10 +158,11 @@ impl Search {
                 best_score = score;
                 if score > alpha {
                     alpha = score;
+
+                    if score >= beta {
+                        break;
+                    }
                 }
-            }
-            if alpha >= beta {
-                break;
             }
 
             index += 1;
