@@ -341,10 +341,15 @@ impl Search {
             let old_state = self.make_move(&move_data);
             #[cfg(target_feature = "sse")]
             {
-                use core::arch::x86_64::{_MM_HINT_NTA, _mm_prefetch};
-                let index = self.board.zobrist_key().distribute(self.transposition_table.len()) as usize;
+                use core::arch::x86_64::{_mm_prefetch, _MM_HINT_NTA};
+                let index =
+                    self.board
+                        .zobrist_key()
+                        .distribute(self.transposition_table.len()) as usize;
                 unsafe {
-                    _mm_prefetch::<{ _MM_HINT_NTA }>(self.transposition_table.as_ptr().add(index) as *const i8);
+                    _mm_prefetch::<{ _MM_HINT_NTA }>(
+                        self.transposition_table.as_ptr().add(index) as *const i8
+                    );
                 }
             }
 
