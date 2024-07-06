@@ -55,6 +55,7 @@ impl Zobrist {
         self.0 as u32
     }
 
+    /// Uniformly map zobrist key into an integer no larger than `size`.
     #[must_use]
     pub const fn distribute(&self, size: usize) -> u64 {
         ((self.0 as u128 * size as u128) >> 64) as u64
