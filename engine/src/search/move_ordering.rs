@@ -42,7 +42,7 @@ const PIECE_VALUES: [MoveGuessNum; 12] = [
     0,   // King
 ];
 
-pub struct MoveOrderer {}
+pub struct MoveOrderer;
 impl MoveOrderer {
     fn guess_move_value(
         search: &Search,
