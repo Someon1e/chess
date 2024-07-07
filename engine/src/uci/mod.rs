@@ -189,10 +189,8 @@ uciok",
                     info.black_increment
                 })
                 .unwrap_or(0);
-                let hard_time_limit = (clock_time / 20 + increment / 2).min(self.max_thinking_time);
-
-                // TODO: check accuracy
-                let soft_time_limit = (hard_time_limit as f64 * 0.66) as u64;
+                let hard_time_limit = (clock_time / 10).min(self.max_thinking_time);
+                let soft_time_limit = (clock_time / 26 + increment / 2).min(hard_time_limit);
 
                 (hard_time_limit, soft_time_limit)
             }
