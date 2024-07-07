@@ -215,7 +215,11 @@ uciok",
                 .map(|encoded_move| " ".to_owned() + &encode_move(encoded_move.decode()))
                 .collect::<String>();
 
-            let nodes_per_second = (u64::from(nodes) * 1000) / time;
+            let nodes_per_second = if time == 0 {
+                69420
+            } else {
+                (u64::from(nodes) * 1000) / time
+            };
 
             (self.out)(&format!(
                 "info depth {depth} {evaluation_info} time {time} nodes {nodes} nps {nodes_per_second} pv{pv_string}"
