@@ -137,10 +137,14 @@ impl Search {
             MoveOrderer::get_move_guesses_captures_only(self, &move_generator);
         let mut index = 0;
         while index != move_count {
-            let move_data =
+            let move_data = unsafe {
+                // SAFETY: `get_move_guesses_captures_only` guarantees that `move_guesses[0..move_count]` are initialised.
+                // `index` can not be higher than `move_count`, due to the loop condition.
+
                 MoveOrderer::put_highest_guessed_move(&mut move_guesses, index, move_count)
-                    .move_data
-                    .decode();
+            }
+            .move_data
+            .decode();
 
             let old_state = self.board.make_move(&move_data);
             let score = -self.quiescence_search(-beta, -alpha);
@@ -324,9 +328,13 @@ impl Search {
         let mut quiets_evaluated: Vec<EncodedMove> = Vec::new();
         let mut index = 0;
         loop {
-            let encoded_move_data =
+            let encoded_move_data = unsafe {
+                // SAFETY: `put_highest_guessed_move` guarantees that `move_guesses[0..move_count]` are initialised.
+                // `index` can not be higher than `move_count`, due to the loop condition.
+
                 MoveOrderer::put_highest_guessed_move(&mut move_guesses, index, move_count)
-                    .move_data;
+            }
+            .move_data;
             let move_data = encoded_move_data.decode();
 
             let is_capture = move_generator.enemy_piece_bit_board().get(&move_data.to);

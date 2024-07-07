@@ -1,3 +1,5 @@
+use std::mem::MaybeUninit;
+
 use crate::{
     board::bit_board::BitBoard,
     move_generator::{
@@ -87,13 +89,17 @@ impl MoveOrderer {
         score
     }
 
-    pub fn put_highest_guessed_move(
-        move_guesses: &mut [MoveGuess],
+    /// # Safety
+    /// It is up to the caller to guarantee that `move_guesses[unsorted_index..move_count]` are initialised.
+    pub unsafe fn put_highest_guessed_move(
+        move_guesses: &mut [MaybeUninit<MoveGuess>],
         unsorted_index: usize,
         move_count: usize,
     ) -> MoveGuess {
-        let (mut index_of_highest_move, mut highest_guess) =
-            (unsorted_index, move_guesses[unsorted_index].guess);
+        let (mut index_of_highest_move, mut highest_guess) = (
+            unsorted_index,
+            move_guesses[unsorted_index].assume_init().guess,
+        );
 
         // Find highest guessed unsorted move
         for (index, item) in move_guesses
@@ -103,7 +109,7 @@ impl MoveOrderer {
             .skip(unsorted_index)
         {
             // Iterate part of the array that is unsorted
-            let guess = item.guess;
+            let guess = item.assume_init().guess;
             if guess > highest_guess {
                 // New highest guess
                 highest_guess = guess;
@@ -116,7 +122,7 @@ impl MoveOrderer {
             move_guesses.swap(index_of_highest_move, unsorted_index);
         }
 
-        move_guesses[unsorted_index]
+        move_guesses[unsorted_index].assume_init()
     }
 
     fn guess_capture_value(search: &Search, move_data: Move) -> MoveGuessNum {
@@ -147,20 +153,17 @@ impl MoveOrderer {
     pub fn get_move_guesses_captures_only(
         search: &Search,
         move_generator: &MoveGenerator,
-    ) -> ([MoveGuess; MAX_CAPTURES], usize) {
-        let mut move_guesses = [MoveGuess {
-            move_data: EncodedMove::NONE,
-            guess: 0,
-        }; MAX_CAPTURES];
+    ) -> ([MaybeUninit<MoveGuess>; MAX_CAPTURES], usize) {
+        let mut move_guesses = [MaybeUninit::uninit(); MAX_CAPTURES];
 
         let mut index = 0;
         move_generator.gen(
             &mut |move_data| {
                 let encoded = EncodedMove::new(move_data);
-                move_guesses[index] = MoveGuess {
+                move_guesses[index].write(MoveGuess {
                     move_data: encoded,
                     guess: Self::guess_capture_value(search, move_data),
-                };
+                });
                 index += 1;
             },
             true,
@@ -174,17 +177,14 @@ impl MoveOrderer {
         move_generator: &MoveGenerator,
         hash_move: EncodedMove,
         killer_move: EncodedMove,
-    ) -> ([MoveGuess; MAX_LEGAL_MOVES], usize) {
-        let mut move_guesses = [MoveGuess {
-            move_data: EncodedMove::NONE,
-            guess: 0,
-        }; MAX_LEGAL_MOVES];
+    ) -> ([MaybeUninit<MoveGuess>; MAX_LEGAL_MOVES], usize) {
+        let mut move_guesses = [MaybeUninit::uninit(); MAX_LEGAL_MOVES];
 
         let mut index = 0;
         move_generator.gen(
             &mut |move_data| {
                 let encoded = EncodedMove::new(move_data);
-                move_guesses[index] = MoveGuess {
+                move_guesses[index].write(MoveGuess {
                     move_data: encoded,
                     guess: if encoded == hash_move {
                         HASH_MOVE_BONUS
@@ -199,7 +199,7 @@ impl MoveOrderer {
                             0
                         }
                     },
-                };
+                });
                 index += 1;
             },
             false,
@@ -234,8 +234,9 @@ mod tests {
 
         let mut index = 0;
         let mut next_move = || {
-            let move_guess =
-                MoveOrderer::put_highest_guessed_move(&mut move_guesses, index, move_count);
+            let move_guess = unsafe {
+                MoveOrderer::put_highest_guessed_move(&mut move_guesses, index, move_count)
+            };
             println!("{index} {} {}", move_guess.move_data, move_guess.guess);
             index += 1;
             (move_guess.move_data, index != move_count)
