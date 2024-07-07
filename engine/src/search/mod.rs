@@ -58,8 +58,7 @@ pub struct Search {
 
     pub pv: Pv,
 
-    #[cfg(test)]
-    times_evaluation_was_called: u32,
+    quiescence_call_count: u32,
 }
 
 impl Search {
@@ -80,8 +79,7 @@ impl Search {
 
             pv: Pv::new(),
 
-            #[cfg(test)]
-            times_evaluation_was_called: 0,
+            quiescence_call_count: 0,
         }
     }
 
@@ -99,10 +97,7 @@ impl Search {
 
     /// Another search.
     pub fn clear_for_new_search(&mut self) {
-        #[cfg(test)]
-        {
-            self.times_evaluation_was_called = 0;
-        }
+        self.quiescence_call_count = 0;
         self.killer_moves.fill(EncodedMove::NONE);
         for side in &mut self.quiet_history {
             for value in side {
@@ -121,10 +116,7 @@ impl Search {
 
     #[must_use]
     fn quiescence_search(&mut self, mut alpha: EvalNumber, beta: EvalNumber) -> EvalNumber {
-        #[cfg(test)]
-        {
-            self.times_evaluation_was_called += 1;
-        }
+        self.quiescence_call_count += 1;
 
         let mut best_score = Eval::evaluate(
             &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLES,
@@ -488,7 +480,7 @@ impl Search {
         hard_time_limit: u64,
         soft_time_limit: u64,
 
-        depth_completed: &mut dyn FnMut(Ply, (&Pv, EvalNumber)),
+        depth_completed: &mut dyn FnMut(Ply, (&Pv, EvalNumber), u32),
     ) -> (Ply, EvalNumber) {
         assert!(hard_time_limit >= soft_time_limit);
 
@@ -512,7 +504,11 @@ impl Search {
             if self.pv.root_best_move().is_none() || Self::score_is_checkmate(self.best_score) {
                 break;
             }
-            depth_completed(depth, (&self.pv, self.best_score));
+            depth_completed(
+                depth,
+                (&self.pv, self.best_score),
+                self.quiescence_call_count,
+            );
 
             if depth == Ply::MAX {
                 break;
@@ -522,7 +518,12 @@ impl Search {
                 break;
             }
         }
+
         (depth, self.best_score)
+    }
+
+    pub fn quiescence_call_count(&self) -> u32 {
+        self.quiescence_call_count
     }
 }
 
@@ -1317,13 +1318,13 @@ mod tests {
 
                     let search_start = Time::now();
                     let result =
-                        search.iterative_deepening(&search_start, 2000, 2000, &mut |_, _| {});
+                        search.iterative_deepening(&search_start, 2000, 2000, &mut |_, _, _| {});
 
                     sender
                         .send((
                             position,
                             matches_solution(search.pv.root_best_move().decode()),
-                            search.times_evaluation_was_called,
+                            search.quiescence_call_count,
                         ))
                         .unwrap();
                 }
@@ -1332,13 +1333,13 @@ mod tests {
 
         let mut failures = 0;
         let mut successes = 0;
-        let mut total_times_evaluation_was_called = 0;
+        let mut total_quiescence_call_count = 0;
         println!("Number | Position | Times eval was called");
-        for (position, success, times_evaluation_was_called) in receiver.iter() {
+        for (position, success, quiescence_call_count) in receiver.iter() {
             if success {
                 successes += 1;
-                total_times_evaluation_was_called += times_evaluation_was_called;
-                println!("\x1b[92mSuccess #{successes:<4} {position:<72} {times_evaluation_was_called:>8}\x1b[0m");
+                total_quiescence_call_count += quiescence_call_count;
+                println!("\x1b[92mSuccess #{successes:<4} {position:<72} {quiescence_call_count:>8}\x1b[0m");
             } else {
                 failures += 1;
                 println!("\x1b[91mFailure #{failures:<4} {position}\x1b[0m");
@@ -1347,6 +1348,6 @@ mod tests {
                 break;
             }
         }
-        println!("Successes: {successes} Failures: {failures} Times eval was called: {total_times_evaluation_was_called}");
+        println!("Successes: {successes} Failures: {failures} Times eval was called: {total_quiescence_call_count}");
     }
 }

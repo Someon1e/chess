@@ -199,7 +199,7 @@ uciok",
         };
 
         let search_start = Time::now();
-        let output_info = |depth, pv: &Pv, evaluation| {
+        let output_info = |depth, pv: &Pv, evaluation, nodes| {
             let evaluation_info = if Search::score_is_checkmate(evaluation) {
                 format!(
                     "score mate {}",
@@ -214,20 +214,28 @@ uciok",
                 .take(pv.pv_length[0] as usize)
                 .map(|encoded_move| " ".to_owned() + &encode_move(encoded_move.decode()))
                 .collect::<String>();
+
+            let nodes_per_second = (u64::from(nodes) * 1000) / time;
+
             (self.out)(&format!(
-                "info depth {depth} {evaluation_info} time {time} pv{pv_string}"
+                "info depth {depth} {evaluation_info} time {time} nodes {nodes} nps {nodes_per_second} pv{pv_string}"
             ));
         };
         let (depth, evaluation) = search.iterative_deepening(
             &search_start,
             hard_time_limit,
             soft_time_limit,
-            &mut |depth, (pv, evaluation)| {
-                output_info(depth, pv, evaluation);
+            &mut |depth, (pv, evaluation), quiescence_call_count| {
+                output_info(depth, pv, evaluation, quiescence_call_count);
             },
         );
 
-        output_info(depth, &search.pv, evaluation);
+        output_info(
+            depth,
+            &search.pv,
+            evaluation,
+            search.quiescence_call_count(),
+        );
         (self.out)(&format!(
             "bestmove {}",
             encode_move(search.pv.root_best_move().decode())
