@@ -184,21 +184,18 @@ impl MoveOrderer {
         move_generator.gen(
             &mut |move_data| {
                 let encoded = EncodedMove::new(move_data);
+
+                let guess = if encoded == hash_move {
+                    HASH_MOVE_BONUS
+                } else if encoded == killer_move {
+                    KILLER_MOVE_BONUS
+                } else {
+                    Self::guess_move_value(search, move_generator.enemy_pawn_attacks(), move_data)
+                };
+
                 move_guesses[index].write(MoveGuess {
                     move_data: encoded,
-                    guess: if encoded == hash_move {
-                        HASH_MOVE_BONUS
-                    } else {
-                        Self::guess_move_value(
-                            search,
-                            move_generator.enemy_pawn_attacks(),
-                            move_data,
-                        ) + if encoded == killer_move {
-                            KILLER_MOVE_BONUS
-                        } else {
-                            0
-                        }
-                    },
+                    guess,
                 });
                 index += 1;
             },
