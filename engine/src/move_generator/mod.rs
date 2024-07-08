@@ -60,8 +60,6 @@ pub struct MoveGenerator {
 
     check_mask: BitBoard,
     push_mask: BitBoard,
-
-    enemy_pawn_attacks: BitBoard,
 }
 
 impl MoveGenerator {
@@ -442,7 +440,6 @@ impl MoveGenerator {
 
         let mut push_mask = BitBoard::EMPTY;
 
-        let enemy_pawn_attacks;
         {
             let not_on_the_right_edge = if white_to_move {
                 BitBoard::NOT_A_FILE
@@ -455,7 +452,7 @@ impl MoveGenerator {
                 BitBoard::NOT_A_FILE
             };
 
-            enemy_pawn_attacks = if board.white_to_move {
+            let enemy_pawn_attacks = if board.white_to_move {
                 (enemy_pawns & not_on_the_right_edge) >> 9
             } else {
                 (enemy_pawns & not_on_the_right_edge) << 9
@@ -542,7 +539,6 @@ impl MoveGenerator {
             orthogonal_pin_rays,
             check_mask,
             push_mask,
-            enemy_pawn_attacks,
         }
     }
 
@@ -640,12 +636,6 @@ impl MoveGenerator {
     #[must_use]
     pub const fn is_in_check(&self) -> bool {
         self.is_in_check
-    }
-
-    /// Returns the enemy pawn attacks.
-    #[must_use]
-    pub const fn enemy_pawn_attacks(&self) -> BitBoard {
-        self.enemy_pawn_attacks
     }
 
     /// Returns the enemy piece bit board.

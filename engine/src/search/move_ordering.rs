@@ -1,11 +1,8 @@
 use std::mem::MaybeUninit;
 
-use crate::{
-    board::bit_board::BitBoard,
-    move_generator::{
-        move_data::{Flag, Move},
-        MoveGenerator,
-    },
+use crate::move_generator::{
+    move_data::{Flag, Move},
+    MoveGenerator,
 };
 
 use super::{encoded_move::EncodedMove, Search};
@@ -29,32 +26,50 @@ const KNIGHT_PROMOTION_BONUS: MoveGuessNum = 20_000_000;
 const ROOK_PROMOTION_BONUS: MoveGuessNum = 0;
 const BISHOP_PROMOTION_BONUS: MoveGuessNum = 0;
 
-const PIECE_VALUES: [MoveGuessNum; 12] = [
-    100, // Pawn
-    300, // Knight
-    320, // Bishop
-    500, // Rook
-    900, // Queen
-    0,   // King
-    100, // Pawn
-    300, // Knight
-    320, // Bishop
-    500, // Rook
-    900, // Queen
-    0,   // King
+macro_rules! repeat_array {
+    // Base case: When no elements are left to process
+    (@internal [$($acc:expr),*] []) => {
+        [$($acc),*]
+    };
+
+    // Recursive case: Process the first element and recurse on the rest
+    (@internal [$($acc:expr),*] [$head:expr $(, $tail:expr)*]) => {
+        repeat_array!(@internal [$($acc,)* $head] [$($tail),*])
+    };
+
+    // Entry point: Duplicate the array by calling the internal rule twice
+    ([$($arr:expr),*]) => {
+        repeat_array!(@internal [$($arr),*] [$($arr),*])
+    };
+}
+
+const MVV_LVA_PAWN: [u8; 12] = repeat_array!([15, 14, 13, 12, 11, 10]); // Victim P > Attacker P, N, B, R, Q, K
+const MVV_LVA_KNIGHT: [u8; 12] = repeat_array!([25, 24, 23, 22, 21, 20]); // Victim N > Attacker P, N, B, R, Q, K
+const MVV_LVA_BISHOP: [u8; 12] = repeat_array!([35, 34, 33, 32, 31, 30]); // Victim B > Attacker P, N, B, R, Q, K
+const MVV_LVA_ROOK: [u8; 12] = repeat_array!([45, 44, 43, 42, 41, 40]); // Victim R > Attacker P, N, B, R, Q, K
+const MVV_LVA_QUEEN: [u8; 12] = repeat_array!([55, 54, 53, 52, 51, 50]); // Victim Q > Attacker P, N, B, R, Q, K
+const MVV_LVA_KING: [u8; 12] = repeat_array!([0, 0, 0, 0, 0, 0]); // Victim K > Attacker P, N, B, R, Q, K
+const MVV_LVA: [[u8; 12]; 12] = [
+    MVV_LVA_PAWN,
+    MVV_LVA_KNIGHT,
+    MVV_LVA_BISHOP,
+    MVV_LVA_ROOK,
+    MVV_LVA_QUEEN,
+    MVV_LVA_KING,
+    MVV_LVA_PAWN,
+    MVV_LVA_KNIGHT,
+    MVV_LVA_BISHOP,
+    MVV_LVA_ROOK,
+    MVV_LVA_QUEEN,
+    MVV_LVA_KING,
 ];
 
 pub struct MoveOrderer;
 impl MoveOrderer {
-    fn guess_move_value(
-        search: &Search,
-        enemy_pawn_attacks: BitBoard,
-        move_data: Move,
-    ) -> MoveGuessNum {
+    fn guess_move_value(search: &Search, move_data: Move) -> MoveGuessNum {
         let moving_from = move_data.from;
         let moving_to = move_data.to;
 
-        let mut score = 0;
         match move_data.flag {
             Flag::EnPassant | Flag::Castle => {
                 return search.quiet_history[usize::from(search.board.white_to_move)]
@@ -69,22 +84,17 @@ impl MoveOrderer {
             Flag::PawnTwoUp | Flag::None => {}
         }
 
-        let moving_piece = search.board.friendly_piece_at(moving_from).unwrap();
+        let mut score = 0;
 
         // This won't consider en passant
         if let Some(capturing) = search.board.enemy_piece_at(moving_to) {
-            let mut potential_value_loss = PIECE_VALUES[moving_piece as usize];
-            if !enemy_pawn_attacks.get(&moving_to) {
-                potential_value_loss /= 2;
-            }
             score += CAPTURE_BONUS;
-            score += PIECE_VALUES[capturing as usize];
-            score -= potential_value_loss;
+
+            let moving_piece = search.board.friendly_piece_at(moving_from).unwrap();
+            score += MoveGuessNum::from(MVV_LVA[capturing as usize][moving_piece as usize]);
         } else {
-            score += MoveGuessNum::from(
-                search.quiet_history[usize::from(search.board.white_to_move)]
-                    [moving_from.usize() + moving_to.usize() * 64],
-            );
+            score += search.quiet_history[usize::from(search.board.white_to_move)]
+                [moving_from.usize() + moving_to.usize() * 64];
         }
         score
     }
@@ -140,12 +150,9 @@ impl MoveOrderer {
         };
 
         let capturing = search.board.enemy_piece_at(move_data.to).unwrap();
-        let capturing_value = PIECE_VALUES[capturing as usize];
-
-        score += capturing_value;
-
         let moving_piece = search.board.friendly_piece_at(move_data.from).unwrap();
-        score -= PIECE_VALUES[moving_piece as usize];
+
+        score += MoveGuessNum::from(MVV_LVA[capturing as usize][moving_piece as usize]);
 
         score
     }
@@ -190,7 +197,7 @@ impl MoveOrderer {
                 } else if encoded == killer_move {
                     KILLER_MOVE_BONUS
                 } else {
-                    Self::guess_move_value(search, move_generator.enemy_pawn_attacks(), move_data)
+                    Self::guess_move_value(search, move_data)
                 };
 
                 move_guesses[index].write(MoveGuess {
