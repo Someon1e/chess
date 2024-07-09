@@ -15,6 +15,7 @@
 
 ### Search pruning and reductions
 - Late move reduction
+- Late move pruning
 - Static null move pruning (also known as reverse futility pruning)
 - Null move heuristic
 - Internal iterative reduction

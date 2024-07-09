@@ -452,6 +452,14 @@ impl Search {
                 }
             }
             if !is_capture {
+                // Late move pruning
+                if is_not_pv_node
+                    && !move_generator.is_in_check()
+                    && quiets_evaluated.len() as u32 + 1
+                        > 3 + u32::from(ply_remaining) * u32::from(ply_remaining)
+                {
+                    break;
+                }
                 quiets_evaluated.push(encoded_move_data);
             }
 
