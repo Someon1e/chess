@@ -1342,7 +1342,7 @@ mod tests {
         let mut failures = 0;
         let mut successes = 0;
         let mut total_quiescence_call_count = 0;
-        println!("Number | Position | Times eval was called");
+        println!("Number | Position | Nodes");
         for (position, success, quiescence_call_count) in receiver.iter() {
             if success {
                 successes += 1;
@@ -1356,6 +1356,6 @@ mod tests {
                 break;
             }
         }
-        println!("Successes: {successes} Failures: {failures} Times eval was called: {total_quiescence_call_count}");
+        println!("Successes: {successes} Failures: {failures} Total nodes: {total_quiescence_call_count}");
     }
 }
