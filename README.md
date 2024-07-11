@@ -23,6 +23,7 @@
 ### Search move ordering
 - History heuristic
 - Killer move heuristic
+- MVV-LVA
 
 ## TODO:
 - Futility Pruning
