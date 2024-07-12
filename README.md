@@ -8,6 +8,7 @@
 - Fail-soft alpha-beta pruning
 - Iterative deepening
 - Principal Variation Search
+- Aspiration windows
 - Quiescence search
 - Transposition table
 - Tuned piece-square-table-only evaluation

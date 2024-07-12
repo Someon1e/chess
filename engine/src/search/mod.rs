@@ -93,6 +93,7 @@ impl Search {
     pub fn new_board(&mut self, board: Board) {
         self.board = board;
         self.repetition_table.clear();
+        self.best_score = 0;
     }
 
     /// Another search.
@@ -487,6 +488,27 @@ impl Search {
         score.abs() >= CHECKMATE_SCORE
     }
 
+    #[must_use]
+    fn aspiration_search(&mut self, timer: &Time, hard_time_limit: u64, depth: Ply) {
+        for window in [40, 80, 120, 200] {
+            let alpha = self.best_score - window;
+            let beta = self.best_score + window;
+            self.best_score = self.negamax(timer, hard_time_limit, depth, 0, false, alpha, beta);
+            if alpha < self.best_score && self.best_score < beta {
+                return;
+            }
+        }
+        self.best_score = self.negamax(
+            timer,
+            hard_time_limit,
+            depth,
+            0,
+            false,
+            -EvalNumber::MAX,
+            EvalNumber::MAX,
+        );
+    }
+
     /// Repeatedly searches the board, increasing depth by one each time. Stops when `should_cancel` returns true.
     #[must_use]
     pub fn iterative_deepening(
@@ -503,15 +525,7 @@ impl Search {
         let mut depth = 0;
         loop {
             depth += 1;
-            self.negamax(
-                timer,
-                hard_time_limit,
-                depth,
-                0,
-                false,
-                -EvalNumber::MAX,
-                EvalNumber::MAX,
-            );
+            let _ = self.aspiration_search(timer, hard_time_limit, depth);
 
             if timer.milliseconds() > soft_time_limit {
                 break;
