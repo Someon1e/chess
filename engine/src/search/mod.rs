@@ -54,8 +54,6 @@ pub struct Search {
     killer_moves: [EncodedMove; 32],
     quiet_history: [[MoveGuessNum; 64 * 64]; 2],
 
-    best_score: EvalNumber,
-
     pub pv: Pv,
 
     quiescence_call_count: u32,
@@ -75,8 +73,6 @@ impl Search {
             killer_moves: [EncodedMove::NONE; 32],
             quiet_history: [[0; 64 * 64]; 2],
 
-            best_score: -EvalNumber::MAX,
-
             pv: Pv::new(),
 
             quiescence_call_count: 0,
@@ -93,7 +89,6 @@ impl Search {
     pub fn new_board(&mut self, board: Board) {
         self.board = board;
         self.repetition_table.clear();
-        self.best_score = 0;
     }
 
     /// Another search.
@@ -225,10 +220,6 @@ impl Search {
                         NodeType::Beta => saved.value >= beta,
                         NodeType::Alpha => saved.value <= alpha,
                     } {
-                        if ply_from_root == 0 {
-                            self.best_score = saved.value;
-                        }
-
                         self.pv.update_move(ply_from_root, saved.transposition_move);
 
                         return saved.value;
@@ -317,9 +308,6 @@ impl Search {
                 // Stalemate
                 0
             };
-            if ply_from_root == 0 {
-                self.best_score = score;
-            }
             return score;
         }
 
@@ -419,10 +407,6 @@ impl Search {
                 if score > alpha {
                     alpha = score;
 
-                    if ply_from_root == 0 {
-                        self.best_score = best_score;
-                    }
-
                     self.pv.update_move(ply_from_root, encoded_move_data);
 
                     node_type = NodeType::Exact;
@@ -489,16 +473,22 @@ impl Search {
     }
 
     #[must_use]
-    fn aspiration_search(&mut self, timer: &Time, hard_time_limit: u64, depth: Ply) {
+    fn aspiration_search(
+        &mut self,
+        timer: &Time,
+        hard_time_limit: u64,
+        mut best_score: EvalNumber,
+        depth: Ply,
+    ) -> EvalNumber {
         for window in [40, 80, 120, 200] {
-            let alpha = self.best_score - window;
-            let beta = self.best_score + window;
-            self.best_score = self.negamax(timer, hard_time_limit, depth, 0, false, alpha, beta);
-            if alpha < self.best_score && self.best_score < beta {
-                return;
+            let alpha = best_score - window;
+            let beta = best_score + window;
+            best_score = self.negamax(timer, hard_time_limit, depth, 0, false, alpha, beta);
+            if alpha < best_score && best_score < beta {
+                return best_score;
             }
         }
-        self.best_score = self.negamax(
+        self.negamax(
             timer,
             hard_time_limit,
             depth,
@@ -506,7 +496,7 @@ impl Search {
             false,
             -EvalNumber::MAX,
             EvalNumber::MAX,
-        );
+        )
     }
 
     /// Repeatedly searches the board, increasing depth by one each time. Stops when `should_cancel` returns true.
@@ -523,22 +513,19 @@ impl Search {
         assert!(hard_time_limit >= soft_time_limit);
 
         let mut depth = 0;
+        let mut best_score = -EvalNumber::MAX;
         loop {
             depth += 1;
-            let _ = self.aspiration_search(timer, hard_time_limit, depth);
+            best_score = self.aspiration_search(timer, hard_time_limit, best_score, depth);
 
             if timer.milliseconds() > soft_time_limit {
                 break;
             }
 
-            if self.pv.root_best_move().is_none() || Self::score_is_checkmate(self.best_score) {
+            if self.pv.root_best_move().is_none() || Self::score_is_checkmate(best_score) {
                 break;
             }
-            depth_completed(
-                depth,
-                (&self.pv, self.best_score),
-                self.quiescence_call_count,
-            );
+            depth_completed(depth, (&self.pv, best_score), self.quiescence_call_count);
 
             if depth == Ply::MAX {
                 break;
@@ -549,7 +536,7 @@ impl Search {
             }
         }
 
-        (depth, self.best_score)
+        (depth, best_score)
     }
 
     pub fn quiescence_call_count(&self) -> u32 {
