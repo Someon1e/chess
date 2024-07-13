@@ -480,12 +480,14 @@ impl Search {
         mut best_score: EvalNumber,
         depth: Ply,
     ) -> EvalNumber {
-        for window in [40, 80, 120, 200] {
-            let alpha = best_score - window;
-            let beta = best_score + window;
-            best_score = self.negamax(timer, hard_time_limit, depth, 0, false, alpha, beta);
-            if alpha < best_score && best_score < beta {
-                return best_score;
+        if depth != 1 {
+            for window in [40, 80, 120, 200] {
+                let alpha = best_score - window;
+                let beta = best_score + window;
+                best_score = self.negamax(timer, hard_time_limit, depth, 0, false, alpha, beta);
+                if alpha < best_score && best_score < beta {
+                    return best_score;
+                }
             }
         }
         self.negamax(
