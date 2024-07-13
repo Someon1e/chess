@@ -8,15 +8,20 @@ use crate::{
     board::{piece::Piece, square::Square, Board},
     move_generator::move_data::{Flag, Move},
     perft::perft_root,
-    search::{pv::Pv, Search, IMMEDIATE_CHECKMATE_SCORE},
+    search::{encoded_move::EncodedMove, pv::Pv, Search, IMMEDIATE_CHECKMATE_SCORE},
     timer::Time,
 };
 
 use self::go_params::GoParameters;
 
-/// Encodes a move in coordinate notation.
+/// Encodes a move in uci notation.
 #[must_use]
 pub fn encode_move(move_data: Move) -> String {
+    const NULL_MOVE: Move = EncodedMove::NONE.decode();
+    if move_data == NULL_MOVE {
+        return "0000".to_owned();
+    }
+
     let mut encoded = String::with_capacity(4);
     encoded.push_str(&move_data.from.to_notation());
     encoded.push_str(&move_data.to.to_notation());
