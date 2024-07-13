@@ -42,6 +42,7 @@ const USE_LATE_MOVE_REDUCTION: bool = true;
 const USE_INTERNAL_ITERATIVE_REDUCTION: bool = true;
 const USE_PVS: bool = true;
 const USE_KILLER_MOVE: bool = true;
+const USE_ASPIRATION_WINDOWS: bool = true;
 
 /// Looks for the best outcome in a position.
 pub struct Search {
@@ -480,7 +481,7 @@ impl Search {
         mut best_score: EvalNumber,
         depth: Ply,
     ) -> EvalNumber {
-        if depth != 1 {
+        if USE_ASPIRATION_WINDOWS && depth != 1 {
             for window in [40, 80, 120, 200] {
                 let alpha = best_score - window;
                 let beta = best_score + window;
