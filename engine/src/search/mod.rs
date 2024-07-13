@@ -396,7 +396,7 @@ impl Search {
 
             self.unmake_move(&move_data, &old_state);
 
-            if timer.milliseconds() > hard_time_limit {
+            if ply_remaining > 1 && timer.milliseconds() > hard_time_limit {
                 return 0;
             }
 
