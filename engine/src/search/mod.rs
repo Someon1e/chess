@@ -515,30 +515,39 @@ impl Search {
         assert!(hard_time_limit >= soft_time_limit);
 
         let mut depth = 0;
-        let mut best_score = -EvalNumber::MAX;
+        let mut previous_best_score = -EvalNumber::MAX;
         loop {
             depth += 1;
-            best_score = self.aspiration_search(timer, hard_time_limit, best_score, depth);
+            let best_score =
+                self.aspiration_search(timer, hard_time_limit, previous_best_score, depth);
 
-            if timer.milliseconds() > soft_time_limit {
+            if timer.milliseconds() > hard_time_limit {
+                // Must stop now.
                 break;
             }
+            previous_best_score = best_score;
 
             if self.pv.root_best_move().is_none() || Self::score_is_checkmate(best_score) {
+                // No point searching more.
                 break;
             }
+
+            // Depth was completed
+            // Report results of search iteration
             depth_completed(depth, (&self.pv, best_score), self.quiescence_call_count);
 
             if depth == Ply::MAX {
+                // Maximum depth, can not continue
                 break;
             }
 
             if timer.milliseconds() > soft_time_limit {
+                // It would probably be a waste of time to start another iteration
                 break;
             }
         }
 
-        (depth, best_score)
+        (depth, previous_best_score)
     }
 
     pub fn quiescence_call_count(&self) -> u32 {
