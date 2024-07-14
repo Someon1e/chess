@@ -72,8 +72,10 @@ impl MoveOrderer {
 
         match move_data.flag {
             Flag::EnPassant | Flag::Castle => {
-                return search.quiet_history[usize::from(search.board.white_to_move)]
-                    [moving_from.usize() + moving_to.usize() * 64]
+                return MoveGuessNum::from(
+                    search.quiet_history[usize::from(search.board.white_to_move)]
+                        [moving_from.usize() + moving_to.usize() * 64],
+                )
             }
 
             Flag::BishopPromotion => return BISHOP_PROMOTION_BONUS,
@@ -93,8 +95,10 @@ impl MoveOrderer {
             let moving_piece = search.board.friendly_piece_at(moving_from).unwrap();
             score += MoveGuessNum::from(MVV_LVA[capturing as usize][moving_piece as usize]);
         } else {
-            score += search.quiet_history[usize::from(search.board.white_to_move)]
-                [moving_from.usize() + moving_to.usize() * 64];
+            score += MoveGuessNum::from(
+                search.quiet_history[usize::from(search.board.white_to_move)]
+                    [moving_from.usize() + moving_to.usize() * 64],
+            );
         }
         score
     }

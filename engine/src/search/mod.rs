@@ -22,7 +22,7 @@ use self::{
     encoded_move::EncodedMove,
     eval::Eval,
     eval_data::EvalNumber,
-    move_ordering::{MoveGuessNum, MoveOrderer},
+    move_ordering::MoveOrderer,
     repetition_table::RepetitionTable,
     transposition::{NodeType, NodeValue, TRANSPOSITION_CAPACITY},
 };
@@ -53,7 +53,7 @@ pub struct Search {
     transposition_table: Vec<Option<NodeValue>>,
 
     killer_moves: [EncodedMove; 32],
-    quiet_history: [[MoveGuessNum; 64 * 64]; 2],
+    quiet_history: [[i16; 64 * 64]; 2],
 
     pub pv: Pv,
 
@@ -420,16 +420,26 @@ impl Search {
                                 self.killer_moves[usize::from(ply_from_root)] = encoded_move_data;
                             }
 
-                            let history = MoveGuessNum::from(ply_remaining)
-                                * MoveGuessNum::from(ply_remaining);
+                            const MAX_HISTORY: i32 = 16384;
+                            fn history_gravity(current_value: i16, history_bonus: i32) -> i16 {
+                                (history_bonus
+                                    - i32::from(current_value) * history_bonus / MAX_HISTORY)
+                                    as i16
+                            }
+
+                            let history_bonus = (i32::from(ply_remaining) * i32::from(ply_remaining)).min(MAX_HISTORY);
 
                             let history_side =
                                 &mut self.quiet_history[usize::from(self.board.white_to_move)];
 
-                            history_side[encoded_move_data.without_flag() as usize] += history;
+                            let history =
+                                &mut history_side[encoded_move_data.without_flag() as usize];
+                            *history += history_gravity(*history, history_bonus);
 
                             for previous_quiet in quiets_evaluated {
-                                history_side[previous_quiet.without_flag() as usize] -= history;
+                                let history =
+                                    &mut history_side[previous_quiet.without_flag() as usize];
+                                *history += history_gravity(*history, -history_bonus);
                             }
                         }
                         node_type = NodeType::Beta;
