@@ -1,4 +1,4 @@
-# Generic chess engine written in rust
+# Generic chess engine written in Rust
 
 ## Features:
 - UCI
