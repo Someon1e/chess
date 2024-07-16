@@ -427,7 +427,9 @@ impl Search {
                                     as i16
                             }
 
-                            let history_bonus = (i32::from(ply_remaining) * i32::from(ply_remaining)).min(MAX_HISTORY);
+                            let history_bonus = (i32::from(ply_remaining)
+                                * i32::from(ply_remaining))
+                            .min(MAX_HISTORY);
 
                             let history_side =
                                 &mut self.quiet_history[usize::from(self.board.white_to_move)];
@@ -561,7 +563,8 @@ impl Search {
         (depth, previous_best_score)
     }
 
-    pub fn quiescence_call_count(&self) -> u32 {
+    #[must_use]
+    pub const fn quiescence_call_count(&self) -> u32 {
         self.quiescence_call_count
     }
 }

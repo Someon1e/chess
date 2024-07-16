@@ -9,19 +9,21 @@ pub struct Pv {
 }
 
 impl Pv {
-    pub fn new() -> Self {
+    #[must_use]
+    pub const fn new() -> Self {
         Self {
             pv_table: [[EncodedMove::NONE; Ply::MAX as usize]; Ply::MAX as usize],
             pv_length: [0; Ply::MAX as usize],
         }
     }
 
-    pub fn root_best_move(&self) -> EncodedMove {
+    #[must_use]
+    pub const fn root_best_move(&self) -> EncodedMove {
         self.pv_table[0][0]
     }
 
     pub fn set_pv_length(&mut self, ply_from_root: Ply, length: Ply) {
-        self.pv_length[ply_from_root as usize] = length
+        self.pv_length[ply_from_root as usize] = length;
     }
 
     pub fn update_move(&mut self, ply_from_root: Ply, encoded_move_data: EncodedMove) {
