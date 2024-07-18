@@ -3,7 +3,7 @@ use core::fmt;
 use core::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not, Shl, Shr};
 
 /// 64 bit number where each bit represents a square.
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub struct BitBoard(u64);
 
 impl fmt::Display for BitBoard {

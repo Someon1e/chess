@@ -167,9 +167,13 @@ fn init_lookup(
 }
 
 #[must_use]
-fn rook_lookup() -> &'static Box<[BitBoard]> {
-    static COMPUTATION: OnceLock<Box<[BitBoard]>> = OnceLock::new();
-    COMPUTATION.get_or_init(|| init_lookup(ROOK_TABLE_SIZE, &ROOK_KEYS, &RELEVANT_ROOK_BLOCKERS, 0))
+fn rook_lookup() -> &'static Box<[BitBoard; ROOK_TABLE_SIZE]> {
+    static COMPUTATION: OnceLock<Box<[BitBoard; ROOK_TABLE_SIZE]>> = OnceLock::new();
+    COMPUTATION.get_or_init(|| {
+        init_lookup(ROOK_TABLE_SIZE, &ROOK_KEYS, &RELEVANT_ROOK_BLOCKERS, 0)
+            .try_into()
+            .unwrap()
+    })
 }
 
 /// Returns possible rook moves at a square given blockers which are relevant.
@@ -180,8 +184,8 @@ pub fn get_rook_moves(square: Square, relevant_blockers: BitBoard) -> BitBoard {
 }
 
 #[must_use]
-fn bishop_lookup() -> &'static Box<[BitBoard]> {
-    static COMPUTATION: OnceLock<Box<[BitBoard]>> = OnceLock::new();
+fn bishop_lookup() -> &'static Box<[BitBoard; BISHOP_TABLE_SIZE]> {
+    static COMPUTATION: OnceLock<Box<[BitBoard; BISHOP_TABLE_SIZE]>> = OnceLock::new();
     COMPUTATION.get_or_init(|| {
         init_lookup(
             BISHOP_TABLE_SIZE,
@@ -189,6 +193,8 @@ fn bishop_lookup() -> &'static Box<[BitBoard]> {
             &RELEVANT_BISHOP_BLOCKERS,
             4,
         )
+        .try_into()
+        .unwrap()
     })
 }
 
