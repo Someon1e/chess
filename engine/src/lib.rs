@@ -108,7 +108,9 @@ mod tests {
 
     #[test]
     fn test_perft() {
-        for (depth, expected_move_count, fen) in TEST_FENS {
+        let mut fens = TEST_FENS;
+        fens.sort_by_key(|v| {v.1});
+        for (depth, expected_move_count, fen) in fens {
             println!("{fen}");
             debug_perft(fen, depth, expected_move_count);
             println!();
