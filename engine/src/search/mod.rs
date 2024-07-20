@@ -1302,7 +1302,7 @@ mod tests {
             ), // "WAC.300"
         ];
 
-        let mut state: u64 = 123456789;
+        let mut state: u64 = 17;
         let mut index = obvious_positions.len();
 
         while index > 1 {
