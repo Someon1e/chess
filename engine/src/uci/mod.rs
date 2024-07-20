@@ -188,12 +188,14 @@ uciok",
                     info.black_time
                 })
                 .unwrap();
+
                 let increment = (if search.board().white_to_move {
                     info.white_increment
                 } else {
                     info.black_increment
                 })
-                .unwrap_or(0);
+                .map_or_else(|| 0, |non_zero| non_zero.get());
+
                 let hard_time_limit = (clock_time / 10).min(self.max_thinking_time);
                 let soft_time_limit = (clock_time / 26 + increment / 2).min(hard_time_limit);
 

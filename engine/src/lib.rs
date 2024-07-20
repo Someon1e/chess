@@ -109,7 +109,7 @@ mod tests {
     #[test]
     fn test_perft() {
         let mut fens = TEST_FENS;
-        fens.sort_by_key(|v| {v.1});
+        fens.sort_by_key(|v| v.1);
         for (depth, expected_move_count, fen) in fens {
             println!("{fen}");
             debug_perft(fen, depth, expected_move_count);

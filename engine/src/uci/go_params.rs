@@ -1,12 +1,13 @@
 use core::str::SplitWhitespace;
+use std::num::{NonZeroU16, NonZeroU64};
 
 #[derive(Default)]
 pub struct SearchTimeInfo {
     pub white_time: Option<u64>,
     pub black_time: Option<u64>,
-    pub white_increment: Option<u64>,
-    pub black_increment: Option<u64>,
-    pub moves_to_go: Option<u16>,
+    pub white_increment: Option<NonZeroU64>,
+    pub black_increment: Option<NonZeroU64>,
+    pub moves_to_go: Option<NonZeroU16>,
 }
 
 pub enum SearchTime {
