@@ -246,15 +246,19 @@ impl Search {
 
         let move_generator = MoveGenerator::new(&self.board);
 
-        if is_not_pv_node && !move_generator.is_in_check() {
+        if (USE_STATIC_NULL_MOVE_PRUNING || USE_NULL_MOVE_PRUNING)
+            && is_not_pv_node
+            && !move_generator.is_in_check()
+        {
+            let static_eval = Eval::evaluate(
+                &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLES,
+                &eval_data::END_GAME_PIECE_SQUARE_TABLES,
+                &eval_data::PHASES,
+                &self.board,
+            );
+
             // Static null move pruning (also known as reverse futility pruning)
             if USE_STATIC_NULL_MOVE_PRUNING && ply_remaining < 5 {
-                let static_eval = Eval::evaluate(
-                    &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLES,
-                    &eval_data::END_GAME_PIECE_SQUARE_TABLES,
-                    &eval_data::PHASES,
-                    &self.board,
-                );
                 if static_eval - i32::from(ply_remaining) * 60 > beta {
                     return static_eval;
                 }
@@ -264,6 +268,8 @@ impl Search {
             if USE_NULL_MOVE_PRUNING
             && allow_null_move
             && ply_remaining > 2
+
+            && static_eval >= beta
 
             // Do not do it if we only have pawns and a king
             && move_generator.friendly_pawns().count() + 1
