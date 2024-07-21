@@ -106,8 +106,8 @@ impl GoParameters {
                 }
                 "mate" => {
                     assert!(self.find_mate.is_none(), "Conflicting mate");
-                    self.find_mate = parse_number!()
-                },
+                    self.find_mate = parse_number!();
+                }
                 "movetime" => {
                     assert!(self.move_time.is_none(), "Conflicting move time");
                     self.move_time = Some(SearchTime::Fixed(parse_number!().unwrap()));

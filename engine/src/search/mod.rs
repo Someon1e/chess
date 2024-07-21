@@ -338,7 +338,7 @@ impl Search {
                         .distribute(self.transposition_table.len()) as usize;
                 unsafe {
                     _mm_prefetch::<{ _MM_HINT_NTA }>(
-                        self.transposition_table.as_ptr().add(index) as *const i8
+                        self.transposition_table.as_ptr().add(index).cast::<i8>(),
                     );
                 }
             }

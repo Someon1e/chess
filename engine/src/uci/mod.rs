@@ -194,7 +194,7 @@ uciok",
                 } else {
                     info.black_increment
                 })
-                .map_or_else(|| 0, |non_zero| non_zero.get());
+                .map_or_else(|| 0, core::num::NonZero::get);
 
                 let hard_time_limit = (clock_time / 10).min(self.max_thinking_time);
                 let soft_time_limit = (clock_time / 26 + increment / 2).min(hard_time_limit);
