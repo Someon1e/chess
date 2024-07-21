@@ -96,9 +96,18 @@ impl GoParameters {
                     };
                 }
 
-                "depth" => self.depth = parse_number!(),
-                "nodes" => self.nodes = parse_number!(),
-                "mate" => self.find_mate = parse_number!(),
+                "depth" => {
+                    assert!(self.depth.is_none(), "Conflicting depth");
+                    self.depth = parse_number!();
+                }
+                "nodes" => {
+                    assert!(self.nodes.is_none(), "Conflicting nodes");
+                    self.nodes = parse_number!();
+                }
+                "mate" => {
+                    assert!(self.find_mate.is_none(), "Conflicting mate");
+                    self.find_mate = parse_number!()
+                },
                 "movetime" => {
                     assert!(self.move_time.is_none(), "Conflicting move time");
                     self.move_time = Some(SearchTime::Fixed(parse_number!().unwrap()));
