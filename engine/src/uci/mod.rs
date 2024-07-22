@@ -196,8 +196,9 @@ uciok",
                 })
                 .map_or_else(|| 0, core::num::NonZero::get);
 
-                let hard_time_limit = (clock_time / 10).min(self.max_thinking_time);
-                let soft_time_limit = (clock_time / 26 + increment / 2).min(hard_time_limit);
+                let max_time = self.max_thinking_time.min(clock_time / 2);
+                let hard_time_limit = (clock_time / 6 + increment * 2).min(max_time);
+                let soft_time_limit = (clock_time / 24 + increment / 2).min(hard_time_limit);
 
                 (hard_time_limit, soft_time_limit)
             }
