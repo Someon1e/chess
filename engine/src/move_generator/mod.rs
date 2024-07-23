@@ -571,49 +571,46 @@ impl MoveGenerator {
             (Piece::BLACK_PIECES, Piece::WHITE_PIECES)
         };
 
-        let friendly_pawns = *board.get_bit_board(friendly_pieces[0]);
-        let friendly_knights = *board.get_bit_board(friendly_pieces[1]);
-        let friendly_bishops = *board.get_bit_board(friendly_pieces[2]);
-        let friendly_rooks = *board.get_bit_board(friendly_pieces[3]);
-        let friendly_queens = *board.get_bit_board(friendly_pieces[4]);
         let friendly_king = *board.get_bit_board(friendly_pieces[5]);
-
-        let friendly_piece_bit_board = friendly_pawns
-            | friendly_knights
-            | friendly_bishops
-            | friendly_rooks
-            | friendly_queens
-            | friendly_king;
-
-        let enemy_pawns = *board.get_bit_board(enemy_pieces[0]);
-
-        let enemy_knights = *board.get_bit_board(enemy_pieces[1]);
-        let enemy_bishops = *board.get_bit_board(enemy_pieces[2]);
-        let enemy_rooks = *board.get_bit_board(enemy_pieces[3]);
-        let enemy_queens = *board.get_bit_board(enemy_pieces[4]);
-        let enemy_king = *board.get_bit_board(enemy_pieces[5]);
-
-        let enemy_diagonal = enemy_bishops | enemy_queens;
-        let enemy_orthogonal = enemy_rooks | enemy_queens;
-
-        let enemy_piece_bit_board =
-            enemy_pawns | enemy_knights | enemy_diagonal | enemy_orthogonal | enemy_king;
-
-        let occupied_squares = friendly_piece_bit_board | enemy_piece_bit_board;
-
         let king_square = friendly_king.first_square();
 
         let pawn_check = PawnMoveGenerator::attack_bit_board(king_square, board.white_to_move);
+        let enemy_pawns = *board.get_bit_board(enemy_pieces[0]);
         let pawn_attacker = pawn_check & enemy_pawns;
         if pawn_attacker.is_not_empty() {
             return true;
         }
 
         let knight_check = Self::knight_attack_bit_board(king_square);
+        let enemy_knights = *board.get_bit_board(enemy_pieces[1]);
         let knight_attacker = knight_check & enemy_knights;
         if knight_attacker.is_not_empty() {
             return true;
         }
+
+        let friendly_pawns = *board.get_bit_board(friendly_pieces[0]);
+        let friendly_knights = *board.get_bit_board(friendly_pieces[1]);
+        let friendly_bishops = *board.get_bit_board(friendly_pieces[2]);
+        let friendly_rooks = *board.get_bit_board(friendly_pieces[3]);
+        let friendly_queens = *board.get_bit_board(friendly_pieces[4]);
+
+        let enemy_bishops = *board.get_bit_board(enemy_pieces[2]);
+        let enemy_rooks = *board.get_bit_board(enemy_pieces[3]);
+        let enemy_queens = *board.get_bit_board(enemy_pieces[4]);
+        let enemy_king = *board.get_bit_board(enemy_pieces[5]);
+        let enemy_diagonal = enemy_bishops | enemy_queens;
+        let enemy_orthogonal = enemy_rooks | enemy_queens;
+
+        let enemy_piece_bit_board =
+            enemy_pawns | enemy_knights | enemy_diagonal | enemy_orthogonal | enemy_king;
+        let friendly_piece_bit_board = friendly_pawns
+            | friendly_knights
+            | friendly_bishops
+            | friendly_rooks
+            | friendly_queens
+            | friendly_king;
+            
+        let occupied_squares = friendly_piece_bit_board | enemy_piece_bit_board;
 
         let diagonal_blockers = occupied_squares & RELEVANT_BISHOP_BLOCKERS[king_square.usize()];
         let diagonal_attacks = get_bishop_moves(king_square, diagonal_blockers);
