@@ -609,7 +609,7 @@ impl MoveGenerator {
             | friendly_rooks
             | friendly_queens
             | friendly_king;
-            
+
         let occupied_squares = friendly_piece_bit_board | enemy_piece_bit_board;
 
         let diagonal_blockers = occupied_squares & RELEVANT_BISHOP_BLOCKERS[king_square.usize()];

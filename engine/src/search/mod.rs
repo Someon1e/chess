@@ -56,6 +56,7 @@ pub struct Search {
     quiet_history: [[i16; 64 * 64]; 2],
 
     pub pv: Pv,
+    pub highest_depth: Ply,
 
     quiescence_call_count: u32,
 }
@@ -75,6 +76,7 @@ impl Search {
             quiet_history: [[0; 64 * 64]; 2],
 
             pv: Pv::new(),
+            highest_depth: 0,
 
             quiescence_call_count: 0,
         }
@@ -95,6 +97,7 @@ impl Search {
     /// Another search.
     pub fn clear_for_new_search(&mut self) {
         self.quiescence_call_count = 0;
+        self.highest_depth = 0;
         self.killer_moves.fill(EncodedMove::NONE);
         for side in &mut self.quiet_history {
             for value in side {
@@ -190,6 +193,10 @@ impl Search {
         mut alpha: EvalNumber,
         beta: EvalNumber,
     ) -> EvalNumber {
+        if ply_from_root > self.highest_depth {
+            self.highest_depth = ply_from_root;
+        }
+
         self.pv.set_pv_length(ply_from_root, ply_from_root);
 
         // Get the zobrist key
@@ -529,7 +536,7 @@ impl Search {
         hard_time_limit: u64,
         soft_time_limit: u64,
 
-        depth_completed: &mut dyn FnMut(Ply, (&Pv, EvalNumber), u32),
+        depth_completed: &mut dyn FnMut(Ply, (&Pv, EvalNumber), Ply, u32),
     ) -> (Ply, EvalNumber) {
         assert!(hard_time_limit >= soft_time_limit);
 
@@ -553,7 +560,12 @@ impl Search {
 
             // Depth was completed
             // Report results of search iteration
-            depth_completed(depth, (&self.pv, best_score), self.quiescence_call_count);
+            depth_completed(
+                depth,
+                (&self.pv, best_score),
+                self.highest_depth,
+                self.quiescence_call_count,
+            );
 
             if depth == Ply::MAX {
                 // Maximum depth, can not continue
@@ -1366,7 +1378,7 @@ mod tests {
 
                     let search_start = Time::now();
                     let result =
-                        search.iterative_deepening(&search_start, 2000, 2000, &mut |_, _, _| {});
+                        search.iterative_deepening(&search_start, 2000, 2000, &mut |_, _, _, _| {});
 
                     sender
                         .send((
