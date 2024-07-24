@@ -29,6 +29,27 @@ fn fill_magic_table(
     Ok(table)
 }
 
+fn out(best_magics: &[u64; 64], best_index_bits: &[u8; 64]) {
+    let mut length = 0;
+    for (magic, index_bits) in best_magics.iter().zip(best_index_bits) {
+        let shift = 64 - index_bits;
+
+        let magic_hex = format!("{magic:#018X}");
+        let mut magic_hex_underscores: String =
+            String::with_capacity(magic_hex.len() + magic_hex.len() / 2);
+        for (i, character) in magic_hex.chars().enumerate() {
+            if i != 2 && (i + 2) % 4 == 0 {
+                magic_hex_underscores.push('_');
+            }
+            magic_hex_underscores.push(character);
+        }
+
+        println!("Key {{shift: {shift}, magic: {magic_hex_underscores}, offset: {length}}},");
+        length += 1 << index_bits;
+    }
+    println!("{length}");
+}
+
 fn find_magics(relevant_blockers: &[BitBoard; 64], direction_offset: usize) {
     let mut random = rand_chacha::ChaCha20Rng::seed_from_u64(420);
 
@@ -53,13 +74,7 @@ fn find_magics(relevant_blockers: &[BitBoard; 64], direction_offset: usize) {
             }
         }
     }
-    let mut length = 0;
-    for (magic, index_bits) in best_magics.iter().zip(best_index_bits) {
-        let shift = 64 - index_bits;
-        println!("Key {{shift: {shift}, magic: {magic:#04X}, offset: {length}}},");
-        length += 1 << index_bits;
-    }
-    println!("{length}");
+    out(&best_magics, &best_index_bits);
 
     loop {
         let mut did_improve = false;
@@ -73,50 +88,49 @@ fn find_magics(relevant_blockers: &[BitBoard; 64], direction_offset: usize) {
 
             let magic = match square_index {
                 // Cheat, just use magics found online
-
                 /* Rook
-                48 => 0x48FFFE99FECFAA00,
-                49 => 0x48FFFE99FECFAA00,
-                50 => 0x497FFFADFF9C2E00,
-                51 => 0x613FFFDDFFCE9200,
-                52 => 0xffffffe9ffe7ce00,
-                53 => 0xfffffff5fff3e600,
-                54 => 0x0003ff95e5e6a4c0,
-                55 => 0x510FFFF5F63C96A0,
-                56 => 0xEBFFFFB9FF9FC526,
-                57 => 0x61FFFEDDFEEDAEAE,
-                58 => 0x53BFFFEDFFDEB1A2,
-                59 => 0x127FFFB9FFDFB5F6,
-                60 => 0x411FFFDDFFDBF4D6,
-                62 => 0x0003ffef27eebe74,
-                63 => 0x7645FFFECBFEA79E,
+                48 => 0x48FF_FE99_FECF_AA00,
+                49 => 0x48FF_FE99_FECF_AA00,
+                50 => 0x497F_FFAD_FF9C_2E00,
+                51 => 0x613F_FFDD_FFCE_9200,
+                52 => 0xffff_ffe9_ffe7_ce00,
+                53 => 0xffff_fff5_fff3_e600,
+                54 => 0x0003_ff95_e5e6_a4c0,
+                55 => 0x510F_FFF5_F63C_96A0,
+                56 => 0xEBFF_FFB9_FF9F_C526,
+                57 => 0x61FF_FEDD_FEED_AEAE,
+                58 => 0x53BF_FFED_FFDE_B1A2,
+                59 => 0x127F_FFB9_FFDF_B5F6,
+                60 => 0x411F_FFDD_FFDB_F4D6,
+                62 => 0x0003_ffef_27ee_be74,
+                63 => 0x7645_FFFE_CBFE_A79E,
                 */
 
                 /* Bishop
-                0 => 0xffedf9fd7cfcffff,
-                1 => 0xfc0962854a77f576,
-                6 => 0xfc0a66c64a7ef576,
-                7 => 0x7ffdfdfcbd79ffff,
-                8 => 0xfc0846a64a34fff6,
-                9 => 0xfc087a874a3cf7f6,
-                14 => 0xfc0864ae59b4ff76,
-                15 => 0x3c0860af4b35ff76,
-                16 => 0x73C01AF56CF4CFFB,
-                17 => 0x41A01CFAD64AAFFC,
-                22 => 0x7c0c028f5b34ff76,
-                23 => 0xfc0a028e5ab4df76,
-                40 => 0xDCEFD9B54BFCC09F,
-                41 => 0xF95FFA765AFD602B,
-                46 => 0x43ff9a5cf4ca0c01,
-                47 => 0x4BFFCD8E7C587601,
-                48 => 0xfc0ff2865334f576,
-                49 => 0xfc0bf6ce5924f576,
-                54 => 0xc3ffb7dc36ca8c89,
-                55 => 0xc3ff8a54f4ca2c89,
-                56 => 0xfffffcfcfd79edff,
-                57 => 0xfc0863fccb147576,
-                62 => 0xfc087e8e4bb2f736,
-                63 => 0x43ff9e4ef4ca2c89,
+                0 => 0xffed_f9fd_7cfc_ffff,
+                1 => 0xfc09_6285_4a77_f576,
+                6 => 0xfc0a_66c6_4a7e_f576,
+                7 => 0x7ffd_fdfc_bd79_ffff,
+                8 => 0xfc08_46a6_4a34_fff6,
+                9 => 0xfc08_7a87_4a3c_f7f6,
+                14 => 0xfc08_64ae_59b4_ff76,
+                15 => 0x3c08_60af_4b35_ff76,
+                16 => 0x73C0_1AF5_6CF4_CFFB,
+                17 => 0x41A0_1CFA_D64A_AFFC,
+                22 => 0x7c0c_028f_5b34_ff76,
+                23 => 0xfc0a_028e_5ab4_df76,
+                40 => 0xDCEF_D9B5_4BFC_C09F,
+                41 => 0xF95F_FA76_5AFD_602B,
+                46 => 0x43ff_9a5c_f4ca_0c01,
+                47 => 0x4BFF_CD8E_7C58_7601,
+                48 => 0xfc0f_f286_5334_f576,
+                49 => 0xfc0b_f6ce_5924_f576,
+                54 => 0xc3ff_b7dc_36ca_8c89,
+                55 => 0xc3ff_8a54_f4ca_2c89,
+                56 => 0xffff_fcfc_fd79_edff,
+                57 => 0xfc08_63fc_cb14_7576,
+                62 => 0xfc08_7e8e_4bb2_f736,
+                63 => 0x43ff_9e4e_f4ca_2c89,
                 */
                 _ => random.next_u64() & random.next_u64() & random.next_u64(),
             };
@@ -130,19 +144,13 @@ fn find_magics(relevant_blockers: &[BitBoard; 64], direction_offset: usize) {
             }
         }
         if did_improve {
-            let mut length = 0;
-            for (magic, index_bits) in best_magics.iter().zip(best_index_bits) {
-                let shift = 64 - index_bits;
-                println!("Key {{shift: {shift}, magic: {magic:#04X}, offset: {length}}},");
-                length += 1 << index_bits;
-            }
-            println!("{length}");
+            out(&best_magics, &best_index_bits);
         }
     }
 }
 
 fn main() {
-    if false {
+    if true {
         find_magics(&RELEVANT_ROOK_BLOCKERS, 0);
     } else {
         find_magics(&RELEVANT_BISHOP_BLOCKERS, 4);
