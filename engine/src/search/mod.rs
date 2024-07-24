@@ -52,7 +52,7 @@ pub struct Search {
 
     transposition_table: Vec<Option<NodeValue>>,
 
-    killer_moves: [EncodedMove; 32],
+    killer_moves: [EncodedMove; 64],
     quiet_history: [[i16; 64 * 64]; 2],
 
     pub pv: Pv,
@@ -72,7 +72,7 @@ impl Search {
 
             transposition_table: vec![None; TRANSPOSITION_CAPACITY],
 
-            killer_moves: [EncodedMove::NONE; 32],
+            killer_moves: [EncodedMove::NONE; 64],
             quiet_history: [[0; 64 * 64]; 2],
 
             pv: Pv::new(),
