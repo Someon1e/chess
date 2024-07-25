@@ -17,6 +17,7 @@
 ### Search pruning and reductions
 - Late move reduction
 - Late move pruning
+- Futility Pruning
 - Static null move pruning (also known as reverse futility pruning)
 - Null move heuristic
 - Internal iterative reduction
@@ -27,5 +28,4 @@
 - MVV-LVA
 
 ## TODO:
-- Futility Pruning
 - Opening book

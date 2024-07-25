@@ -43,6 +43,7 @@ const USE_INTERNAL_ITERATIVE_REDUCTION: bool = true;
 const USE_PVS: bool = true;
 const USE_KILLER_MOVE: bool = true;
 const USE_ASPIRATION_WINDOWS: bool = true;
+const USE_FUTILITY_PRUNING: bool = true;
 
 /// Looks for the best outcome in a position.
 pub struct Search {
@@ -253,17 +254,13 @@ impl Search {
 
         let move_generator = MoveGenerator::new(&self.board);
 
-        if (USE_STATIC_NULL_MOVE_PRUNING || USE_NULL_MOVE_PRUNING)
-            && is_not_pv_node
-            && !move_generator.is_in_check()
-        {
-            let static_eval = Eval::evaluate(
-                &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLES,
-                &eval_data::END_GAME_PIECE_SQUARE_TABLES,
-                &eval_data::PHASES,
-                &self.board,
-            );
-
+        let static_eval = Eval::evaluate(
+            &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLES,
+            &eval_data::END_GAME_PIECE_SQUARE_TABLES,
+            &eval_data::PHASES,
+            &self.board,
+        );
+        if is_not_pv_node && !move_generator.is_in_check() {
             // Static null move pruning (also known as reverse futility pruning)
             if USE_STATIC_NULL_MOVE_PRUNING && ply_remaining < 5 {
                 if static_eval - i32::from(ply_remaining) * 60 > beta {
@@ -463,13 +460,18 @@ impl Search {
                 }
             }
             if !is_capture {
-                // Late move pruning
-                if is_not_pv_node
-                    && !move_generator.is_in_check()
-                    && quiets_evaluated.len() as u32 + 1
+                if is_not_pv_node && !move_generator.is_in_check() {
+                    if USE_FUTILITY_PRUNING && static_eval + 130 * i32::from(ply_remaining) < alpha
+                    {
+                        // Futility pruning
+                        break;
+                    }
+                    if quiets_evaluated.len() as u32 + 1
                         > 3 + u32::from(ply_remaining) * u32::from(ply_remaining)
-                {
-                    break;
+                    {
+                        // Late move pruning
+                        break;
+                    }
                 }
                 quiets_evaluated.push(encoded_move_data);
             }
