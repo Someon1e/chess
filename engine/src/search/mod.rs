@@ -218,7 +218,7 @@ impl Search {
         let is_not_pv_node = alpha + 1 == beta;
 
         // Get value from transposition table
-        if let Some(saved) = self.transposition_table[zobrist_index] {
+        let saved = if let Some(saved) = self.transposition_table[zobrist_index] {
             // Check if it's actually the same position
             if saved.zobrist_key_32 == zobrist_key.lower_u32() {
                 // Check if the saved depth is as high as the depth now
@@ -236,8 +236,14 @@ impl Search {
                 }
 
                 hash_move = saved.transposition_move;
+
+                Some(saved)
+            } else {
+                None
             }
-        }
+        } else {
+            None
+        };
         if ply_from_root == 0 {
             // Use iterative deepening move as hash move
             hash_move = self.pv.root_best_move();
@@ -254,12 +260,28 @@ impl Search {
 
         let move_generator = MoveGenerator::new(&self.board);
 
-        let static_eval = Eval::evaluate(
-            &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLES,
-            &eval_data::END_GAME_PIECE_SQUARE_TABLES,
-            &eval_data::PHASES,
-            &self.board,
-        );
+        let static_eval = {
+            let mut static_eval = Eval::evaluate(
+                &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLES,
+                &eval_data::END_GAME_PIECE_SQUARE_TABLES,
+                &eval_data::PHASES,
+                &self.board,
+            );
+            if let Some(saved) = saved {
+                // Use saved value as better static evaluation
+                if !Self::score_is_checkmate(saved.value)
+                    && match saved.node_type {
+                        NodeType::Exact => true,
+                        NodeType::Beta => saved.value > static_eval,
+                        NodeType::Alpha => saved.value < static_eval,
+                    }
+                {
+                    static_eval = saved.value;
+                }
+            }
+            static_eval
+        };
+
         if is_not_pv_node && !move_generator.is_in_check() {
             // Static null move pruning (also known as reverse futility pruning)
             if USE_STATIC_NULL_MOVE_PRUNING && ply_remaining < 5 {
