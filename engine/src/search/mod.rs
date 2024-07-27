@@ -6,22 +6,20 @@ mod move_ordering;
 mod repetition_table;
 mod transposition;
 
-/// Handles evaluation.
-pub mod eval;
-pub mod eval_data;
-
 use pv::Pv;
 
 use crate::{
     board::{game_state::GameState, Board},
+    evaluation::{
+        eval_data::{self, EvalNumber},
+        Eval,
+    },
     move_generator::{move_data::Move, MoveGenerator},
     timer::Time,
 };
 
 use self::{
     encoded_move::EncodedMove,
-    eval::Eval,
-    eval_data::EvalNumber,
     move_ordering::MoveOrderer,
     repetition_table::RepetitionTable,
     transposition::{NodeType, NodeValue, TRANSPOSITION_CAPACITY},
@@ -617,11 +615,11 @@ mod tests {
 
     use crate::{
         board::Board,
-        search::{
-            eval::Eval,
+        evaluation::{
             eval_data::{self, EvalNumber},
-            Search,
+            Eval,
         },
+        search::Search,
         timer::Time,
         uci,
     };

@@ -22,6 +22,8 @@ pub mod perft;
 
 mod timer;
 
+pub mod evaluation;
+
 #[cfg(test)]
 mod tests {
     use std::time::Instant;

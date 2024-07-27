@@ -3,7 +3,8 @@ use crate::{
     consume_bit_board,
 };
 
-use super::eval_data::{EvalNumber, PieceSquareTable};
+pub mod eval_data;
+use eval_data::{EvalNumber, PieceSquareTable};
 
 /// Evaluation functions.
 pub struct Eval;
@@ -126,10 +127,7 @@ impl Eval {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        board::Board,
-        search::{eval::Eval, eval_data},
-    };
+    use crate::{board::Board, evaluation::eval_data, evaluation::Eval};
 
     #[test]
     fn advanced_pawn_worth_more() {

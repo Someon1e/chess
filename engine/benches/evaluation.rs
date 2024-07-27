@@ -1,7 +1,7 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use engine::{
     board::Board,
-    search::{eval::Eval, eval_data},
+    evaluation::{eval_data, Eval},
 };
 
 pub fn evaluation_benchmark(c: &mut Criterion) {
