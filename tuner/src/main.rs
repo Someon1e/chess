@@ -2,8 +2,8 @@
 #![warn(clippy::nursery)]
 
 use engine::board::Board;
-use engine::search::eval::Eval;
-use engine::search::eval_data::PieceSquareTable;
+use engine::evaluation::eval_data::PieceSquareTable;
+use engine::evaluation::Eval;
 use rayon::prelude::*;
 use std::io::BufRead;
 use std::time::Instant;
@@ -48,7 +48,7 @@ fn mean_square_error(
         .par_iter()
         .map(|(board, result)| {
             let score = f64::from(
-                Eval::evaluate(
+                Eval::evaluate_with_parameters(
                     middle_game_piece_square_tables,
                     end_game_piece_square_tables,
                     phases,

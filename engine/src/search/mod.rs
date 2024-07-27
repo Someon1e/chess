@@ -117,12 +117,7 @@ impl Search {
     fn quiescence_search(&mut self, mut alpha: EvalNumber, beta: EvalNumber) -> EvalNumber {
         self.quiescence_call_count += 1;
 
-        let mut best_score = Eval::evaluate(
-            &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLES,
-            &eval_data::END_GAME_PIECE_SQUARE_TABLES,
-            &eval_data::PHASES,
-            &self.board,
-        );
+        let mut best_score = Eval::evaluate(&self.board);
         if best_score > alpha {
             alpha = best_score;
 
@@ -259,12 +254,7 @@ impl Search {
         let move_generator = MoveGenerator::new(&self.board);
 
         let static_eval = {
-            let mut static_eval = Eval::evaluate(
-                &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLES,
-                &eval_data::END_GAME_PIECE_SQUARE_TABLES,
-                &eval_data::PHASES,
-                &self.board,
-            );
+            let mut static_eval = Eval::evaluate(&self.board);
             if let Some(saved) = saved {
                 // Use saved value as better static evaluation
                 if !Self::score_is_checkmate(saved.value)
@@ -630,12 +620,7 @@ mod tests {
         let quiet = Board::from_fen("rnb1kbnr/ppp1pppp/8/3q4/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
         assert_eq!(
             Search::new(board).quiescence_search(-EvalNumber::MAX, EvalNumber::MAX),
-            Eval::evaluate(
-                &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLES,
-                &eval_data::END_GAME_PIECE_SQUARE_TABLES,
-                &eval_data::PHASES,
-                &quiet
-            )
+            Eval::evaluate(&quiet)
         );
     }
 

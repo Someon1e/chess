@@ -65,9 +65,9 @@ impl Eval {
         (middle_game_score * middle_game_phase + end_game_score * end_game_phase) / total_phase
     }
 
-    /// Returns an estimated score of the position for the side playing.
+    /// Returns an estimated score of the position for the side playing, using the provided evaluation parameters.
     #[must_use]
-    pub fn evaluate(
+    pub fn evaluate_with_parameters(
         middle_game_piece_square_tables: &PieceSquareTable,
         end_game_piece_square_tables: &PieceSquareTable,
         phases: &[EvalNumber; 5],
@@ -123,6 +123,17 @@ impl Eval {
             total_end_game_score,
         ) * if board.white_to_move { 1 } else { -1 }
     }
+
+    /// Returns an estimated score of the position for the side playing.
+    #[must_use]
+    pub fn evaluate(board: &Board) -> EvalNumber {
+        Self::evaluate_with_parameters(
+            &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLES,
+            &eval_data::END_GAME_PIECE_SQUARE_TABLES,
+            &eval_data::PHASES,
+            board,
+        )
+    }
 }
 
 #[cfg(test)]
@@ -134,17 +145,7 @@ mod tests {
         let starting_rank_pawn = Board::from_fen("7k/8/8/8/8/8/4P3/K7 w - - 0 1");
         let one_step_from_promoting_pawn = Board::from_fen("7k/4P3/8/8/8/8/8/K7 w - - 0 1");
         assert!(
-            Eval::evaluate(
-                &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLES,
-                &eval_data::END_GAME_PIECE_SQUARE_TABLES,
-                &eval_data::PHASES,
-                &one_step_from_promoting_pawn
-            ) > Eval::evaluate(
-                &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLES,
-                &eval_data::END_GAME_PIECE_SQUARE_TABLES,
-                &eval_data::PHASES,
-                &starting_rank_pawn
-            )
+            Eval::evaluate(&one_step_from_promoting_pawn) > Eval::evaluate(&starting_rank_pawn)
         );
     }
 
@@ -152,18 +153,6 @@ mod tests {
     fn centralised_knight_worth_more() {
         let centralised_knight = Board::from_fen("7k/8/8/4n3/8/8/8/K7 b - - 0 1");
         let knight_on_the_edge = Board::from_fen("7k/8/8/8/7n/8/8/K7 b - - 0 1");
-        assert!(
-            Eval::evaluate(
-                &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLES,
-                &eval_data::END_GAME_PIECE_SQUARE_TABLES,
-                &eval_data::PHASES,
-                &centralised_knight
-            ) > Eval::evaluate(
-                &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLES,
-                &eval_data::END_GAME_PIECE_SQUARE_TABLES,
-                &eval_data::PHASES,
-                &knight_on_the_edge
-            )
-        );
+        assert!(Eval::evaluate(&centralised_knight) > Eval::evaluate(&knight_on_the_edge));
     }
 }
