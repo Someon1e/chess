@@ -50,10 +50,11 @@ pub extern "C" fn send_input(input: u8) {
     }
 }
 
-fn process_input(input: &str) {
+fn process_input(input: &str) -> bool {
+    let mut quit = false;
     let mut args = input.split_whitespace();
     UCI_PROCESSOR.with(|uci_processor| match args.next().expect("Empty input") {
-        "quit" => std::process::exit(0),
+        "quit" => quit = true,
 
         "uci" => uci_processor.borrow().uci(),
         "isready" => uci_processor.borrow().isready(),
@@ -63,6 +64,7 @@ fn process_input(input: &str) {
         "stop" => uci_processor.borrow().stop(),
         _ => panic!("Unrecognised command"),
     });
+    quit
 }
 
 fn main() {
@@ -70,6 +72,9 @@ fn main() {
         let mut input = String::new();
         stdin().read_line(&mut input).unwrap();
 
-        process_input(&input);
+        let quit = process_input(&input);
+        if quit {
+            break;
+        }
     }
 }
