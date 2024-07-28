@@ -46,7 +46,7 @@ const PERFT_POSITION: [(&str, u8); 2] = [
 ];
 
 fn run(target: &str) {
-    let mut run = Command::new(format!("../engine/target/{target}/release/engine.exe"))
+    let mut run = Command::new(format!("../engine/target/{target}/release/engine"))
         .stdin(Stdio::piped())
         .spawn()
         .unwrap();
