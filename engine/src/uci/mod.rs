@@ -8,7 +8,9 @@ use crate::{
     board::{piece::Piece, square::Square, Board},
     move_generator::move_data::{Flag, Move},
     perft::perft_root,
-    search::{encoded_move::EncodedMove, pv::Pv, Search, IMMEDIATE_CHECKMATE_SCORE},
+    search::{
+        encoded_move::EncodedMove, pv::Pv, DepthSearchInfo, Search, IMMEDIATE_CHECKMATE_SCORE,
+    },
     timer::Time,
 };
 
@@ -205,7 +207,12 @@ uciok",
         };
 
         let search_start = Time::now();
-        let output_info = |depth, pv: &Pv, evaluation, highest_depth, nodes| {
+        let output_info = |info: DepthSearchInfo| {
+            let (pv, evaluation) = info.best;
+            let depth = info.depth;
+            let highest_depth = info.highest_depth;
+            let nodes = info.quiescence_call_count;
+
             let evaluation_info = if Search::score_is_checkmate(evaluation) {
                 format!(
                     "score mate {}",
@@ -235,18 +242,17 @@ uciok",
             &search_start,
             hard_time_limit,
             soft_time_limit,
-            &mut |depth, (pv, evaluation), highest_depth, quiescence_call_count| {
-                output_info(depth, pv, evaluation, highest_depth, quiescence_call_count);
+            &mut |depth_info| {
+                output_info(depth_info);
             },
         );
 
-        output_info(
+        output_info(DepthSearchInfo {
             depth,
-            &search.pv,
-            evaluation,
-            search.highest_depth,
-            search.quiescence_call_count(),
-        );
+            best: (&search.pv, evaluation),
+            highest_depth: search.highest_depth,
+            quiescence_call_count: search.quiescence_call_count(),
+        });
         (self.out)(&format!(
             "bestmove {}",
             encode_move(search.pv.root_best_move().decode())

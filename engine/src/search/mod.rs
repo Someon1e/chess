@@ -43,6 +43,13 @@ const USE_KILLER_MOVE: bool = true;
 const USE_ASPIRATION_WINDOWS: bool = true;
 const USE_FUTILITY_PRUNING: bool = true;
 
+pub struct DepthSearchInfo<'a> {
+    pub depth: Ply,
+    pub best: (&'a Pv, EvalNumber),
+    pub highest_depth: Ply,
+    pub quiescence_call_count: u32,
+}
+
 /// Looks for the best outcome in a position.
 pub struct Search {
     board: Board,
@@ -548,7 +555,7 @@ impl Search {
         hard_time_limit: u64,
         soft_time_limit: u64,
 
-        depth_completed: &mut dyn FnMut(Ply, (&Pv, EvalNumber), Ply, u32),
+        depth_completed: &mut dyn FnMut(DepthSearchInfo),
     ) -> (Ply, EvalNumber) {
         assert!(hard_time_limit >= soft_time_limit);
 
@@ -572,12 +579,12 @@ impl Search {
 
             // Depth was completed
             // Report results of search iteration
-            depth_completed(
+            depth_completed(DepthSearchInfo {
                 depth,
-                (&self.pv, best_score),
-                self.highest_depth,
-                self.quiescence_call_count,
-            );
+                best: (&self.pv, best_score),
+                highest_depth: self.highest_depth,
+                quiescence_call_count: self.quiescence_call_count,
+            });
 
             if depth == Ply::MAX {
                 // Maximum depth, can not continue
@@ -1384,8 +1391,7 @@ mod tests {
                     search.clear_for_new_search();
 
                     let search_start = Time::now();
-                    let result =
-                        search.iterative_deepening(&search_start, 2000, 2000, &mut |_, _, _, _| {});
+                    let result = search.iterative_deepening(&search_start, 2000, 2000, &mut |_| {});
 
                     sender
                         .send((
