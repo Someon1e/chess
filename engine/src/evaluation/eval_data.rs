@@ -1,6 +1,10 @@
+/// Number type of the evaluation score.
 pub type EvalNumber = i32;
+
+/// Table containing the value of each piece for every square on the board.
 pub type PieceSquareTable = [i16; 384];
 
+/// Piece square table for the middle game.
 #[rustfmt::skip]
 pub const MIDDLE_GAME_PIECE_SQUARE_TABLES: PieceSquareTable = [
    0,   0,   0,   0,   0,   0,   0,   0,
@@ -63,6 +67,7 @@ pub const MIDDLE_GAME_PIECE_SQUARE_TABLES: PieceSquareTable = [
   35,  59,  31, -69,  -3, -38,  44,  45,
 ];
 
+/// Piece square table for the end game.
 #[rustfmt::skip]
 pub const END_GAME_PIECE_SQUARE_TABLES: PieceSquareTable = [
    0,   0,   0,   0,   0,   0,   0,   0,

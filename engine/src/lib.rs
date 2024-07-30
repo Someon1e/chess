@@ -14,6 +14,9 @@ pub mod move_generator;
 /// Finds the best outcome in a chess position.
 pub mod search;
 
+/// Estimates how good a chess position is.
+pub mod evaluation;
+
 /// Universal Chess Protocol.
 pub mod uci;
 
@@ -21,8 +24,6 @@ pub mod uci;
 pub mod perft;
 
 mod timer;
-
-pub mod evaluation;
 
 #[cfg(test)]
 mod tests {
