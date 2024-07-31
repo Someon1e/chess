@@ -155,9 +155,13 @@ uciok",
             for (from, to, promotion) in &self.moves {
                 board.make_move(&decode_move(&board, *from, *to, *promotion));
             }
+
+            let search_start = Time::now();
+            let nodes = perft_root(&mut board, parameters.depth.unwrap(), self.out);
+            let time = search_start.milliseconds();
+            let nodes_per_second = if time == 0 { 0 } else { (nodes * 1000) / time };
             (self.out)(&format!(
-                "Nodes searched: {}",
-                perft_root(&mut board, parameters.depth.unwrap(), self.out)
+                "Searched {nodes} nodes in {time} milliseconds ({nodes_per_second} nodes per second)",
             ));
             return;
         }
