@@ -612,10 +612,7 @@ mod tests {
 
     use crate::{
         board::Board,
-        evaluation::{
-            eval_data::{self, EvalNumber},
-            Eval,
-        },
+        evaluation::{eval_data::EvalNumber, Eval},
         search::Search,
         timer::Time,
         uci,

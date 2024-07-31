@@ -8,9 +8,7 @@ use crate::{
     board::{piece::Piece, square::Square, Board},
     move_generator::move_data::{Flag, Move},
     perft::perft_root,
-    search::{
-        encoded_move::EncodedMove, pv::Pv, DepthSearchInfo, Search, IMMEDIATE_CHECKMATE_SCORE,
-    },
+    search::{encoded_move::EncodedMove, DepthSearchInfo, Search, IMMEDIATE_CHECKMATE_SCORE},
     timer::Time,
 };
 
