@@ -18,7 +18,6 @@ pub mod slider_keys;
 pub mod slider_lookup;
 
 use self::move_data::{Flag, Move};
-use self::pawn_move_generator::PawnMoveGenerator;
 use self::precomputed::{KING_MOVES_AT_SQUARE, KNIGHT_MOVES_AT_SQUARE, SQUARES_FROM_EDGE};
 use self::slider_lookup::{
     get_bishop_moves, get_rook_moves, RELEVANT_BISHOP_BLOCKERS, RELEVANT_ROOK_BLOCKERS,
@@ -64,7 +63,7 @@ pub struct MoveGenerator {
 
 impl MoveGenerator {
     fn gen_pawns(&self, add_move: &mut dyn FnMut(Move), captures_only: bool) {
-        PawnMoveGenerator::generate(self, add_move, captures_only);
+        pawn_move_generator::generate(self, add_move, captures_only);
     }
 }
 
@@ -165,7 +164,7 @@ impl MoveGenerator {
             check_mask |= orthogonal_attacker;
         }
 
-        let pawn_check = PawnMoveGenerator::attack_bit_board(king_square, white_to_move);
+        let pawn_check = pawn_move_generator::attack_bit_board(king_square, white_to_move);
         let pawn_attacker = pawn_check & enemy_pawns;
         if pawn_attacker.is_not_empty() {
             check_mask |= pawn_attacker;
@@ -574,7 +573,7 @@ impl MoveGenerator {
         let friendly_king = *board.get_bit_board(friendly_pieces[5]);
         let king_square = friendly_king.first_square();
 
-        let pawn_check = PawnMoveGenerator::attack_bit_board(king_square, board.white_to_move);
+        let pawn_check = pawn_move_generator::attack_bit_board(king_square, board.white_to_move);
         let enemy_pawns = *board.get_bit_board(enemy_pieces[0]);
         let pawn_attacker = pawn_check & enemy_pawns;
         if pawn_attacker.is_not_empty() {
