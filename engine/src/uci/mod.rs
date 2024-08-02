@@ -82,13 +82,15 @@ pub struct UCIProcessor {
 impl UCIProcessor {
     /// Outputs `id` command, `option` commands, and `uciok`
     pub fn uci(&self) {
-        (self.out)(
-            "id name chess
+        (self.out)(&format!(
+            "id name {} {}
 id author someone
 option name Hash type spin default 32 min 32 max 32
 option name Threads type spin default 1 min 1 max 1
 uciok",
-        );
+            env!("CARGO_PKG_NAME"),
+            env!("CARGO_PKG_VERSION"),
+        ));
     }
 
     /// This should output `readyok`.
