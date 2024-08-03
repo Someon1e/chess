@@ -4,7 +4,7 @@ pub mod pv;
 
 mod move_ordering;
 mod repetition_table;
-mod transposition;
+pub mod transposition;
 
 use pv::Pv;
 
@@ -22,7 +22,7 @@ use self::{
     encoded_move::EncodedMove,
     move_ordering::MoveOrderer,
     repetition_table::RepetitionTable,
-    transposition::{NodeType, NodeValue, TRANSPOSITION_CAPACITY},
+    transposition::{NodeType, NodeValue},
 };
 
 type Ply = u8;
@@ -70,13 +70,13 @@ pub struct Search {
 impl Search {
     /// Create a new search.
     #[must_use]
-    pub fn new(board: Board) -> Self {
+    pub fn new(board: Board, transposition_capacity: usize) -> Self {
         Self {
             board,
 
             repetition_table: RepetitionTable::new(),
 
-            transposition_table: vec![None; TRANSPOSITION_CAPACITY],
+            transposition_table: vec![None; transposition_capacity],
 
             killer_moves: [EncodedMove::NONE; 64],
             quiet_history: [[0; 64 * 64]; 2],
@@ -86,6 +86,10 @@ impl Search {
 
             quiescence_call_count: 0,
         }
+    }
+
+    pub fn resize_transposition_table(&mut self, transposition_capacity: usize) {
+        self.transposition_table = vec![None; transposition_capacity];
     }
 
     /// Returns the current board.
@@ -613,7 +617,7 @@ mod tests {
     use crate::{
         board::Board,
         evaluation::{eval_data::EvalNumber, Eval},
-        search::Search,
+        search::{transposition::megabytes_to_capacity, Search},
         timer::Time,
         uci,
     };
@@ -623,7 +627,8 @@ mod tests {
         let board = Board::from_fen("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
         let quiet = Board::from_fen("rnb1kbnr/ppp1pppp/8/3q4/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
         assert_eq!(
-            Search::new(board).quiescence_search(-EvalNumber::MAX, EvalNumber::MAX),
+            Search::new(board, megabytes_to_capacity(8))
+                .quiescence_search(-EvalNumber::MAX, EvalNumber::MAX),
             Eval::evaluate(&quiet)
         );
     }
@@ -1370,7 +1375,10 @@ mod tests {
             let positions = &OBVIOUS_POSITIONS_RANDOMISED[i * divide..end];
 
             thread::spawn(move || {
-                let mut search = Search::new(Board::from_fen(Board::START_POSITION_FEN));
+                let mut search = Search::new(
+                    Board::from_fen(Board::START_POSITION_FEN),
+                    megabytes_to_capacity(32),
+                );
 
                 for (position, solutions) in positions {
                     let board = Board::from_fen(position);

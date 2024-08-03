@@ -1,7 +1,7 @@
 use super::{encoded_move::EncodedMove, eval_data::EvalNumber, Ply};
 
 #[derive(Clone, Copy)]
-pub struct NodeValue {
+pub(super) struct NodeValue {
     pub zobrist_key_32: u32,
     pub ply_remaining: Ply,
     pub node_type: NodeType,
@@ -12,7 +12,7 @@ pub struct NodeValue {
 }
 
 #[derive(Clone, Copy)]
-pub enum NodeType {
+pub(super) enum NodeType {
     Exact,
 
     /// Lower bound.
@@ -22,9 +22,8 @@ pub enum NodeType {
     Alpha,
 }
 
-pub const TRANSPOSITION_CAPACITY: usize = {
-    const MEGABYTES: usize = 32;
+pub const MEMORY_OF_ONE_ENTRY_IN_BYTES: usize = core::mem::size_of::<Option<NodeValue>>();
 
-    const MEMORY_OF_ONE_ENTRY_IN_BYTES: usize = core::mem::size_of::<Option<NodeValue>>();
-    (MEGABYTES * 1_000_000) / MEMORY_OF_ONE_ENTRY_IN_BYTES
-};
+pub const fn megabytes_to_capacity(megabytes: usize) -> usize {
+    (megabytes * 1_000_000) / MEMORY_OF_ONE_ENTRY_IN_BYTES
+}

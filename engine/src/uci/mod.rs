@@ -1,4 +1,5 @@
 use core::str::SplitWhitespace;
+use std::ops::Range;
 
 mod go_params;
 
@@ -8,7 +9,10 @@ use crate::{
     board::{piece::Piece, square::Square, Board},
     move_generator::move_data::{Flag, Move},
     perft::perft_root,
-    search::{encoded_move::EncodedMove, DepthSearchInfo, Search, IMMEDIATE_CHECKMATE_SCORE},
+    search::{
+        encoded_move::EncodedMove, transposition::megabytes_to_capacity, DepthSearchInfo, Search,
+        IMMEDIATE_CHECKMATE_SCORE,
+    },
     timer::Time,
 };
 
@@ -61,6 +65,18 @@ pub fn decode_move(board: &Board, from: Square, to: Square, promotion: Flag) -> 
     Move { from, to, flag }
 }
 
+pub struct SpinU16 {
+    range: Range<u16>,
+    default: u16,
+}
+impl SpinU16 {
+    pub fn new(range: Range<u16>, default: u16) -> Self {
+        assert!(range.contains(&default));
+
+        Self { range, default }
+    }
+}
+
 /// Handles UCI input and output.
 pub struct UCIProcessor {
     /// Maximum time to search, in milliseconds.
@@ -77,25 +93,87 @@ pub struct UCIProcessor {
 
     /// Called with UCI output.
     pub out: fn(&str),
+
+    pub hash_option: SpinU16,
+    pub transposition_capacity: usize,
+}
+
+impl UCIProcessor {
+    pub fn new(max_thinking_time: u64, out: fn(&str), hash_option: SpinU16) -> Self {
+        let megabytes = hash_option.default as usize;
+        let transposition_capacity = megabytes_to_capacity(megabytes);
+
+        Self {
+            max_thinking_time,
+            fen: None,
+            moves: Vec::new(),
+            search: None,
+            out,
+            hash_option,
+            transposition_capacity,
+        }
+    }
+    fn set_transposition_capacity(&mut self, transposition_capacity: usize) {
+        self.transposition_capacity = transposition_capacity;
+        if let Some(search) = &mut self.search {
+            search.resize_transposition_table(transposition_capacity);
+        }
+    }
 }
 
 impl UCIProcessor {
     /// Outputs `id` command, `option` commands, and `uciok`
     pub fn uci(&self) {
+        let min_hash = self.hash_option.range.start;
+        let default_hash = self.hash_option.default;
+        let max_hash = self.hash_option.range.end - 1;
+
         (self.out)(&format!(
             "id name {} {}
 id author someone
-option name Hash type spin default 32 min 32 max 32
+option name Hash type spin default {default_hash} min {min_hash} max {max_hash}
 option name Threads type spin default 1 min 1 max 1
 uciok",
             env!("CARGO_PKG_NAME"),
-            env!("CARGO_PKG_VERSION"),
+            env!("CARGO_PKG_VERSION")
         ));
     }
 
     /// This should output `readyok`.
     pub fn isready(&self) {
         (self.out)("readyok");
+    }
+
+    pub fn setoption(&mut self, args: &str) {
+        let trimmed = args.trim();
+
+        let name_index = trimmed.find("name ").expect("Did not find name");
+        let value_index = trimmed.find(" value ");
+
+        let (name, value) = if let Some(value_index) = value_index {
+            let name = &trimmed[(name_index + 5)..value_index];
+            let value = &trimmed[(value_index + 7)..];
+            (name, Some(value))
+        } else {
+            let name = &trimmed[(name_index + 5)..];
+            (name, None)
+        };
+
+        match name.trim().to_lowercase().as_str() {
+            "hash" => {
+                let megabytes = value.expect("Missing value").parse().unwrap();
+                assert!(self.hash_option.range.contains(&megabytes));
+
+                self.set_transposition_capacity(megabytes_to_capacity(megabytes.into()));
+            }
+            _ => {
+                if value.is_none() {
+                    panic!("Unknown option name (or missing value label)")
+                } else {
+                    panic!("Unknown option name")
+                }
+            }
+        }
     }
 
     /// # Panics
@@ -170,7 +248,7 @@ uciok",
 
         let search = if self.search.is_none() {
             // First time making search
-            let search = Search::new(board);
+            let search = Search::new(board, self.transposition_capacity);
             self.search = Some(search);
             self.search.as_mut().unwrap()
         } else {

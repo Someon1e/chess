@@ -225,7 +225,10 @@ mod tests {
             move_data::{Flag, Move},
             MoveGenerator,
         },
-        search::{encoded_move::EncodedMove, move_ordering::MoveOrderer, Search},
+        search::{
+            encoded_move::EncodedMove, move_ordering::MoveOrderer,
+            transposition::megabytes_to_capacity, Search,
+        },
     };
 
     #[test]
@@ -234,7 +237,7 @@ mod tests {
         let move_generator = MoveGenerator::new(&board);
 
         let (mut move_guesses, move_count) = MoveOrderer::get_move_guesses(
-            &Search::new(board),
+            &Search::new(board, megabytes_to_capacity(8)),
             &move_generator,
             EncodedMove::NONE,
             EncodedMove::NONE,
