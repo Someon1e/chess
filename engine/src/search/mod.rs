@@ -4,9 +4,11 @@ pub mod pv;
 
 mod move_ordering;
 mod repetition_table;
+mod search_params;
 pub mod transposition;
 
 use pv::Pv;
+use search_params::DEFAULT_TUNABLES;
 
 use crate::{
     board::{game_state::GameState, Board},
@@ -32,8 +34,6 @@ pub const IMMEDIATE_CHECKMATE_SCORE: EvalNumber = -EvalNumber::MAX + 1;
 
 const CHECKMATE_SCORE: EvalNumber = IMMEDIATE_CHECKMATE_SCORE.abs() - (Ply::MAX as EvalNumber);
 
-const NOT_LATE_MOVES: usize = 3;
-
 const USE_STATIC_NULL_MOVE_PRUNING: bool = true;
 const USE_NULL_MOVE_PRUNING: bool = true;
 const USE_LATE_MOVE_REDUCTION: bool = true;
@@ -42,6 +42,12 @@ const USE_PVS: bool = true;
 const USE_KILLER_MOVE: bool = true;
 const USE_ASPIRATION_WINDOWS: bool = true;
 const USE_FUTILITY_PRUNING: bool = true;
+
+macro_rules! param {
+    () => {
+        DEFAULT_TUNABLES
+    };
+}
 
 pub struct DepthSearchInfo<'a> {
     pub depth: Ply,
@@ -111,7 +117,7 @@ impl Search {
         self.killer_moves.fill(EncodedMove::NONE);
         for side in &mut self.quiet_history {
             for value in side {
-                *value /= 9;
+                *value /= param!().history_decay;
             }
         }
     }
@@ -252,9 +258,12 @@ impl Search {
             // Use iterative deepening move as hash move
             hash_move = self.pv.root_best_move();
         }
-        if USE_INTERNAL_ITERATIVE_REDUCTION && hash_move.is_none() && ply_remaining > 3 {
+        if USE_INTERNAL_ITERATIVE_REDUCTION
+            && hash_move.is_none()
+            && ply_remaining > param!().iir_min_depth
+        {
             // Internal iterative reduction
-            ply_remaining -= 1;
+            ply_remaining -= param!().iir_depth_reduction;
         }
 
         if ply_remaining == 0 {
@@ -283,8 +292,8 @@ impl Search {
 
         if is_not_pv_node && !move_generator.is_in_check() {
             // Static null move pruning (also known as reverse futility pruning)
-            if USE_STATIC_NULL_MOVE_PRUNING && ply_remaining < 5 {
-                if static_eval - i32::from(ply_remaining) * 60 > beta {
+            if USE_STATIC_NULL_MOVE_PRUNING && ply_remaining < param!().static_null_min_depth {
+                if static_eval - i32::from(ply_remaining) * param!().static_null_margin > beta {
                     return static_eval;
                 }
             }
@@ -292,7 +301,7 @@ impl Search {
             // Null move pruning
             if USE_NULL_MOVE_PRUNING
             && allow_null_move
-            && ply_remaining > 2
+            && ply_remaining > param!().nmp_min_depth
 
             && static_eval >= beta
 
@@ -305,7 +314,9 @@ impl Search {
                 let score = -self.negamax(
                     timer,
                     hard_time_limit,
-                    ply_remaining - (3 + ply_remaining / 6),
+                    ply_remaining.saturating_sub(
+                        param!().nmp_base_reduction + ply_remaining / param!().nmp_ply_divisor,
+                    ),
                     ply_from_root + 1,
                     false,
                     -beta,
@@ -379,14 +390,16 @@ impl Search {
 
             let mut normal_search = check_extension // Do not reduce if extending
                 || is_capture // Do not reduce if it's a capture
-                || index < NOT_LATE_MOVES // Do not reduce if it's not a late move
-                || (ply_remaining) < 3 // Do not reduce if there is little depth remaining
+                || index < param!().lmr_min_index // Do not reduce if it's not a late move
+                || (ply_remaining) < param!().lmr_min_depth // Do not reduce if there is little depth remaining
                 || !USE_LATE_MOVE_REDUCTION; // Do not reduce if turned off
             let mut score = 0;
 
             if !normal_search {
                 // Late move reduction
-                let r = 2 + ply_remaining / 10 + index as Ply / 9;
+                let r = 2
+                    + ply_remaining / param!().lmr_ply_divisor
+                    + index as Ply / param!().lmr_index_divisor;
                 score = -self.negamax(
                     timer,
                     hard_time_limit,
@@ -482,13 +495,14 @@ impl Search {
             }
             if !is_capture {
                 if is_not_pv_node && !move_generator.is_in_check() {
-                    if USE_FUTILITY_PRUNING && static_eval + 130 * i32::from(ply_remaining) < alpha
+                    if USE_FUTILITY_PRUNING
+                        && static_eval + param!().futility_margin * i32::from(ply_remaining) < alpha
                     {
                         // Futility pruning
                         break;
                     }
                     if quiets_evaluated.len() as u32 + 1
-                        > 3 + u32::from(ply_remaining) * u32::from(ply_remaining)
+                        > param!().lmp_base + u32::from(ply_remaining) * u32::from(ply_remaining)
                     {
                         // Late move pruning
                         break;
@@ -530,7 +544,12 @@ impl Search {
         depth: Ply,
     ) -> EvalNumber {
         if USE_ASPIRATION_WINDOWS && depth != 1 {
-            for window in [40, 80, 120, 200] {
+            for window in [
+                param!().aspiration_window,
+                param!().aspiration_window * 2,
+                param!().aspiration_window * 3,
+                param!().aspiration_window * 5,
+            ] {
                 let alpha = best_score - window;
                 let beta = best_score + window;
                 best_score = self.negamax(timer, hard_time_limit, depth, 0, false, alpha, beta);
