@@ -255,7 +255,7 @@ impl BitBoard {
     }
 
     /// Used to traverse subsets of a set.
-    /// This take the current subset and find the next highest subset after it.
+    /// This takes the current subset and finds the next highest subset after it.
     ///
     /// # Examples
     ///
