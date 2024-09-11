@@ -3,20 +3,25 @@ use crate::board::square::Square;
 use super::{piece::Piece, zobrist::Zobrist};
 
 macro_rules! define_castling_rights {
-    // TODO: better documentation here
-    ($getter:ident, $setter:ident, $unsetter:ident, $offset:expr) => {
-        /// Get.
+    ($getter:ident, $setter:ident, $unsetter:ident, $side:expr, $offset:expr) => {
+        #[doc = " Returns true if there is a right to"]
+        #[doc = $side]
+        #[doc = " castling, otherwise false."]
         #[must_use]
         pub const fn $getter(&self) -> bool {
             self.0 & (1 << $offset) != 0
         }
 
-        /// Set.
+        #[doc = "Sets "]
+        #[doc = $side]
+        #[doc = " castling right."]
         pub fn $setter(&mut self) {
             self.0 |= 1 << $offset;
         }
 
-        /// Unset.
+        #[doc = "Unsets "]
+        #[doc = $side]
+        #[doc = " castling right."]
         pub fn $unsetter(&mut self) {
             self.0 &= !(1 << $offset);
         }
@@ -36,6 +41,7 @@ impl CastlingRights {
         get_white_king_side,
         set_white_king_side,
         unset_white_king_side,
+        "white kingside",
         Self::WHITE_KING_SIDE_OFFSET
     );
 
@@ -43,18 +49,21 @@ impl CastlingRights {
         get_white_queen_side,
         set_white_queen_side,
         unset_white_queen_side,
+        "white queenside",
         Self::WHITE_QUEEN_SIDE_OFFSET
     );
     define_castling_rights!(
         get_black_king_side,
         set_black_king_side,
         unset_black_king_side,
+        "black kingside",
         Self::BLACK_KING_SIDE_OFFSET
     );
     define_castling_rights!(
         get_black_queen_side,
         set_black_queen_side,
         unset_black_queen_side,
+        "black queenside",
         Self::BLACK_QUEEN_SIDE_OFFSET
     );
 
