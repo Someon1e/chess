@@ -49,10 +49,18 @@ macro_rules! param {
     };
 }
 
+/// Search info at a depth.
 pub struct DepthSearchInfo<'a> {
+    /// Depth searched at.
     pub depth: Ply,
-    pub best: (&'a Pv, EvalNumber),
+
+    /// Highest number of moves looked ahead.
     pub highest_depth: Ply,
+
+    /// The best move and evaluation.
+    pub best: (&'a Pv, EvalNumber),
+
+    /// How many times `quiescence_search()` was called.
     pub quiescence_call_count: u32,
 }
 
