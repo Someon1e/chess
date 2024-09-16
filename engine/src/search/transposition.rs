@@ -22,6 +22,7 @@ pub(super) enum NodeType {
     Alpha,
 }
 
+/// How many bytes one transposition table entry takes.
 pub const MEMORY_OF_ONE_ENTRY_IN_BYTES: usize = core::mem::size_of::<Option<NodeValue>>();
 
 #[must_use]
