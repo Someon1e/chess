@@ -70,6 +70,7 @@ pub struct SpinU16 {
     default: u16,
 }
 impl SpinU16 {
+    #[must_use]
     pub fn new(range: Range<u16>, default: u16) -> Self {
         assert!(range.contains(&default));
 

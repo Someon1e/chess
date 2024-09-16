@@ -24,6 +24,7 @@ pub(super) enum NodeType {
 
 pub const MEMORY_OF_ONE_ENTRY_IN_BYTES: usize = core::mem::size_of::<Option<NodeValue>>();
 
+#[must_use]
 pub const fn megabytes_to_capacity(megabytes: usize) -> usize {
     (megabytes * 1_000_000) / MEMORY_OF_ONE_ENTRY_IN_BYTES
 }
