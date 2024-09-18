@@ -95,7 +95,10 @@ pub struct UCIProcessor {
     /// Called with UCI output.
     pub out: fn(&str),
 
+    /// Range and default size of the transposition table in megabytes.
     pub hash_option: SpinU16,
+
+    /// Maximum entry count of the transposition table.
     pub transposition_capacity: usize,
 }
 
