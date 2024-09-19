@@ -193,6 +193,10 @@ impl Search {
     }
 
     /// Unmakes a move, then removes the position from the repetition table.
+    ///
+    /// # Panics
+    ///
+    /// Will panic if the zobrist key after playing the move does not match the previous position's.
     pub fn unmake_move(&mut self, move_data: &Move, old_state: &GameState) {
         self.board.unmake_move(move_data, old_state);
 
