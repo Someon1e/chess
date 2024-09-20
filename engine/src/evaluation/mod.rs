@@ -138,7 +138,7 @@ impl Eval {
 
 #[cfg(test)]
 mod tests {
-    use crate::{board::Board, evaluation::eval_data, evaluation::Eval};
+    use crate::{board::Board, evaluation::Eval};
 
     #[test]
     fn advanced_pawn_worth_more() {
