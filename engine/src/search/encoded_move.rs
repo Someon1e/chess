@@ -32,6 +32,7 @@ impl EncodedMove {
         }
     }
 
+    /// No move.
     pub const NONE: Self = Self(0);
 
     #[must_use]
