@@ -102,6 +102,7 @@ impl Search {
         }
     }
 
+    /// Sets an empty transposition table with the new capacity.
     pub fn resize_transposition_table(&mut self, transposition_capacity: usize) {
         self.transposition_table = vec![None; transposition_capacity];
     }
