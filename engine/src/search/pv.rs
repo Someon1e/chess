@@ -17,6 +17,7 @@ impl Pv {
         }
     }
 
+    /// Returns the best move at the first ply.
     #[must_use]
     pub const fn root_best_move(&self) -> EncodedMove {
         self.pv_table[0][0]
