@@ -11,6 +11,7 @@ pub struct Eval;
 impl Eval {
     /// Gets the phase.
     #[must_use]
+    #[allow(clippy::cast_possible_wrap)] // count() should never return more than 64
     pub fn get_phase(board: &Board, phases: &[EvalNumber; 5]) -> EvalNumber {
         let mut phase = 0;
 
