@@ -25,6 +25,7 @@ pub(super) enum NodeType {
 /// How many bytes one transposition table entry takes.
 pub const MEMORY_OF_ONE_ENTRY_IN_BYTES: usize = core::mem::size_of::<Option<NodeValue>>();
 
+/// Returns how many transposition table entries could fit into `megabytes` megabytes.
 #[must_use]
 pub const fn megabytes_to_capacity(megabytes: usize) -> usize {
     (megabytes * 1_000_000) / MEMORY_OF_ONE_ENTRY_IN_BYTES
