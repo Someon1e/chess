@@ -582,7 +582,7 @@ impl Search {
         )
     }
 
-    /// Repeatedly searches the board, increasing depth by one each time. Stops when `should_cancel` returns true.
+    /// Repeatedly searches the board, increasing depth by one each time. Stops when `should_cancel` returns `true`.
     #[must_use]
     pub fn iterative_deepening(
         &mut self,

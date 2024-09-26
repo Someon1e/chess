@@ -4,9 +4,9 @@ use super::{piece::Piece, zobrist::Zobrist};
 
 macro_rules! define_castling_rights {
     ($getter:ident, $setter:ident, $unsetter:ident, $side:expr, $offset:expr) => {
-        #[doc = " Returns true if there is a right to"]
+        #[doc = " Returns `true` if there is a right to"]
         #[doc = $side]
-        #[doc = " castling, otherwise false."]
+        #[doc = " castling, otherwise `false`."]
         #[must_use]
         pub const fn $getter(&self) -> bool {
             self.0 & (1 << $offset) != 0
