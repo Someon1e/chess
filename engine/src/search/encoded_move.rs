@@ -58,6 +58,7 @@ impl EncodedMove {
         &Flag::ALL[((self.0 >> 12) & 0b1111) as usize]
     }
 
+    /// Returns the bit-packed move data without the flag.
     #[must_use]
     pub const fn without_flag(self) -> u16 {
         self.0 & 0b111111_111111
