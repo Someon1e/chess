@@ -305,10 +305,11 @@ impl Search {
 
         if is_not_pv_node && !move_generator.is_in_check() {
             // Static null move pruning (also known as reverse futility pruning)
-            if USE_STATIC_NULL_MOVE_PRUNING && ply_remaining < param!().static_null_min_depth {
-                if static_eval - i32::from(ply_remaining) * param!().static_null_margin > beta {
-                    return static_eval;
-                }
+            if USE_STATIC_NULL_MOVE_PRUNING
+                && ply_remaining < param!().static_null_min_depth
+                && static_eval - i32::from(ply_remaining) * param!().static_null_margin > beta
+            {
+                return static_eval;
             }
 
             // Null move pruning
