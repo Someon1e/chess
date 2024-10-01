@@ -36,6 +36,7 @@ impl EncodedMove {
     /// No move.
     pub const NONE: Self = Self(0);
 
+    /// Returns `true` if the move is none
     #[must_use]
     pub fn is_none(self) -> bool {
         self == Self::NONE
