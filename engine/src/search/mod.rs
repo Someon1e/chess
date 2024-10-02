@@ -637,6 +637,7 @@ impl Search {
         (depth, previous_best_score)
     }
 
+    /// Returns how many times quiescence search was called.
     #[must_use]
     pub const fn quiescence_call_count(&self) -> u32 {
         self.quiescence_call_count
