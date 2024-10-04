@@ -65,6 +65,7 @@ pub fn decode_move(board: &Board, from: Square, to: Square, promotion: Flag) -> 
     Move { from, to, flag }
 }
 
+/// An value within a range.
 pub struct SpinU16 {
     range: Range<u16>,
     default: u16,
