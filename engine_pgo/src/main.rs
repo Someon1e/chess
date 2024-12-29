@@ -116,7 +116,7 @@ fn main() {
 
     let target = &args
         .get(1)
-        .expect("Specify target, for example: cargo run --release x86_64-pc-windows-msvc");
+        .expect("Specify target, for example: cargo run --release x86_64-pc-windows-msvc"); // or aarch64-apple-darwin
 
     env::set_current_dir("../engine").unwrap();
 
