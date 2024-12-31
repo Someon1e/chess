@@ -557,17 +557,24 @@ impl Search {
         mut best_score: EvalNumber,
         depth: Ply,
     ) -> EvalNumber {
-        if USE_ASPIRATION_WINDOWS && depth != 1 {
-            for window in [
-                param!().aspiration_window,
-                param!().aspiration_window * 2,
-                param!().aspiration_window * 3,
-                param!().aspiration_window * 5,
-            ] {
-                let alpha = best_score - window;
-                let beta = best_score + window;
+        if USE_ASPIRATION_WINDOWS && depth > 2 {
+            let mut alpha = best_score
+                .saturating_sub(param!().aspiration_window_start)
+                .max(-EvalNumber::MAX);
+            let mut beta = best_score.saturating_add(param!().aspiration_window_start);
+            for _ in 0..4 {
                 best_score = self.negamax(timer, hard_time_limit, depth, 0, false, alpha, beta);
-                if alpha < best_score && best_score < beta {
+                if best_score <= alpha {
+                    alpha = alpha
+                        .saturating_sub(param!().aspiration_window_growth)
+                        .max(-EvalNumber::MAX);
+                    // -EvalNumber::MAX = -2147483647
+                    // EvalNumber::MIN = -2147483648
+
+                    beta = (alpha + beta) / 2;
+                } else if best_score >= beta {
+                    beta = beta.saturating_add(param!().aspiration_window_growth);
+                } else {
                     return best_score;
                 }
             }

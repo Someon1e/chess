@@ -20,7 +20,8 @@ pub struct Tunable {
     pub nmp_base_reduction: u8,
     pub nmp_ply_divisor: u8,
 
-    pub aspiration_window: i32,
+    pub aspiration_window_start: i32,
+    pub aspiration_window_growth: i32,
 }
 
 pub const DEFAULT_TUNABLES: Tunable = Tunable {
@@ -45,5 +46,6 @@ pub const DEFAULT_TUNABLES: Tunable = Tunable {
     nmp_base_reduction: 3,
     nmp_ply_divisor: 6,
 
-    aspiration_window: 40,
+    aspiration_window_start: 32,
+    aspiration_window_growth: 47,
 };
