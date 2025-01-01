@@ -159,7 +159,6 @@ const PHASES: [i32; 5] = {:#?};",
                 improved = true;
                 best_error = new_error;
                 best_psqt = new_psqts;
-                log_params(best_psqt[0], best_psqt[1], best_phases);
             }
         }
         for index in 0..5 {
@@ -186,9 +185,9 @@ const PHASES: [i32; 5] = {:#?};",
             improved = true;
             best_error = new_error;
             best_phases = new_phases;
-            log_params(best_psqt[0], best_psqt[1], best_phases);
         }
 
+        log_params(best_psqt[0], best_psqt[1], best_phases);
         println!("Finished one iteration");
     }
 }
