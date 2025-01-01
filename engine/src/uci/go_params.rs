@@ -52,7 +52,7 @@ impl GoParameters {
         while let Some(label) = args.next() {
             macro_rules! parse_number {
                 () => {
-                    Some(args.next().unwrap().parse().unwrap())
+                    args.next().unwrap().parse()
                 };
             }
             match label {
@@ -73,23 +73,31 @@ impl GoParameters {
                     match label {
                         "wtime" => {
                             assert!(move_time.white_time.is_none(), "Overwritten wtime");
-                            move_time.white_time = parse_number!();
+                            move_time.white_time = Some(parse_number!().unwrap());
                         }
                         "btime" => {
                             assert!(move_time.black_time.is_none(), "Overwritten btime");
-                            move_time.black_time = parse_number!();
+                            move_time.black_time = Some(parse_number!().unwrap());
                         }
                         "winc" => {
                             assert!(move_time.white_increment.is_none(), "Overwritten winc");
-                            move_time.white_increment = parse_number!();
+                            if let Ok(winc) = parse_number!() {
+                                move_time.white_increment = NonZeroU64::new(winc);
+                            } else {
+                                move_time.white_increment = None
+                            }
                         }
                         "binc" => {
                             assert!(move_time.black_increment.is_none(), "Overwritten binc");
-                            move_time.black_increment = parse_number!();
+                            if let Ok(binc) = parse_number!() {
+                                move_time.black_increment = NonZeroU64::new(binc);
+                            } else {
+                                move_time.black_increment = None
+                            }
                         }
                         "movestogo" => {
                             assert!(move_time.moves_to_go.is_none(), "Overwritten movestogo");
-                            move_time.moves_to_go = parse_number!();
+                            move_time.moves_to_go = Some(parse_number!().unwrap());
                         }
 
                         _ => unreachable!(),
@@ -98,15 +106,15 @@ impl GoParameters {
 
                 "depth" => {
                     assert!(self.depth.is_none(), "Conflicting depth");
-                    self.depth = parse_number!();
+                    self.depth = Some(parse_number!().unwrap());
                 }
                 "nodes" => {
                     assert!(self.nodes.is_none(), "Conflicting nodes");
-                    self.nodes = parse_number!();
+                    self.nodes = Some(parse_number!().unwrap());
                 }
                 "mate" => {
                     assert!(self.find_mate.is_none(), "Conflicting mate");
-                    self.find_mate = parse_number!();
+                    self.find_mate = Some(parse_number!().unwrap());
                 }
                 "movetime" => {
                     assert!(self.move_time.is_none(), "Conflicting move time");
@@ -114,7 +122,7 @@ impl GoParameters {
                 }
                 "perft" => {
                     self.search_type = SearchType::Perft;
-                    self.depth = parse_number!();
+                    self.depth = Some(parse_number!().unwrap());
                 }
                 "infinite" => {
                     assert!(self.move_time.is_none(), "Conflicting move time");
