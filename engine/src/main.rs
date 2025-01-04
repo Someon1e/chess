@@ -2,7 +2,7 @@
 #![warn(clippy::pedantic)]
 #![warn(clippy::nursery)]
 
-use std::{intrinsics::mir::UnwindResume, io::stdin};
+use std::io::stdin;
 
 use core::cell::RefCell;
 use engine::{
