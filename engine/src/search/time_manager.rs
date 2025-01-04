@@ -37,8 +37,7 @@ impl<'a> TimeManager<'a> {
                 ..
             } => timer.milliseconds() > hard_time_limit,
             Mode::Depth(_) => false,
-        };
-        return false;
+        }
     }
     pub fn hard_stop_iterative_deepening(&self, depth: u8) -> bool {
         match self.mode {
@@ -48,8 +47,7 @@ impl<'a> TimeManager<'a> {
                 ..
             } => timer.milliseconds() > hard_time_limit,
             Mode::Depth(max_depth) => depth > max_depth,
-        };
-        return false;
+        }
     }
     pub fn soft_stop(&self) -> bool {
         match self.mode {
@@ -57,8 +55,8 @@ impl<'a> TimeManager<'a> {
                 timer,
                 soft_time_limit,
                 ..
-            } => return timer.milliseconds() > soft_time_limit,
-            Mode::Depth(_) => return false,
+            } => timer.milliseconds() > soft_time_limit,
+            Mode::Depth(_) => false,
         }
     }
 }
