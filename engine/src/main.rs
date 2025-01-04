@@ -2,10 +2,14 @@
 #![warn(clippy::pedantic)]
 #![warn(clippy::nursery)]
 
-use std::io::stdin;
+use std::{intrinsics::mir::UnwindResume, io::stdin};
 
 use core::cell::RefCell;
-use engine::uci::{SpinU16, UCIProcessor};
+use engine::{
+    board::Board,
+    search::{transposition::megabytes_to_capacity, Search},
+    uci::{SpinU16, UCIProcessor},
+};
 
 /// Max time for thinking.
 const MAX_TIME: u64 = 40 * 1000;
@@ -61,6 +65,27 @@ fn process_input(input: &str) -> bool {
         "uci" => uci_processor.borrow().uci(),
         "stop" => uci_processor.borrow().stop(),
         "quit" => quit = true,
+
+        "bench" => {
+            const SEARCH_POSITIONS: [&str; 2] = [
+                "position fen 8/k7/3p4/p2P1p2/P2P1P2/8/8/K7 w - - 0 1", // Lasker-Reichhelm Position
+                "position fen 8/8/2bq4/4kp2/2B5/5P1Q/8/7K w - - 11 1",  // Liburkin, 1947
+            ];
+
+            let mut search = Search::new(
+                Board::from_fen(Board::START_POSITION_FEN),
+                megabytes_to_capacity(32),
+            );
+
+            for position in SEARCH_POSITIONS {
+                let board = Board::from_fen(position);
+                search.new_board(board);
+                search.clear_cache_for_new_game();
+                search.clear_for_new_search();
+
+                // TODO: actually run bench
+            }
+        }
 
         _ => panic!("Unrecognised command"),
     });
