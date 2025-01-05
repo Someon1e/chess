@@ -11,7 +11,7 @@ use crate::{
     perft::perft_root,
     search::{
         encoded_move::EncodedMove, transposition::megabytes_to_capacity, DepthSearchInfo, Search,
-        IMMEDIATE_CHECKMATE_SCORE,
+        TimeManager, IMMEDIATE_CHECKMATE_SCORE,
     },
     timer::Time,
 };
@@ -325,14 +325,12 @@ uciok",
                 "info depth {depth} seldepth {highest_depth} {evaluation_info} time {time} nodes {nodes} nps {nodes_per_second} pv{pv_string}"
             ));
         };
-        let (depth, evaluation) = search.iterative_deepening(
-            &search_start,
-            hard_time_limit,
-            soft_time_limit,
-            &mut |depth_info| {
-                output_info(depth_info);
-            },
-        );
+
+        let time_manager =
+            TimeManager::time_limited(&search_start, hard_time_limit, soft_time_limit);
+        let (depth, evaluation) = search.iterative_deepening(&time_manager, &mut |depth_info| {
+            output_info(depth_info);
+        });
 
         output_info(DepthSearchInfo {
             depth,

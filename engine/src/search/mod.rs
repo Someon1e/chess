@@ -5,10 +5,12 @@ pub mod pv;
 mod move_ordering;
 mod repetition_table;
 mod search_params;
+mod time_manager;
 pub mod transposition;
 
 use pv::Pv;
 use search_params::DEFAULT_TUNABLES;
+pub use time_manager::TimeManager;
 
 use crate::{
     board::{game_state::GameState, Board},
@@ -17,7 +19,6 @@ use crate::{
         Eval,
     },
     move_generator::{move_data::Move, MoveGenerator},
-    timer::Time,
 };
 
 use self::{
@@ -206,8 +207,7 @@ impl Search {
     fn negamax(
         &mut self,
 
-        timer: &Time,
-        hard_time_limit: u64,
+        time_manager: &TimeManager,
 
         mut ply_remaining: Ply,
         ply_from_root: Ply,
@@ -326,8 +326,7 @@ impl Search {
                 let old_state = self.board.make_null_move();
 
                 let score = -self.negamax(
-                    timer,
-                    hard_time_limit,
+                    time_manager,
                     ply_remaining.saturating_sub(
                         param!().nmp_base_reduction + ply_remaining / param!().nmp_ply_divisor,
                     ),
@@ -415,8 +414,7 @@ impl Search {
                     + ply_remaining / param!().lmr_ply_divisor
                     + index as Ply / param!().lmr_index_divisor;
                 score = -self.negamax(
-                    timer,
-                    hard_time_limit,
+                    time_manager,
                     ply_remaining.saturating_sub(r),
                     ply_from_root + 1,
                     true,
@@ -431,8 +429,7 @@ impl Search {
 
             if USE_PVS && normal_search && index != 0 {
                 score = -self.negamax(
-                    timer,
-                    hard_time_limit,
+                    time_manager,
                     ply_remaining - 1 + Ply::from(check_extension),
                     ply_from_root + 1,
                     true,
@@ -443,8 +440,7 @@ impl Search {
             }
             if normal_search {
                 score = -self.negamax(
-                    timer,
-                    hard_time_limit,
+                    time_manager,
                     ply_remaining - 1 + Ply::from(check_extension),
                     ply_from_root + 1,
                     true,
@@ -455,7 +451,7 @@ impl Search {
 
             self.unmake_move(&move_data, &old_state);
 
-            if ply_remaining > 1 && timer.milliseconds() > hard_time_limit {
+            if ply_remaining > 1 && time_manager.hard_stop_inner_search() {
                 return 0;
             }
 
@@ -552,8 +548,7 @@ impl Search {
     #[must_use]
     fn aspiration_search(
         &mut self,
-        timer: &Time,
-        hard_time_limit: u64,
+        time_manager: &TimeManager,
         mut best_score: EvalNumber,
         depth: Ply,
     ) -> EvalNumber {
@@ -563,7 +558,7 @@ impl Search {
                 .max(-EvalNumber::MAX);
             let mut beta = best_score.saturating_add(param!().aspiration_window_start);
             for _ in 0..4 {
-                best_score = self.negamax(timer, hard_time_limit, depth, 0, false, alpha, beta);
+                best_score = self.negamax(time_manager, depth, 0, false, alpha, beta);
                 if best_score <= alpha {
                     alpha = alpha
                         .saturating_sub(param!().aspiration_window_growth)
@@ -580,8 +575,7 @@ impl Search {
             }
         }
         self.negamax(
-            timer,
-            hard_time_limit,
+            time_manager,
             depth,
             0,
             false,
@@ -595,22 +589,17 @@ impl Search {
     pub fn iterative_deepening(
         &mut self,
 
-        timer: &Time,
-        hard_time_limit: u64,
-        soft_time_limit: u64,
+        time_manager: &TimeManager,
 
         depth_completed: &mut dyn FnMut(DepthSearchInfo),
     ) -> (Ply, EvalNumber) {
-        assert!(hard_time_limit >= soft_time_limit);
-
         let mut depth = 0;
         let mut previous_best_score = -EvalNumber::MAX;
         loop {
             depth += 1;
-            let best_score =
-                self.aspiration_search(timer, hard_time_limit, previous_best_score, depth);
+            let best_score = self.aspiration_search(time_manager, previous_best_score, depth);
 
-            if timer.milliseconds() > hard_time_limit {
+            if time_manager.hard_stop_iterative_deepening(depth) {
                 // Must stop now.
                 break;
             }
@@ -635,7 +624,7 @@ impl Search {
                 break;
             }
 
-            if timer.milliseconds() > soft_time_limit {
+            if time_manager.soft_stop() {
                 // It would probably be a waste of time to start another iteration
                 break;
             }
@@ -658,7 +647,11 @@ mod tests {
     use crate::{
         board::Board,
         evaluation::{eval_data::EvalNumber, Eval},
-        search::{transposition::megabytes_to_capacity, Search},
+        search::{
+            time_manager::{self, TimeManager},
+            transposition::megabytes_to_capacity,
+            Search,
+        },
         timer::Time,
         uci,
     };
@@ -1437,7 +1430,8 @@ mod tests {
                     search.clear_for_new_search();
 
                     let search_start = Time::now();
-                    let result = search.iterative_deepening(&search_start, 2000, 2000, &mut |_| {});
+                    let time_manager = TimeManager::time_limited(&search_start, 2000, 2000);
+                    let result = search.iterative_deepening(&time_manager, &mut |_| {});
 
                     sender
                         .send((

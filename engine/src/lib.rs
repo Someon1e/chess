@@ -23,7 +23,7 @@ pub mod uci;
 /// Perft testing.
 pub mod perft;
 
-mod timer;
+pub mod timer;
 
 #[cfg(test)]
 mod tests {
