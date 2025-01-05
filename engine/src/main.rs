@@ -547,6 +547,7 @@ fn main() {
         let target = args.get(1);
         if target.is_some_and(|arg| arg == "bench") {
             bench();
+            return;
         }
     }
 
