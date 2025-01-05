@@ -171,6 +171,10 @@ uciok",
 
                 self.set_transposition_capacity(megabytes_to_capacity(megabytes.into()));
             }
+            "threads" => {
+                let threads: u16 = value.expect("Missing value").parse().unwrap();
+                assert!(threads == 1, "Only supports single thread");
+            }
             _ => {
                 if value.is_none() {
                     panic!("Unknown option name (or missing value label)")
