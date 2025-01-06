@@ -1,5 +1,7 @@
 //! Chess move generator and engine
 
+#![feature(stdarch_aarch64_prefetch)]
+#![feature(core_intrinsics)]
 #![deny(clippy::all)]
 #![warn(clippy::pedantic)]
 #![warn(clippy::nursery)]
