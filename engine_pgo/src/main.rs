@@ -7,7 +7,10 @@ use std::io::Write;
 use std::process::{Command, Stdio};
 
 fn clean() {
-    let mut clean = Command::new("cargo").arg("clean").spawn().unwrap();
+    let mut clean = Command::new("cargo")
+        .args(["+nightly", "clean"])
+        .spawn()
+        .unwrap();
     assert!(clean.wait().unwrap().success());
 }
 
@@ -17,7 +20,12 @@ fn build_instrument(target: &str) {
             "RUSTFLAGS",
             "-Ctarget-cpu=native -Cprofile-generate=target/pgo-data",
         )
-        .args(["build", "--release", &("--target=".to_owned() + target)])
+        .args([
+            "+nightly",
+            "build",
+            "--release",
+            &("--target=".to_owned() + target),
+        ])
         .spawn()
         .unwrap();
     assert!(build.wait().unwrap().success());
@@ -105,7 +113,12 @@ fn build_optimised(target: &str) {
             "RUSTFLAGS",
             "-Ctarget-cpu=native -Cprofile-use=target/pgo-data/merged.profdata",
         )
-        .args(["build", "--release", &("--target=".to_owned() + target)])
+        .args([
+            "+nightly",
+            "build",
+            "--release",
+            &("--target=".to_owned() + target),
+        ])
         .spawn()
         .unwrap();
     assert!(build.wait().unwrap().success());
