@@ -660,11 +660,7 @@ mod tests {
     use crate::{
         board::Board,
         evaluation::{eval_data::EvalNumber, Eval},
-        search::{
-            time_manager::{self, TimeManager},
-            transposition::megabytes_to_capacity,
-            Search,
-        },
+        search::{time_manager::TimeManager, transposition::megabytes_to_capacity, Search},
         timer::Time,
         uci,
     };
