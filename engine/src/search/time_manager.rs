@@ -24,7 +24,7 @@ impl<'a> TimeManager<'a> {
             },
         }
     }
-    pub fn depth_limited(depth: u8) -> Self {
+    pub const fn depth_limited(depth: u8) -> Self {
         Self {
             mode: Mode::Depth(depth),
         }

@@ -75,7 +75,8 @@ pub const KING_MOVES_AT_SQUARE: [BitBoard; 64] = {
         let left = (square_bit & 0x7F7F_7F7F_7F7F_7F7F) << 1;
         let right = (square_bit & 0xFEFE_FEFE_FEFE_FEFE) >> 1;
         let left_right = left | right;
-        let attacks = left_right | (left_right | square_bit) >> 8 | (left_right | square_bit) << 8;
+        let attacks =
+            left_right | ((left_right | square_bit) >> 8) | ((left_right | square_bit) << 8);
         king_moves_at_square[index] = BitBoard::new(attacks);
 
         index += 1;

@@ -30,11 +30,13 @@ mod inner {
     }
 
     impl Time {
+        #[must_use]
         pub fn now() -> Self {
             Self {
                 start: Instant::now(),
             }
         }
+        #[must_use]
         pub fn milliseconds(&self) -> u64 {
             self.start.elapsed().as_millis().try_into().unwrap()
         }

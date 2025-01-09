@@ -84,7 +84,7 @@ impl GoParameters {
                             if let Ok(winc) = parse_number!() {
                                 move_time.white_increment = NonZeroU64::new(winc);
                             } else {
-                                move_time.white_increment = None
+                                move_time.white_increment = None;
                             }
                         }
                         "binc" => {
@@ -92,7 +92,7 @@ impl GoParameters {
                             if let Ok(binc) = parse_number!() {
                                 move_time.black_increment = NonZeroU64::new(binc);
                             } else {
-                                move_time.black_increment = None
+                                move_time.black_increment = None;
                             }
                         }
                         "movestogo" => {

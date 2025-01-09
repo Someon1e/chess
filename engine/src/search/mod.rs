@@ -399,15 +399,15 @@ impl Search {
             }
             #[cfg(any(target_arch = "aarch64", target_arch = "arm64ec"))]
             {
+                use core::arch::aarch64::{_prefetch, _PREFETCH_LOCALITY0, _PREFETCH_READ};
                 let index =
                     self.board
                         .zobrist_key()
                         .distribute(self.transposition_table.len()) as usize;
-                use core::arch::aarch64::{_prefetch, _PREFETCH_LOCALITY0, _PREFETCH_READ};
                 unsafe {
                     _prefetch::<_PREFETCH_READ, _PREFETCH_LOCALITY0>(
                         self.transposition_table.as_ptr().add(index).cast::<i8>(),
-                    )
+                    );
                 }
             }
 
