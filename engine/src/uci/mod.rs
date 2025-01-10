@@ -47,7 +47,7 @@ pub fn encode_move(move_data: Move) -> String {
 pub fn decode_move(board: &Board, from: Square, to: Square, promotion: Flag) -> Move {
     let piece = board
         .friendly_piece_at(from)
-        .expect("Tried to play illegal move {uci_move} on {board}");
+        .expect("Tried to play illegal move");
 
     let mut flag = promotion;
     if piece == Piece::WhitePawn || piece == Piece::BlackPawn {
