@@ -14,6 +14,7 @@ pub struct TimeManager<'a> {
 }
 
 impl<'a> TimeManager<'a> {
+    #[must_use]
     pub fn time_limited(timer: &'a Time, hard_time_limit: u64, soft_time_limit: u64) -> Self {
         assert!(hard_time_limit >= soft_time_limit);
         Self {
@@ -24,11 +25,13 @@ impl<'a> TimeManager<'a> {
             },
         }
     }
+    #[must_use]
     pub const fn depth_limited(depth: u8) -> Self {
         Self {
             mode: Mode::Depth(depth),
         }
     }
+    #[must_use]
     pub fn hard_stop_inner_search(&self) -> bool {
         match self.mode {
             Mode::Time {
@@ -39,6 +42,7 @@ impl<'a> TimeManager<'a> {
             Mode::Depth(_) => false,
         }
     }
+    #[must_use]
     pub fn hard_stop_iterative_deepening(&self, depth: u8) -> bool {
         match self.mode {
             Mode::Time {
@@ -49,6 +53,7 @@ impl<'a> TimeManager<'a> {
             Mode::Depth(max_depth) => depth > max_depth,
         }
     }
+    #[must_use]
     pub fn soft_stop(&self) -> bool {
         match self.mode {
             Mode::Time {
