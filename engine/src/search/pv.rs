@@ -36,3 +36,9 @@ impl Pv {
         self.pv_length[ply_from_root as usize] = self.pv_length[ply_from_root as usize + 1];
     }
 }
+
+impl Default for Pv {
+    fn default() -> Self {
+        Self::new()
+    }
+}
