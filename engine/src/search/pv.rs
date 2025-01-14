@@ -4,8 +4,8 @@ pub type PvTable = [[EncodedMove; Ply::MAX as usize]; Ply::MAX as usize];
 pub type PvLength = [Ply; Ply::MAX as usize];
 
 pub struct Pv {
-    pub pv_table: PvTable,
-    pub pv_length: PvLength,
+    pv_table: PvTable,
+    pv_length: PvLength,
 }
 
 impl Pv {
@@ -15,6 +15,10 @@ impl Pv {
             pv_table: [[EncodedMove::NONE; Ply::MAX as usize]; Ply::MAX as usize],
             pv_length: [0; Ply::MAX as usize],
         }
+    }
+
+    pub fn best_line(&self) -> std::iter::Take<std::slice::Iter<'_, EncodedMove>> {
+        self.pv_table[0].iter().take(self.pv_length[0] as usize)
     }
 
     /// Returns the best move at the first ply.

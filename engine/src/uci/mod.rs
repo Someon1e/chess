@@ -313,9 +313,8 @@ uciok",
                 format!("score cp {evaluation}")
             };
             let time = search_start.milliseconds();
-            let pv_string = pv.pv_table[0]
-                .iter()
-                .take(pv.pv_length[0] as usize)
+            let pv_string = pv
+                .best_line()
                 .map(|encoded_move| " ".to_owned() + &encode_move(encoded_move.decode()))
                 .collect::<String>();
 
