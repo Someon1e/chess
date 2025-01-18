@@ -17,6 +17,10 @@ harness = false
 name = "evaluation"
 harness = false
 
+[[bench]]
+name = "make_unmake_move"
+harness = false
+
 [dependencies]
 
 [profile.release]
