@@ -508,7 +508,7 @@ fn bench() {
             "{position} {depth} {}",
             search.quiescence_call_count()
         ));
-        total_nodes += u64::from(search.quiescence_call_count())
+        total_nodes += u64::from(search.quiescence_call_count());
     }
     out(&format!(
         "{total_nodes} nodes {nodes_per_second} nps",
