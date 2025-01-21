@@ -10,8 +10,10 @@ use crate::{
     move_generator::move_data::{Flag, Move},
     perft::perft_root,
     search::{
-        encoded_move::EncodedMove, transposition::megabytes_to_capacity, DepthSearchInfo, Search,
-        TimeManager, IMMEDIATE_CHECKMATE_SCORE,
+        encoded_move::EncodedMove,
+        search_params::{Tunable, DEFAULT_TUNABLES},
+        transposition::megabytes_to_capacity,
+        DepthSearchInfo, Search, TimeManager, IMMEDIATE_CHECKMATE_SCORE,
     },
     timer::Time,
 };
@@ -101,6 +103,9 @@ pub struct UCIProcessor {
 
     /// Maximum entry count of the transposition table.
     pub transposition_capacity: usize,
+
+    #[cfg(feature = "spsa")]
+    pub tunables: Tunable,
 }
 
 impl UCIProcessor {
@@ -116,6 +121,8 @@ impl UCIProcessor {
             out,
             hash_option,
             transposition_capacity,
+            #[cfg(feature = "spsa")]
+            tunables: DEFAULT_TUNABLES,
         }
     }
     fn set_transposition_capacity(&mut self, transposition_capacity: usize) {
@@ -132,15 +139,32 @@ impl UCIProcessor {
         let min_hash = self.hash_option.range.start;
         let default_hash = self.hash_option.default;
         let max_hash = self.hash_option.range.end - 1;
+        let mut options = format!(
+            "option name Hash type spin default {default_hash} min {min_hash} max {max_hash}
+option name Threads type spin default 1 min 1 max 1"
+        );
+
+        #[cfg(feature = "spsa")]
+        {
+            // TODO: macros here?
+            options.push_str(&format!(
+                "\noption name history_decay type spin default {} min 3 max 13",
+                DEFAULT_TUNABLES.history_decay
+            ));
+            options.push_str(&format!(
+                "\noption name iir_min_depth type spin default {} min 1 max 6",
+                DEFAULT_TUNABLES.iir_min_depth
+            ));
+        }
 
         (self.out)(&format!(
             "id name {} {}
 id author someone
-option name Hash type spin default {default_hash} min {min_hash} max {max_hash}
-option name Threads type spin default 1 min 1 max 1
+{}
 uciok",
             env!("CARGO_PKG_NAME"),
-            env!("CARGO_PKG_VERSION")
+            env!("CARGO_PKG_VERSION"),
+            options
         ));
     }
 
@@ -175,13 +199,26 @@ uciok",
                 let threads: u16 = value.expect("Missing value").parse().unwrap();
                 assert!(threads == 1, "Only supports single thread");
             }
-            _ => {
-                if value.is_none() {
-                    panic!("Unknown option name (or missing value label)")
-                } else {
-                    panic!("Unknown option name")
+            option_name => match option_name {
+                // TODO: macros here
+                #[cfg(feature = "spsa")]
+                "history_decay" => {
+                    let history_decay = value.expect("Missing value").parse().unwrap();
+                    self.tunables.history_decay = history_decay;
                 }
-            }
+                #[cfg(feature = "spsa")]
+                "iir_min_depth" => {
+                    let iir_min_depth = value.expect("Missing value").parse().unwrap();
+                    self.tunables.iir_min_depth = iir_min_depth;
+                }
+                _ => {
+                    if value.is_none() {
+                        panic!("Unknown option name (or missing value label)")
+                    } else {
+                        panic!("Unknown option name")
+                    }
+                }
+            },
         }
     }
 
@@ -257,7 +294,12 @@ uciok",
 
         let search = if self.search.is_none() {
             // First time making search
-            let search = Search::new(board, self.transposition_capacity);
+            let search = Search::new(
+                board,
+                self.transposition_capacity,
+                #[cfg(feature = "spsa")]
+                self.tunables,
+            );
             self.search = Some(search);
             self.search.as_mut().unwrap()
         } else {

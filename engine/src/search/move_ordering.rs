@@ -226,7 +226,7 @@ mod tests {
             MoveGenerator,
         },
         search::{
-            encoded_move::EncodedMove, move_ordering::MoveOrderer,
+            encoded_move::EncodedMove, move_ordering::MoveOrderer, search_params::DEFAULT_TUNABLES,
             transposition::megabytes_to_capacity, Search,
         },
     };
@@ -237,7 +237,12 @@ mod tests {
         let move_generator = MoveGenerator::new(&board);
 
         let (mut move_guesses, move_count) = MoveOrderer::get_move_guesses(
-            &Search::new(board, megabytes_to_capacity(8)),
+            &Search::new(
+                board,
+                megabytes_to_capacity(8),
+                #[cfg(feature = "spsa")]
+                DEFAULT_TUNABLES,
+            ),
             &move_generator,
             EncodedMove::NONE,
             EncodedMove::NONE,

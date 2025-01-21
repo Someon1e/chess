@@ -4,12 +4,12 @@ pub mod pv;
 
 mod move_ordering;
 mod repetition_table;
-mod search_params;
+pub mod search_params;
 mod time_manager;
 pub mod transposition;
 
 use pv::Pv;
-use search_params::DEFAULT_TUNABLES;
+use search_params::{Tunable, DEFAULT_TUNABLES};
 pub use time_manager::TimeManager;
 
 use crate::{
@@ -44,9 +44,16 @@ const USE_KILLER_MOVE: bool = true;
 const USE_ASPIRATION_WINDOWS: bool = true;
 const USE_FUTILITY_PRUNING: bool = true;
 
+#[cfg(not(feature = "spsa"))]
 macro_rules! param {
-    () => {
+    ($self:expr) => {
         DEFAULT_TUNABLES
+    };
+}
+#[cfg(feature = "spsa")]
+macro_rules! param {
+    ($self:expr) => {
+        $self.tunable
     };
 }
 
@@ -80,12 +87,19 @@ pub struct Search {
     pub highest_depth: Ply,
 
     quiescence_call_count: u32,
+
+    #[cfg(feature = "spsa")]
+    tunable: Tunable,
 }
 
 impl Search {
     /// Create a new search.
     #[must_use]
-    pub fn new(board: Board, transposition_capacity: usize) -> Self {
+    pub fn new(
+        board: Board,
+        transposition_capacity: usize,
+        #[cfg(feature = "spsa")] tunable: Tunable,
+    ) -> Self {
         Self {
             board,
 
@@ -100,6 +114,9 @@ impl Search {
             highest_depth: 0,
 
             quiescence_call_count: 0,
+
+            #[cfg(feature = "spsa")]
+            tunable,
         }
     }
 
@@ -127,7 +144,7 @@ impl Search {
         self.killer_moves.fill(EncodedMove::NONE);
         for side in &mut self.quiet_history {
             for value in side {
-                *value /= param!().history_decay;
+                *value /= param!(self).history_decay;
             }
         }
     }
@@ -273,10 +290,10 @@ impl Search {
         }
         if USE_INTERNAL_ITERATIVE_REDUCTION
             && hash_move.is_none()
-            && ply_remaining > param!().iir_min_depth
+            && ply_remaining > param!(self).iir_min_depth
         {
             // Internal iterative reduction
-            ply_remaining -= param!().iir_depth_reduction;
+            ply_remaining -= param!(self).iir_depth_reduction;
         }
 
         if ply_remaining == 0 {
@@ -306,8 +323,8 @@ impl Search {
         if is_not_pv_node && !move_generator.is_in_check() {
             // Static null move pruning (also known as reverse futility pruning)
             if USE_STATIC_NULL_MOVE_PRUNING
-                && ply_remaining < param!().static_null_min_depth
-                && static_eval - i32::from(ply_remaining) * param!().static_null_margin > beta
+                && ply_remaining < param!(self).static_null_min_depth
+                && static_eval - i32::from(ply_remaining) * param!(self).static_null_margin > beta
             {
                 return static_eval;
             }
@@ -315,7 +332,7 @@ impl Search {
             // Null move pruning
             if USE_NULL_MOVE_PRUNING
             && allow_null_move
-            && ply_remaining > param!().nmp_min_depth
+            && ply_remaining > param!(self).nmp_min_depth
 
             && static_eval >= beta
 
@@ -328,7 +345,8 @@ impl Search {
                 let score = -self.negamax(
                     time_manager,
                     ply_remaining.saturating_sub(
-                        param!().nmp_base_reduction + ply_remaining / param!().nmp_ply_divisor,
+                        param!(self).nmp_base_reduction
+                            + ply_remaining / param!(self).nmp_ply_divisor,
                     ),
                     ply_from_root + 1,
                     false,
@@ -416,16 +434,16 @@ impl Search {
 
             let mut normal_search = check_extension // Do not reduce if extending
                 || is_capture // Do not reduce if it's a capture
-                || index < param!().lmr_min_index // Do not reduce if it's not a late move
-                || (ply_remaining) < param!().lmr_min_depth // Do not reduce if there is little depth remaining
+                || index < param!(self).lmr_min_index // Do not reduce if it's not a late move
+                || (ply_remaining) < param!(self).lmr_min_depth // Do not reduce if there is little depth remaining
                 || !USE_LATE_MOVE_REDUCTION; // Do not reduce if turned off
             let mut score = 0;
 
             if !normal_search {
                 // Late move reduction
                 let r = 2
-                    + ply_remaining / param!().lmr_ply_divisor
-                    + index as Ply / param!().lmr_index_divisor;
+                    + ply_remaining / param!(self).lmr_ply_divisor
+                    + index as Ply / param!(self).lmr_index_divisor;
                 score = -self.negamax(
                     time_manager,
                     ply_remaining.saturating_sub(r),
@@ -519,13 +537,15 @@ impl Search {
             if !is_capture {
                 if is_not_pv_node && !move_generator.is_in_check() {
                     if USE_FUTILITY_PRUNING
-                        && static_eval + param!().futility_margin * i32::from(ply_remaining) < alpha
+                        && static_eval + param!(self).futility_margin * i32::from(ply_remaining)
+                            < alpha
                     {
                         // Futility pruning
                         break;
                     }
                     if quiets_evaluated.len() as u32 + 1
-                        > param!().lmp_base + u32::from(ply_remaining) * u32::from(ply_remaining)
+                        > param!(self).lmp_base
+                            + u32::from(ply_remaining) * u32::from(ply_remaining)
                     {
                         // Late move pruning
                         break;
@@ -567,21 +587,21 @@ impl Search {
     ) -> EvalNumber {
         if USE_ASPIRATION_WINDOWS && depth > 2 {
             let mut alpha = best_score
-                .saturating_sub(param!().aspiration_window_start)
+                .saturating_sub(param!(self).aspiration_window_start)
                 .max(-EvalNumber::MAX);
-            let mut beta = best_score.saturating_add(param!().aspiration_window_start);
+            let mut beta = best_score.saturating_add(param!(self).aspiration_window_start);
             for _ in 0..4 {
                 best_score = self.negamax(time_manager, depth, 0, false, alpha, beta);
                 if best_score <= alpha {
                     alpha = alpha
-                        .saturating_sub(param!().aspiration_window_growth)
+                        .saturating_sub(param!(self).aspiration_window_growth)
                         .max(-EvalNumber::MAX);
                     // -EvalNumber::MAX = -2147483647
                     // EvalNumber::MIN = -2147483648
 
                     beta = (alpha + beta) / 2;
                 } else if best_score >= beta {
-                    beta = beta.saturating_add(param!().aspiration_window_growth);
+                    beta = beta.saturating_add(param!(self).aspiration_window_growth);
                 } else {
                     return best_score;
                 }
@@ -658,7 +678,7 @@ mod tests {
     use crate::{
         board::Board,
         evaluation::{eval_data::EvalNumber, Eval},
-        search::{transposition::megabytes_to_capacity, Search},
+        search::{search_params::DEFAULT_TUNABLES, transposition::megabytes_to_capacity, Search},
     };
 
     #[test]
@@ -666,8 +686,13 @@ mod tests {
         let board = Board::from_fen("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
         let quiet = Board::from_fen("rnb1kbnr/ppp1pppp/8/3q4/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
         assert_eq!(
-            Search::new(board, megabytes_to_capacity(8))
-                .quiescence_search(-EvalNumber::MAX, EvalNumber::MAX),
+            Search::new(
+                board,
+                megabytes_to_capacity(8),
+                #[cfg(feature = "spsa")]
+                DEFAULT_TUNABLES,
+            )
+            .quiescence_search(-EvalNumber::MAX, EvalNumber::MAX),
             Eval::evaluate(&quiet)
         );
     }

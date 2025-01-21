@@ -1,3 +1,4 @@
+#[derive(Clone, Copy)]
 pub struct Tunable {
     pub history_decay: i16,
 
