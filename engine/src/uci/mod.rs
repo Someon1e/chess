@@ -146,15 +146,23 @@ option name Threads type spin default 1 min 1 max 1"
 
         #[cfg(feature = "spsa")]
         {
-            // TODO: macros here?
-            options.push_str(&format!(
-                "\noption name history_decay type spin default {} min 3 max 13",
-                DEFAULT_TUNABLES.history_decay
-            ));
-            options.push_str(&format!(
-                "\noption name iir_min_depth type spin default {} min 1 max 6",
-                DEFAULT_TUNABLES.iir_min_depth
-            ));
+            macro_rules! spin {
+                ($name:expr, $default:expr, $min:expr, $max:expr) => {
+                    options.push_str(&format!(
+                        concat!(
+                            "\noption name ",
+                            $name,
+                            " type spin default {} min ",
+                            $min,
+                            " max ",
+                            $max
+                        ),
+                        $default
+                    ));
+                };
+            }
+            spin!("history_decay", DEFAULT_TUNABLES.history_decay, 3, 13);
+            spin!("iir_min_depth", DEFAULT_TUNABLES.iir_min_depth, 1, 6);
         }
 
         (self.out)(&format!(
@@ -199,6 +207,7 @@ uciok",
                 let threads: u16 = value.expect("Missing value").parse().unwrap();
                 assert!(threads == 1, "Only supports single thread");
             }
+
             option_name => match option_name {
                 // TODO: macros here
                 #[cfg(feature = "spsa")]
