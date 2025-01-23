@@ -1,5 +1,5 @@
 use core::str::SplitWhitespace;
-use std::ops::Range;
+use std::ops::{Range, RangeInclusive};
 
 mod go_params;
 
@@ -108,6 +108,50 @@ pub struct UCIProcessor {
     pub tunables: Tunable,
 }
 
+pub struct TunableRange {
+    pub history_decay: RangeInclusive<i16>,
+
+    pub iir_min_depth: RangeInclusive<u8>,
+    pub iir_depth_reduction: RangeInclusive<u8>,
+
+    pub futility_margin: RangeInclusive<i32>,
+
+    pub static_null_margin: RangeInclusive<i32>,
+    pub static_null_min_depth: RangeInclusive<u8>,
+
+    pub lmr_min_index: RangeInclusive<usize>,
+    pub lmr_min_depth: RangeInclusive<u8>,
+    pub lmr_ply_divisor: RangeInclusive<u8>,
+    pub lmr_index_divisor: RangeInclusive<u8>,
+
+    pub lmp_base: RangeInclusive<u32>,
+
+    pub nmp_min_depth: RangeInclusive<u8>,
+    pub nmp_base_reduction: RangeInclusive<u8>,
+    pub nmp_ply_divisor: RangeInclusive<u8>,
+
+    pub aspiration_window_start: RangeInclusive<i32>,
+    pub aspiration_window_growth: RangeInclusive<i32>,
+}
+const TUNABLE_RANGES: TunableRange = TunableRange {
+    history_decay: 2..=20,
+    iir_min_depth: 1..=7,
+    iir_depth_reduction: 0..=4,
+    futility_margin: 60..=210,
+    static_null_margin: 30..=90,
+    static_null_min_depth: 2..=9,
+    lmr_min_index: 2..=6,
+    lmr_min_depth: 1..=5,
+    lmr_ply_divisor: 6..=16,
+    lmr_index_divisor: 6..=13,
+    lmp_base: 1..=6,
+    nmp_min_depth: 1..=5,
+    nmp_base_reduction: 1..=6,
+    nmp_ply_divisor: 4..=9,
+    aspiration_window_start: 20..=60,
+    aspiration_window_growth: 20..=90,
+};
+
 impl UCIProcessor {
     pub fn new(max_thinking_time: u64, out: fn(&str), hash_option: SpinU16) -> Self {
         let megabytes = hash_option.default as usize;
@@ -149,20 +193,42 @@ option name Threads type spin default 1 min 1 max 1"
             macro_rules! spin {
                 ($name:expr, $default:expr, $min:expr, $max:expr) => {
                     options.push_str(&format!(
-                        concat!(
-                            "\noption name ",
-                            $name,
-                            " type spin default {} min ",
-                            $min,
-                            " max ",
-                            $max
-                        ),
-                        $default
+                        "\noption name {} type spin default {} min {} max {}",
+                        $name, $default, $min, $max
                     ));
                 };
             }
-            spin!("history_decay", DEFAULT_TUNABLES.history_decay, 3, 13);
-            spin!("iir_min_depth", DEFAULT_TUNABLES.iir_min_depth, 1, 6);
+            macro_rules! define_spins {
+                ($($field:ident),*) => {
+                    $(
+                        spin!(
+                            stringify!($field),
+                            DEFAULT_TUNABLES.$field,
+                            TUNABLE_RANGES.$field.start(),
+                            TUNABLE_RANGES.$field.end()
+                        );
+                    )*
+                };
+            }
+
+            define_spins!(
+                history_decay,
+                iir_min_depth,
+                iir_depth_reduction,
+                futility_margin,
+                static_null_margin,
+                static_null_min_depth,
+                lmr_min_index,
+                lmr_min_depth,
+                lmr_ply_divisor,
+                lmr_index_divisor,
+                lmp_base,
+                nmp_min_depth,
+                nmp_base_reduction,
+                nmp_ply_divisor,
+                aspiration_window_start,
+                aspiration_window_growth
+            );
         }
 
         (self.out)(&format!(
@@ -196,6 +262,28 @@ uciok",
             (name, None)
         };
 
+        macro_rules! handle_option {
+            ($option_name:expr, $value:expr, $self:expr, { $($field:ident),* $(,)? }) => {
+                match $option_name {
+                    $(
+                        #[cfg(feature = "spsa")]
+                        stringify!($field) => {
+                            let parsed_value = $value.expect("Missing value").parse().unwrap();
+                            assert!(TUNABLE_RANGES.$field.contains(&parsed_value));
+                            $self.tunables.$field = parsed_value;
+                        }
+                    )*
+                    _ => {
+                        if $value.is_none() {
+                            panic!("Unknown option name (or missing value label)");
+                        } else {
+                            panic!("Unknown option name");
+                        }
+                    }
+                }
+            };
+        }
+
         match name.trim().to_lowercase().as_str() {
             "hash" => {
                 let megabytes = value.expect("Missing value").parse().unwrap();
@@ -208,26 +296,29 @@ uciok",
                 assert!(threads == 1, "Only supports single thread");
             }
 
-            option_name => match option_name {
-                // TODO: macros here
-                #[cfg(feature = "spsa")]
-                "history_decay" => {
-                    let history_decay = value.expect("Missing value").parse().unwrap();
-                    self.tunables.history_decay = history_decay;
+            option_name => handle_option!(
+                option_name,
+                value,
+                self,
+                {
+                    history_decay,
+                    iir_min_depth,
+                    iir_depth_reduction,
+                    futility_margin,
+                    static_null_margin,
+                    static_null_min_depth,
+                    lmr_min_index,
+                    lmr_min_depth,
+                    lmr_ply_divisor,
+                    lmr_index_divisor,
+                    lmp_base,
+                    nmp_min_depth,
+                    nmp_base_reduction,
+                    nmp_ply_divisor,
+                    aspiration_window_start,
+                    aspiration_window_growth
                 }
-                #[cfg(feature = "spsa")]
-                "iir_min_depth" => {
-                    let iir_min_depth = value.expect("Missing value").parse().unwrap();
-                    self.tunables.iir_min_depth = iir_min_depth;
-                }
-                _ => {
-                    if value.is_none() {
-                        panic!("Unknown option name (or missing value label)")
-                    } else {
-                        panic!("Unknown option name")
-                    }
-                }
-            },
+            ),
         }
     }
 
