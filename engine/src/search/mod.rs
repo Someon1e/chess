@@ -293,7 +293,7 @@ impl Search {
             && ply_remaining > param!(self).iir_min_depth
         {
             // Internal iterative reduction
-            ply_remaining -= param!(self).iir_depth_reduction;
+            ply_remaining = ply_remaining.saturating_sub(param!(self).iir_depth_reduction);
         }
 
         if ply_remaining == 0 {
