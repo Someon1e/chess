@@ -133,23 +133,24 @@ pub struct TunableRange {
     pub aspiration_window_start: RangeInclusive<i32>,
     pub aspiration_window_growth: RangeInclusive<i32>,
 }
+
 const TUNABLE_RANGES: TunableRange = TunableRange {
     history_decay: 2..=20,
-    iir_min_depth: 1..=7,
-    iir_depth_reduction: 0..=4,
-    futility_margin: 60..=210,
+    iir_min_depth: 1..=6,
+    iir_depth_reduction: 0..=3,
+    futility_margin: 60..=165,
     static_null_margin: 30..=90,
     static_null_min_depth: 2..=9,
     lmr_min_index: 2..=6,
     lmr_min_depth: 1..=5,
     lmr_ply_divisor: 6..=16,
     lmr_index_divisor: 6..=13,
-    lmp_base: 1..=6,
+    lmp_base: 2..=5,
     nmp_min_depth: 1..=5,
     nmp_base_reduction: 1..=6,
     nmp_ply_divisor: 4..=9,
     aspiration_window_start: 20..=60,
-    aspiration_window_growth: 20..=90,
+    aspiration_window_growth: 25..=95,
 };
 
 impl UCIProcessor {
