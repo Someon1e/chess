@@ -2,9 +2,10 @@
 #![warn(clippy::pedantic)]
 #![warn(clippy::nursery)]
 
-use std::env;
+use clap::Parser;
 use std::io::Write;
 use std::process::{Command, Stdio};
+use std::{env, fs};
 
 fn clean() {
     let mut clean = Command::new("cargo")
@@ -124,18 +125,35 @@ fn build_optimised(target: &str) {
     assert!(build.wait().unwrap().success());
 }
 
-fn main() {
-    let args: Vec<String> = env::args().collect();
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+struct Args {
+    #[arg(short, long)]
+    target_triple: Option<String>,
 
-    let target = &args
-        .get(1)
-        .expect("Specify target, for example: cargo run --release x86_64-pc-windows-msvc"); // or aarch64-apple-darwin
+    #[arg(short, long)]
+    output_file: Option<String>,
+}
+
+fn main() {
+    let args = Args::parse();
+    let target_triple = args.target_triple.unwrap_or_else(|| {
+        let default_target = env!("TARGET").to_string();
+        println!("Using {default_target}");
+        default_target
+    });
+    let output_file = args.output_file.unwrap_or(target_triple.clone());
 
     env::set_current_dir("../engine").unwrap();
 
     clean();
-    build_instrument(target);
-    run(target);
+    build_instrument(&target_triple);
+    run(&target_triple);
     merge_profile_data();
-    build_optimised(target);
+    build_optimised(&target_triple);
+    fs::copy(
+        format!("target/{target_triple}/release/engine"),
+        output_file,
+    )
+    .unwrap();
 }
