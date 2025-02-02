@@ -1,3 +1,4 @@
+#[derive(Clone, Copy)]
 pub struct Tunable {
     pub history_decay: i16,
 
@@ -26,26 +27,19 @@ pub struct Tunable {
 
 pub const DEFAULT_TUNABLES: Tunable = Tunable {
     history_decay: 9,
-
-    iir_min_depth: 3,
-    iir_depth_reduction: 1,
-
-    futility_margin: 130,
-
-    static_null_margin: 60,
-    static_null_min_depth: 5,
-
-    lmr_min_index: 3,
+    iir_min_depth: 5,
+    iir_depth_reduction: 2,
+    futility_margin: 116,
+    static_null_margin: 55,
+    static_null_min_depth: 7,
+    lmr_min_index: 6,
     lmr_min_depth: 3,
-    lmr_ply_divisor: 10,
+    lmr_ply_divisor: 9,
     lmr_index_divisor: 9,
-
-    lmp_base: 3,
-
+    lmp_base: 2,
     nmp_min_depth: 2,
     nmp_base_reduction: 3,
-    nmp_ply_divisor: 6,
-
-    aspiration_window_start: 32,
-    aspiration_window_growth: 47,
+    nmp_ply_divisor: 4,
+    aspiration_window_start: 20,
+    aspiration_window_growth: 43,
 };

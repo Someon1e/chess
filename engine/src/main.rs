@@ -7,7 +7,9 @@ use std::{env, io::stdin};
 use core::cell::RefCell;
 use engine::{
     board::Board,
-    search::{transposition::megabytes_to_capacity, Search, TimeManager},
+    search::{
+        search_params::DEFAULT_TUNABLES, transposition::megabytes_to_capacity, Search, TimeManager,
+    },
     timer::Time,
     uci::{SpinU16, UCIProcessor},
 };
@@ -492,6 +494,8 @@ fn bench() {
     let mut search = Search::new(
         Board::from_fen(Board::START_POSITION_FEN),
         megabytes_to_capacity(32),
+        #[cfg(feature = "spsa")]
+        UCI_PROCESSOR.with(|uci_processor| uci_processor.borrow().tunables),
     );
 
     let mut total_nodes: u64 = 0;

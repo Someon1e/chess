@@ -1,5 +1,5 @@
 use core::str::SplitWhitespace;
-use std::ops::Range;
+use std::ops::{Range, RangeInclusive};
 
 mod go_params;
 
@@ -10,8 +10,10 @@ use crate::{
     move_generator::move_data::{Flag, Move},
     perft::perft_root,
     search::{
-        encoded_move::EncodedMove, transposition::megabytes_to_capacity, DepthSearchInfo, Search,
-        TimeManager, IMMEDIATE_CHECKMATE_SCORE,
+        encoded_move::EncodedMove,
+        search_params::{Tunable, DEFAULT_TUNABLES},
+        transposition::megabytes_to_capacity,
+        DepthSearchInfo, Search, TimeManager, IMMEDIATE_CHECKMATE_SCORE,
     },
     timer::Time,
 };
@@ -101,7 +103,55 @@ pub struct UCIProcessor {
 
     /// Maximum entry count of the transposition table.
     pub transposition_capacity: usize,
+
+    #[cfg(feature = "spsa")]
+    pub tunables: Tunable,
 }
+
+pub struct TunableRange {
+    pub history_decay: RangeInclusive<i16>,
+
+    pub iir_min_depth: RangeInclusive<u8>,
+    pub iir_depth_reduction: RangeInclusive<u8>,
+
+    pub futility_margin: RangeInclusive<i32>,
+
+    pub static_null_margin: RangeInclusive<i32>,
+    pub static_null_min_depth: RangeInclusive<u8>,
+
+    pub lmr_min_index: RangeInclusive<usize>,
+    pub lmr_min_depth: RangeInclusive<u8>,
+    pub lmr_ply_divisor: RangeInclusive<u8>,
+    pub lmr_index_divisor: RangeInclusive<u8>,
+
+    pub lmp_base: RangeInclusive<u32>,
+
+    pub nmp_min_depth: RangeInclusive<u8>,
+    pub nmp_base_reduction: RangeInclusive<u8>,
+    pub nmp_ply_divisor: RangeInclusive<u8>,
+
+    pub aspiration_window_start: RangeInclusive<i32>,
+    pub aspiration_window_growth: RangeInclusive<i32>,
+}
+
+const TUNABLE_RANGES: TunableRange = TunableRange {
+    history_decay: 2..=20,
+    iir_min_depth: 1..=6,
+    iir_depth_reduction: 0..=3,
+    futility_margin: 60..=165,
+    static_null_margin: 30..=90,
+    static_null_min_depth: 2..=9,
+    lmr_min_index: 2..=6,
+    lmr_min_depth: 1..=5,
+    lmr_ply_divisor: 6..=16,
+    lmr_index_divisor: 6..=13,
+    lmp_base: 2..=5,
+    nmp_min_depth: 1..=5,
+    nmp_base_reduction: 1..=6,
+    nmp_ply_divisor: 4..=9,
+    aspiration_window_start: 20..=60,
+    aspiration_window_growth: 25..=95,
+};
 
 impl UCIProcessor {
     pub fn new(max_thinking_time: u64, out: fn(&str), hash_option: SpinU16) -> Self {
@@ -116,6 +166,8 @@ impl UCIProcessor {
             out,
             hash_option,
             transposition_capacity,
+            #[cfg(feature = "spsa")]
+            tunables: DEFAULT_TUNABLES,
         }
     }
     fn set_transposition_capacity(&mut self, transposition_capacity: usize) {
@@ -132,15 +184,62 @@ impl UCIProcessor {
         let min_hash = self.hash_option.range.start;
         let default_hash = self.hash_option.default;
         let max_hash = self.hash_option.range.end - 1;
+        let mut options = format!(
+            "option name Hash type spin default {default_hash} min {min_hash} max {max_hash}
+option name Threads type spin default 1 min 1 max 1"
+        );
+
+        #[cfg(feature = "spsa")]
+        {
+            macro_rules! spin {
+                ($name:expr, $default:expr, $min:expr, $max:expr) => {
+                    options.push_str(&format!(
+                        "\noption name {} type spin default {} min {} max {}",
+                        $name, $default, $min, $max
+                    ));
+                };
+            }
+            macro_rules! define_spins {
+                ($($field:ident),*) => {
+                    $(
+                        spin!(
+                            stringify!($field),
+                            DEFAULT_TUNABLES.$field,
+                            TUNABLE_RANGES.$field.start(),
+                            TUNABLE_RANGES.$field.end()
+                        );
+                    )*
+                };
+            }
+
+            define_spins!(
+                history_decay,
+                iir_min_depth,
+                iir_depth_reduction,
+                futility_margin,
+                static_null_margin,
+                static_null_min_depth,
+                lmr_min_index,
+                lmr_min_depth,
+                lmr_ply_divisor,
+                lmr_index_divisor,
+                lmp_base,
+                nmp_min_depth,
+                nmp_base_reduction,
+                nmp_ply_divisor,
+                aspiration_window_start,
+                aspiration_window_growth
+            );
+        }
 
         (self.out)(&format!(
             "id name {} {}
 id author someone
-option name Hash type spin default {default_hash} min {min_hash} max {max_hash}
-option name Threads type spin default 1 min 1 max 1
+{}
 uciok",
             env!("CARGO_PKG_NAME"),
-            env!("CARGO_PKG_VERSION")
+            env!("CARGO_PKG_VERSION"),
+            options
         ));
     }
 
@@ -164,6 +263,28 @@ uciok",
             (name, None)
         };
 
+        macro_rules! handle_option {
+            ($option_name:expr, $value:expr, $self:expr, { $($field:ident),* $(,)? }) => {
+                match $option_name {
+                    $(
+                        #[cfg(feature = "spsa")]
+                        stringify!($field) => {
+                            let parsed_value = $value.expect("Missing value").parse().unwrap();
+                            assert!(TUNABLE_RANGES.$field.contains(&parsed_value));
+                            $self.tunables.$field = parsed_value;
+                        }
+                    )*
+                    _ => {
+                        if $value.is_none() {
+                            panic!("Unknown option name (or missing value label)");
+                        } else {
+                            panic!("Unknown option name");
+                        }
+                    }
+                }
+            };
+        }
+
         match name.trim().to_lowercase().as_str() {
             "hash" => {
                 let megabytes = value.expect("Missing value").parse().unwrap();
@@ -175,13 +296,30 @@ uciok",
                 let threads: u16 = value.expect("Missing value").parse().unwrap();
                 assert!(threads == 1, "Only supports single thread");
             }
-            _ => {
-                if value.is_none() {
-                    panic!("Unknown option name (or missing value label)")
-                } else {
-                    panic!("Unknown option name")
+
+            option_name => handle_option!(
+                option_name,
+                value,
+                self,
+                {
+                    history_decay,
+                    iir_min_depth,
+                    iir_depth_reduction,
+                    futility_margin,
+                    static_null_margin,
+                    static_null_min_depth,
+                    lmr_min_index,
+                    lmr_min_depth,
+                    lmr_ply_divisor,
+                    lmr_index_divisor,
+                    lmp_base,
+                    nmp_min_depth,
+                    nmp_base_reduction,
+                    nmp_ply_divisor,
+                    aspiration_window_start,
+                    aspiration_window_growth
                 }
-            }
+            ),
         }
     }
 
@@ -257,7 +395,12 @@ uciok",
 
         let search = if self.search.is_none() {
             // First time making search
-            let search = Search::new(board, self.transposition_capacity);
+            let search = Search::new(
+                board,
+                self.transposition_capacity,
+                #[cfg(feature = "spsa")]
+                self.tunables,
+            );
             self.search = Some(search);
             self.search.as_mut().unwrap()
         } else {
