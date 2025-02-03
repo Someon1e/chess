@@ -4,9 +4,6 @@ pub struct Key {
     /// Multiplied with the bit board.
     pub magic: u64,
 
-    /// The right shift after multiply by `magic`.
-    pub shift: u8,
-
     /// Offset in the look up table index
     pub offset: u32,
 }
@@ -14,654 +11,523 @@ pub struct Key {
 /// Rook magic keys.
 pub const ROOK_KEYS: [Key; 64] = [
     Key {
-        shift: 52,
-        magic: 0x2480_0010_2240_0480,
+        magic: 0x1080_0040_0022_8050,
         offset: 0,
     },
     Key {
-        shift: 53,
-        magic: 0x0040_4000_2000_1000,
+        magic: 0x0020_0008_0010_0020,
+        offset: 73239,
+    },
+    Key {
+        magic: 0x0040_0800_4011_0005,
+        offset: 60790,
+    },
+    Key {
+        magic: 0x0040_0800_4004_0002,
+        offset: 75287,
+    },
+    Key {
+        magic: 0x0040_0200_0114_0040,
+        offset: 49619,
+    },
+    Key {
+        magic: 0x0020_2000_8001_0208,
+        offset: 67057,
+    },
+    Key {
+        magic: 0x0040_0080_0104_0040,
+        offset: 69125,
+    },
+    Key {
+        magic: 0x0080_0100_0070_4080,
         offset: 4096,
     },
     Key {
-        shift: 53,
-        magic: 0x0100_1040_0820_0300,
-        offset: 6144,
+        magic: 0x1800_4404_0100_2200,
+        offset: 51939,
     },
     Key {
-        shift: 53,
-        magic: 0x0100_0904_1000_2100,
+        magic: 0x0000_1000_1401_0801,
+        offset: 107434,
+    },
+    Key {
+        magic: 0x0800_0804_1082_4008,
+        offset: 81431,
+    },
+    Key {
+        magic: 0x0000_2004_4021_020C,
+        offset: 121974,
+    },
+    Key {
+        magic: 0x2480_2002_0020_0100,
+        offset: 130756,
+    },
+    Key {
+        magic: 0x0000_2020_0080_0102,
+        offset: 129728,
+    },
+    Key {
+        magic: 0x0801_1010_0808_4002,
+        offset: 116598,
+    },
+    Key {
+        magic: 0x3000_2002_2000_4090,
+        offset: 56414,
+    },
+    Key {
+        magic: 0x0040_0020_0010_0020,
+        offset: 77335,
+    },
+    Key {
+        magic: 0x0820_4004_0210_0800,
+        offset: 85501,
+    },
+    Key {
+        magic: 0x0200_2042_0041_0004,
+        offset: 102323,
+    },
+    Key {
+        magic: 0x3001_8008_0400_C008,
+        offset: 89512,
+    },
+    Key {
+        magic: 0x0432_0020_0201_0020,
+        offset: 110554,
+    },
+    Key {
+        magic: 0x4022_0020_0100_0080,
+        offset: 87528,
+    },
+    Key {
+        magic: 0x0000_0041_0400_8001,
+        offset: 96944,
+    },
+    Key {
+        magic: 0x000A_0110_0400_2008,
+        offset: 44791,
+    },
+    Key {
+        magic: 0x0520_0800_1001_5000,
+        offset: 47295,
+    },
+    Key {
+        magic: 0x0509_0400_1009_1100,
+        offset: 91402,
+    },
+    Key {
+        magic: 0x0080_8400_1006_0010,
+        offset: 95119,
+    },
+    Key {
+        magic: 0x8201_0200_2020_0400,
+        offset: 123164,
+    },
+    Key {
+        magic: 0x0000_0100_2002_1020,
+        offset: 128688,
+    },
+    Key {
+        magic: 0x0010_0100_2020_0080,
+        offset: 131780,
+    },
+    Key {
+        magic: 0x0000_2001_1004_4008,
+        offset: 113626,
+    },
+    Key {
+        magic: 0x0000_2000_2000_4090,
+        offset: 58610,
+    },
+    Key {
+        magic: 0x0410_2041_0008_0408,
+        offset: 64987,
+    },
+    Key {
+        magic: 0x8100_8008_0012_2100,
+        offset: 71189,
+    },
+    Key {
+        magic: 0x0000_4108_0040_0410,
+        offset: 118046,
+    },
+    Key {
+        magic: 0x0082_0081_0008_0008,
+        offset: 112090,
+    },
+    Key {
+        magic: 0x0401_4082_0040_0104,
+        offset: 105770,
+    },
+    Key {
+        magic: 0x8000_2008_8020_0102,
+        offset: 127644,
+    },
+    Key {
+        magic: 0x1001_0004_0088_2001,
+        offset: 104068,
+    },
+    Key {
+        magic: 0x8810_0488_0088_0201,
+        offset: 54190,
+    },
+    Key {
+        magic: 0x0240_0020_1000_2008,
+        offset: 42231,
+    },
+    Key {
+        magic: 0x0002_0100_8040_8400,
+        offset: 120702,
+    },
+    Key {
+        magic: 0x9200_0440_8800_4010,
+        offset: 119390,
+    },
+    Key {
+        magic: 0x0100_4082_0010_0100,
+        offset: 83468,
+    },
+    Key {
+        magic: 0x0024_0020_1100_2002,
+        offset: 109002,
+    },
+    Key {
+        magic: 0x0000_4001_0000_C002,
+        offset: 100547,
+    },
+    Key {
+        magic: 0x0200_2000_4001_1009,
+        offset: 115118,
+    },
+    Key {
+        magic: 0x6000_080A_2001_1004,
+        offset: 39647,
+    },
+    Key {
+        magic: 0x0040_0010_0020_0020,
+        offset: 79383,
+    },
+    Key {
+        magic: 0x0012_0008_0204_0008,
+        offset: 125468,
+    },
+    Key {
+        magic: 0x4000_8810_0201_0008,
+        offset: 93291,
+    },
+    Key {
+        magic: 0x2080_0480_2002_0020,
+        offset: 126556,
+    },
+    Key {
+        magic: 0x1000_2001_0002_8020,
+        offset: 124316,
+    },
+    Key {
+        magic: 0x0000_2000_8001_0020,
+        offset: 132804,
+    },
+    Key {
+        magic: 0x0000_0080_0100_0040,
+        offset: 98755,
+    },
+    Key {
+        magic: 0x2000_0040_8420_0020,
+        offset: 62902,
+    },
+    Key {
+        magic: 0x08C0_2102_1203_C082,
         offset: 8192,
     },
     Key {
-        shift: 53,
-        magic: 0x8200_0408_1020_2201,
-        offset: 10240,
+        magic: 0x1801_A100_1089_8041,
+        offset: 20352,
     },
     Key {
-        shift: 53,
-        magic: 0x2200_8400_0200_0810,
-        offset: 12288,
-    },
-    Key {
-        shift: 53,
-        magic: 0x0480_2500_0080_0200,
-        offset: 14336,
-    },
-    Key {
-        shift: 52,
-        magic: 0x0580_0044_800C_2100,
+        magic: 0x0000_0820_8040_0412,
         offset: 16384,
     },
     Key {
-        shift: 53,
-        magic: 0x1040_8028_4000_8003,
-        offset: 20480,
+        magic: 0x0000_0440_2010_0802,
+        offset: 24288,
     },
     Key {
-        shift: 54,
-        magic: 0x0024_8040_0020_0080,
-        offset: 22528,
+        magic: 0x0000_0104_2008_1002,
+        offset: 28128,
     },
     Key {
-        shift: 54,
-        magic: 0x1201_0020_0010_C300,
-        offset: 23552,
+        magic: 0x1480_0090_0104_0802,
+        offset: 31968,
     },
     Key {
-        shift: 54,
-        magic: 0x0001_0009_0660_1000,
-        offset: 24576,
+        magic: 0x0010_0202_4000_8401,
+        offset: 35808,
     },
     Key {
-        shift: 54,
-        magic: 0x0080_8080_0800_4400,
-        offset: 25600,
-    },
-    Key {
-        shift: 54,
-        magic: 0x0002_0008_100C_0200,
-        offset: 26624,
-    },
-    Key {
-        shift: 54,
-        magic: 0x0884_0008_1054_0243,
-        offset: 27648,
-    },
-    Key {
-        shift: 53,
-        magic: 0x0000_8001_0000_E580,
-        offset: 28672,
-    },
-    Key {
-        shift: 53,
-        magic: 0x0002_A080_0840_0290,
-        offset: 30720,
-    },
-    Key {
-        shift: 54,
-        magic: 0x6100_4040_1000_600A,
-        offset: 32768,
-    },
-    Key {
-        shift: 54,
-        magic: 0x8120_0080_8020_1000,
-        offset: 33792,
-    },
-    Key {
-        shift: 54,
-        magic: 0x0004_8480_0800_5000,
-        offset: 34816,
-    },
-    Key {
-        shift: 54,
-        magic: 0x0008_0100_0500_0810,
-        offset: 35840,
-    },
-    Key {
-        shift: 54,
-        magic: 0x0990_8080_0400_0201,
-        offset: 36864,
-    },
-    Key {
-        shift: 54,
-        magic: 0x4102_9400_09D6_0810,
-        offset: 37888,
-    },
-    Key {
-        shift: 53,
-        magic: 0x8017_0600_2400_4083,
-        offset: 38912,
-    },
-    Key {
-        shift: 53,
-        magic: 0x0044_4001_8012_8021,
-        offset: 40960,
-    },
-    Key {
-        shift: 54,
-        magic: 0x0812_2101_0040_0085,
-        offset: 43008,
-    },
-    Key {
-        shift: 54,
-        magic: 0x4400_A004_8010_0485,
-        offset: 44032,
-    },
-    Key {
-        shift: 54,
-        magic: 0xA000_0802_8010_0180,
-        offset: 45056,
-    },
-    Key {
-        shift: 54,
-        magic: 0x0005_2400_8080_0800,
-        offset: 46080,
-    },
-    Key {
-        shift: 54,
-        magic: 0x18C5_00A3_0004_0008,
-        offset: 47104,
-    },
-    Key {
-        shift: 54,
-        magic: 0x5440_1004_0001_2208,
-        offset: 48128,
-    },
-    Key {
-        shift: 53,
-        magic: 0x0000_8004_8000_4100,
-        offset: 49152,
-    },
-    Key {
-        shift: 53,
-        magic: 0x4080_4000_2080_0A80,
-        offset: 51200,
-    },
-    Key {
-        shift: 54,
-        magic: 0x2010_02C0_00C0_2000,
-        offset: 53248,
-    },
-    Key {
-        shift: 54,
-        magic: 0x0060_00C8_0040_1001,
-        offset: 54272,
-    },
-    Key {
-        shift: 54,
-        magic: 0x0102_1000_1900_2100,
-        offset: 55296,
-    },
-    Key {
-        shift: 54,
-        magic: 0x2008_8004_0080_0800,
-        offset: 56320,
-    },
-    Key {
-        shift: 54,
-        magic: 0x0904_0008_0C01_2010,
-        offset: 57344,
-    },
-    Key {
-        shift: 54,
-        magic: 0x2000_1810_2400_2706,
-        offset: 58368,
-    },
-    Key {
-        shift: 53,
-        magic: 0x0001_0045_9200_0104,
-        offset: 59392,
-    },
-    Key {
-        shift: 53,
-        magic: 0x4500_4000_8038_8000,
-        offset: 61440,
-    },
-    Key {
-        shift: 54,
-        magic: 0x1000_5008_2000_4004,
-        offset: 63488,
-    },
-    Key {
-        shift: 54,
-        magic: 0x0120_0080_1000_8020,
-        offset: 64512,
-    },
-    Key {
-        shift: 54,
-        magic: 0x0000_1001_0021_000B,
-        offset: 65536,
-    },
-    Key {
-        shift: 54,
-        magic: 0x4888_0005_0009_0010,
-        offset: 66560,
-    },
-    Key {
-        shift: 54,
-        magic: 0x0002_0008_2402_0050,
-        offset: 67584,
-    },
-    Key {
-        shift: 54,
-        magic: 0x0000_0308_1014_0006,
-        offset: 68608,
-    },
-    Key {
-        shift: 53,
-        magic: 0x40E1_0000_80C1_0002,
-        offset: 69632,
-    },
-    Key {
-        shift: 54,
-        magic: 0x48FF_FE99_FECF_AA00,
-        offset: 71680,
-    },
-    Key {
-        shift: 55,
-        magic: 0x48FF_FE99_FECF_AA00,
-        offset: 72704,
-    },
-    Key {
-        shift: 55,
-        magic: 0x497F_FFAD_FF9C_2E00,
-        offset: 73216,
-    },
-    Key {
-        shift: 55,
-        magic: 0x613F_FFDD_FFCE_9200,
-        offset: 73728,
-    },
-    Key {
-        shift: 55,
-        magic: 0xFFFF_FFE9_FFE7_CE00,
-        offset: 74240,
-    },
-    Key {
-        shift: 55,
-        magic: 0xFFFF_FFF5_FFF3_E600,
-        offset: 74752,
-    },
-    Key {
-        shift: 55,
-        magic: 0x0003_FF95_E5E6_A4C0,
-        offset: 75264,
-    },
-    Key {
-        shift: 54,
-        magic: 0x510F_FFF5_F63C_96A0,
-        offset: 75776,
-    },
-    Key {
-        shift: 53,
-        magic: 0xEBFF_FFB9_FF9F_C526,
-        offset: 76800,
-    },
-    Key {
-        shift: 54,
-        magic: 0x61FF_FEDD_FEED_AEAE,
-        offset: 78848,
-    },
-    Key {
-        shift: 54,
-        magic: 0x53BF_FFED_FFDE_B1A2,
-        offset: 79872,
-    },
-    Key {
-        shift: 54,
-        magic: 0x127F_FFB9_FFDF_B5F6,
-        offset: 80896,
-    },
-    Key {
-        shift: 54,
-        magic: 0x411F_FFDD_FFDB_F4D6,
-        offset: 81920,
-    },
-    Key {
-        shift: 53,
-        magic: 0x0115_0024_000A_0811,
-        offset: 82944,
-    },
-    Key {
-        shift: 54,
-        magic: 0x0003_FFEF_27EE_BE74,
-        offset: 84992,
-    },
-    Key {
-        shift: 53,
-        magic: 0x7645_FFFE_CBFE_A79E,
-        offset: 86016,
+        magic: 0x0000_1400_4088_6102,
+        offset: 12288,
     },
 ];
-
-/// Size of the rook move lookup table.
-pub const ROOK_TABLE_SIZE: usize = 88064;
 
 /// Bishop magic keys.
 #[allow(clippy::unreadable_literal)]
 pub const BISHOP_KEYS: [Key; 64] = [
     Key {
-        shift: 59,
-        magic: 0xFFED_F9FD_7CFC_FFFF,
-        offset: 0,
+        magic: 0x0080_8180_1040_8020,
+        offset: 139187,
     },
     Key {
-        shift: 60,
-        magic: 0xFC09_6285_4A77_F576,
-        offset: 32,
+        magic: 0x4402_A100_2028_0600,
+        offset: 140250,
     },
     Key {
-        shift: 59,
-        magic: 0x0092_0420_C201_0080,
-        offset: 48,
+        magic: 0x6080_4010_8410_0000,
+        offset: 140507,
     },
     Key {
-        shift: 59,
-        magic: 0x2004_4100_2024_0409,
-        offset: 80,
+        magic: 0x2200_8090_0202_0044,
+        offset: 140016,
     },
     Key {
-        shift: 59,
-        magic: 0x0085_1040_0000_0100,
-        offset: 112,
+        magic: 0x2C00_4402_2000_0880,
+        offset: 139517,
     },
     Key {
-        shift: 59,
-        magic: 0x0004_2404_4040_C210,
-        offset: 144,
+        magic: 0x6400_4200_8091_0110,
+        offset: 139027,
     },
     Key {
-        shift: 60,
-        magic: 0xFC0A_66C6_4A7E_F576,
-        offset: 176,
+        magic: 0x0400_1101_0100_8010,
+        offset: 139580,
     },
     Key {
-        shift: 59,
-        magic: 0x7FFD_FDFC_BD79_FFFF,
-        offset: 192,
+        magic: 0x0020_2021_0400_8050,
+        offset: 138212,
     },
     Key {
-        shift: 60,
-        magic: 0xFC08_46A6_4A34_FFF6,
-        offset: 224,
+        magic: 0x8080_0100_4100_4004,
+        offset: 140982,
     },
     Key {
-        shift: 60,
-        magic: 0xFC08_7A87_4A3C_F7F6,
-        offset: 240,
+        magic: 0x8108_0042_0008_4808,
+        offset: 140136,
     },
     Key {
-        shift: 59,
-        magic: 0x28C0_0908_0202_8200,
-        offset: 256,
+        magic: 0x4040_8100_100C_1011,
+        offset: 140914,
     },
     Key {
-        shift: 59,
-        magic: 0x4208_0806_0040_0000,
-        offset: 288,
+        magic: 0x0010_0100_4404_4411,
+        offset: 139894,
     },
     Key {
-        shift: 59,
-        magic: 0x0000_120A_1000_5040,
-        offset: 320,
+        magic: 0x0001_0044_0200_0008,
+        offset: 139643,
     },
     Key {
-        shift: 59,
-        magic: 0x0126_6430_0410_0001,
-        offset: 352,
+        magic: 0x2048_0022_8200_8040,
+        offset: 139107,
     },
     Key {
-        shift: 60,
-        magic: 0xFC08_64AE_59B4_FF76,
-        offset: 384,
+        magic: 0x8008_1010_4104_0058,
+        offset: 139832,
     },
     Key {
-        shift: 60,
-        magic: 0x3C08_60AF_4B35_FF76,
-        offset: 400,
+        magic: 0x0A08_0008_0402_0040,
+        offset: 137213,
     },
     Key {
-        shift: 60,
-        magic: 0x73C0_1AF5_6CF4_CFFB,
-        offset: 416,
+        magic: 0x0202_0101_0200_600A,
+        offset: 140878,
     },
     Key {
-        shift: 60,
-        magic: 0x41A0_1CFA_D64A_AFFC,
-        offset: 432,
+        magic: 0x0002_3201_0100_1010,
+        offset: 140556,
     },
     Key {
-        shift: 57,
-        magic: 0x0004_0082_0022_0A00,
-        offset: 448,
+        magic: 0x0881_0002_0200_1812,
+        offset: 137669,
     },
     Key {
-        shift: 57,
-        magic: 0x4008_0042_2060_4040,
-        offset: 576,
+        magic: 0x4200_2002_0820_0400,
+        offset: 138083,
     },
     Key {
-        shift: 57,
-        magic: 0x0002_0004_0094_0100,
-        offset: 704,
+        magic: 0x1C20_8020_1004_0080,
+        offset: 136070,
     },
     Key {
-        shift: 57,
-        magic: 0x0002_0201_0805_0402,
-        offset: 832,
+        magic: 0x2020_1000_2010_0890,
+        offset: 135876,
     },
     Key {
-        shift: 60,
-        magic: 0x7C0C_028F_5B34_FF76,
-        offset: 960,
+        magic: 0x8020_0410_1121_00E0,
+        offset: 139259,
     },
     Key {
-        shift: 60,
-        magic: 0xFC0A_028E_5AB4_DF76,
-        offset: 976,
+        magic: 0x0240_4010_1010_8020,
+        offset: 139706,
     },
     Key {
-        shift: 59,
-        magic: 0x0020_2200_4408_0221,
-        offset: 992,
+        magic: 0x0802_1000_0200_8022,
+        offset: 138649,
     },
     Key {
-        shift: 59,
-        magic: 0x4808_4200_604C_4110,
-        offset: 1024,
+        magic: 0x0002_0060_0080_8010,
+        offset: 140357,
     },
     Key {
-        shift: 57,
-        magic: 0x4144_280C_1008_8022,
-        offset: 1056,
+        magic: 0x0902_0100_0200_9004,
+        offset: 137381,
     },
     Key {
-        shift: 55,
-        magic: 0x5304_0800_00A2_0040,
-        offset: 1184,
+        magic: 0x0004_0400_0041_0200,
+        offset: 133828,
     },
     Key {
-        shift: 55,
-        magic: 0x1026_0400_0200_8200,
-        offset: 1696,
+        magic: 0x0001_0040_0401_4041,
+        offset: 134340,
     },
     Key {
-        shift: 57,
-        magic: 0x0845_0A00_4108_0120,
-        offset: 2208,
+        magic: 0x0100_2020_0040_1001,
+        offset: 136262,
     },
     Key {
-        shift: 59,
-        magic: 0x1891_0C00_0114_8800,
-        offset: 2336,
+        magic: 0x0000_1020_0080_8010,
+        offset: 140076,
     },
     Key {
-        shift: 59,
-        magic: 0x3440_4081_0442_0821,
-        offset: 2368,
+        magic: 0x0010_0844_4008_2080,
+        offset: 139324,
     },
     Key {
-        shift: 59,
-        magic: 0x0081_0808_4840_5000,
-        offset: 2400,
+        magic: 0x0001_0101_0000_8064,
+        offset: 140948,
     },
     Key {
-        shift: 59,
-        magic: 0x0001_0108_0090_1042,
-        offset: 2432,
+        magic: 0x0210_4040_2042_4101,
+        offset: 140604,
     },
     Key {
-        shift: 57,
-        magic: 0x240C_0044_0048_0124,
-        offset: 2464,
+        magic: 0x0001_8100_8001_0108,
+        offset: 136454,
     },
     Key {
-        shift: 55,
-        magic: 0x1900_1108_0004_0040,
-        offset: 2592,
+        magic: 0xA106_2200_8048_0080,
+        offset: 134852,
     },
     Key {
-        shift: 55,
-        magic: 0x4040_1808_208A_0020,
-        offset: 3104,
+        magic: 0x1000_4080_6002_0200,
+        offset: 135364,
     },
     Key {
-        shift: 57,
-        magic: 0x1002_0404_4008_0802,
-        offset: 3616,
+        magic: 0x000C_0090_5000_2084,
+        offset: 137029,
     },
     Key {
-        shift: 59,
-        magic: 0x4081_4400_8043_0800,
-        offset: 3744,
+        magic: 0x0000_2080_2040_1008,
+        offset: 141014,
     },
     Key {
-        shift: 59,
-        magic: 0x8004_1411_8008_6080,
-        offset: 3776,
+        magic: 0x11C1_0008_0200_0821,
+        offset: 140652,
     },
     Key {
-        shift: 60,
-        magic: 0xDCEF_D9B5_4BFC_C09F,
-        offset: 3808,
+        magic: 0x0000_2402_0081_8209,
+        offset: 138744,
     },
     Key {
-        shift: 60,
-        magic: 0xF95F_FA76_5AFD_602B,
-        offset: 3824,
+        magic: 0x0000_4042_0020_0060,
+        offset: 139955,
     },
     Key {
-        shift: 57,
-        magic: 0x0501_0401_2600_4402,
-        offset: 3840,
+        magic: 0x2018_0840_0800_0089,
+        offset: 136646,
     },
     Key {
-        shift: 57,
-        magic: 0x0082_2020_9300_6800,
-        offset: 3968,
+        magic: 0x8400_9810_8048_4080,
+        offset: 137809,
     },
     Key {
-        shift: 57,
-        magic: 0x8C82_0821_0400_0044,
-        offset: 4096,
+        magic: 0x4850_8400_8080_2024,
+        offset: 137947,
     },
     Key {
-        shift: 57,
-        magic: 0x08C0_5004_1261_2040,
-        offset: 4224,
+        magic: 0x0011_0200_4049_2010,
+        offset: 137525,
     },
     Key {
-        shift: 60,
-        magic: 0x43FF_9A5C_F4CA_0C01,
-        offset: 4352,
+        magic: 0x8004_0030_1010_0022,
+        offset: 140407,
     },
     Key {
-        shift: 60,
-        magic: 0x4BFF_CD8E_7C58_7601,
-        offset: 4368,
+        magic: 0x8000_6088_2021_1408,
+        offset: 140305,
     },
     Key {
-        shift: 60,
-        magic: 0xFC0F_F286_5334_F576,
-        offset: 4384,
+        magic: 0x2010_4044_0080_A00C,
+        offset: 138457,
     },
     Key {
-        shift: 60,
-        magic: 0xFC0B_F6CE_5924_F576,
-        offset: 4400,
+        magic: 0x8040_0821_0100_4B11,
+        offset: 139769,
     },
     Key {
-        shift: 59,
-        magic: 0x0010_0200_4208_0001,
-        offset: 4416,
+        magic: 0x0020_8020_2200_4131,
+        offset: 138839,
     },
     Key {
-        shift: 59,
-        magic: 0x0000_0402_4608_0028,
-        offset: 4448,
+        magic: 0x0180_0318_0840_4210,
+        offset: 139389,
     },
     Key {
-        shift: 59,
-        magic: 0x1800_0210_2022_2000,
-        offset: 4480,
+        magic: 0x0003_2804_0040_1020,
+        offset: 140194,
     },
     Key {
-        shift: 59,
-        magic: 0x1008_081A_1802_0008,
-        offset: 4512,
+        magic: 0x0120_0040_C190_1814,
+        offset: 140700,
     },
     Key {
-        shift: 60,
-        magic: 0xC3FF_B7DC_36CA_8C89,
-        offset: 4544,
+        magic: 0x0906_0040_A008_1201,
+        offset: 140796,
     },
     Key {
-        shift: 60,
-        magic: 0xC3FF_8A54_F4CA_2C89,
-        offset: 4560,
+        magic: 0x1004_0010_4008_080C,
+        offset: 140748,
     },
     Key {
-        shift: 59,
-        magic: 0xFFFF_FCFC_FD79_EDFF,
-        offset: 4576,
+        magic: 0x3081_0080_2101_0088,
+        offset: 136838,
     },
     Key {
-        shift: 60,
-        magic: 0xFC08_63FC_CB14_7576,
-        offset: 4608,
+        magic: 0x1800_0420_1202_0022,
+        offset: 138339,
     },
     Key {
-        shift: 59,
-        magic: 0x0000_0040_8400_8881,
-        offset: 4624,
+        magic: 0x0004_5044_2022_0044,
+        offset: 138933,
     },
     Key {
-        shift: 59,
-        magic: 0x0058_2000_4394_0414,
-        offset: 4656,
+        magic: 0x0210_0000_4008_4040,
+        offset: 139453,
     },
     Key {
-        shift: 59,
-        magic: 0x0020_0000_2950_2C00,
-        offset: 4688,
+        magic: 0x0C05_8000_0100_2020,
+        offset: 141046,
     },
     Key {
-        shift: 59,
-        magic: 0x4080_0141_0C04_1420,
-        offset: 4720,
+        magic: 0x0081_9802_8101_0009,
+        offset: 140838,
     },
     Key {
-        shift: 60,
-        magic: 0xFC08_7E8E_4BB2_F736,
-        offset: 4752,
+        magic: 0x0100_0104_4080_0808,
+        offset: 140457,
     },
     Key {
-        shift: 59,
-        magic: 0x43FF_9E4E_F4CA_2C89,
-        offset: 4768,
+        magic: 0x8004_0100_1021_0004,
+        offset: 138553,
     },
 ];
 
-/// Size of the bishop move lookup table.
-pub const BISHOP_TABLE_SIZE: usize = 4800;
+/// Size of the move lookup table.
+pub const SLIDERS_TABLE_SIZE: usize = 141078;
