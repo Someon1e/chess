@@ -11,260 +11,260 @@ pub struct Key {
 /// Rook magic keys.
 pub const ROOK_KEYS: [Key; 64] = [
     Key {
-        magic: 0x0210_0808_1020_4080,
-        offset: 12288,
+        magic: 0x00280077ffebfffe,
+        offset: 41305,
     },
     Key {
-        magic: 0x4020_0010_0008_0020,
-        offset: 62607,
+        magic: 0x2004010201097fff,
+        offset: 14326,
     },
     Key {
-        magic: 0x0040_1000_4008_0004,
-        offset: 64655,
+        magic: 0x0010020010053fff,
+        offset: 24477,
     },
     Key {
-        magic: 0x0040_0800_4004_0007,
-        offset: 54410,
+        magic: 0x0030002ff71ffffa,
+        offset: 8223,
     },
     Key {
-        magic: 0x0040_0400_0200_4001,
-        offset: 66703,
+        magic: 0x7fd00441ffffd003,
+        offset: 49795,
     },
     Key {
-        magic: 0x0020_0080_0902_1020,
-        offset: 48161,
+        magic: 0x004001d9e03ffff7,
+        offset: 60546,
     },
     Key {
-        magic: 0x0040_0040_0100_0080,
-        offset: 68751,
+        magic: 0x004000888847ffff,
+        offset: 28543,
     },
     Key {
-        magic: 0x0080_0020_4500_0080,
+        magic: 0x006800fbff75fffd,
+        offset: 79282,
+    },
+    Key {
+        magic: 0x000028010113ffff,
+        offset: 6457,
+    },
+    Key {
+        magic: 0x0020040201fcffff,
+        offset: 4125,
+    },
+    Key {
+        magic: 0x007fe80042ffffe8,
+        offset: 81021,
+    },
+    Key {
+        magic: 0x00001800217fffe8,
+        offset: 42341,
+    },
+    Key {
+        magic: 0x00001800073fffe8,
+        offset: 14139,
+    },
+    Key {
+        magic: 0x007fe8009effffe8,
+        offset: 19465,
+    },
+    Key {
+        magic: 0x00001800602fffe8,
+        offset: 9514,
+    },
+    Key {
+        magic: 0x000030002fffffa0,
+        offset: 71090,
+    },
+    Key {
+        magic: 0x00300018010bffff,
+        offset: 75419,
+    },
+    Key {
+        magic: 0x0003000c0085fffb,
+        offset: 33476,
+    },
+    Key {
+        magic: 0x0004000802010008,
+        offset: 27117,
+    },
+    Key {
+        magic: 0x0002002004002002,
+        offset: 85964,
+    },
+    Key {
+        magic: 0x0002002020010002,
+        offset: 54915,
+    },
+    Key {
+        magic: 0x0001002020008001,
+        offset: 36544,
+    },
+    Key {
+        magic: 0x0000004040008001,
+        offset: 71854,
+    },
+    Key {
+        magic: 0x0000802000200040,
+        offset: 37996,
+    },
+    Key {
+        magic: 0x0040200010080010,
+        offset: 30398,
+    },
+    Key {
+        magic: 0x0000080010040010,
+        offset: 55939,
+    },
+    Key {
+        magic: 0x0004010008020008,
+        offset: 53891,
+    },
+    Key {
+        magic: 0x0000040020200200,
+        offset: 56963,
+    },
+    Key {
+        magic: 0x0000010020020020,
+        offset: 77451,
+    },
+    Key {
+        magic: 0x0000010020200080,
+        offset: 12319,
+    },
+    Key {
+        magic: 0x0000008020200040,
+        offset: 88500,
+    },
+    Key {
+        magic: 0x0000200020004081,
+        offset: 51405,
+    },
+    Key {
+        magic: 0x00fffd1800300030,
+        offset: 72878,
+    },
+    Key {
+        magic: 0x007fff7fbfd40020,
+        offset: 676,
+    },
+    Key {
+        magic: 0x003fffbd00180018,
+        offset: 83122,
+    },
+    Key {
+        magic: 0x001fffde80180018,
+        offset: 22206,
+    },
+    Key {
+        magic: 0x000fffe0bfe80018,
+        offset: 75186,
+    },
+    Key {
+        magic: 0x0001000080202001,
+        offset: 681,
+    },
+    Key {
+        magic: 0x0003fffbff980180,
+        offset: 36453,
+    },
+    Key {
+        magic: 0x0001fffdff9000e0,
+        offset: 20369,
+    },
+    Key {
+        magic: 0x00fffeebfeffd800,
+        offset: 1981,
+    },
+    Key {
+        magic: 0x007ffff7ffc01400,
+        offset: 13343,
+    },
+    Key {
+        magic: 0x0000408104200204,
+        offset: 10650,
+    },
+    Key {
+        magic: 0x001ffff01fc03000,
+        offset: 57987,
+    },
+    Key {
+        magic: 0x000fffe7f8bfe800,
+        offset: 26302,
+    },
+    Key {
+        magic: 0x0000008001002020,
+        offset: 58357,
+    },
+    Key {
+        magic: 0x0003fff85fffa804,
+        offset: 40546,
+    },
+    Key {
+        magic: 0x0001fffd75ffa802,
         offset: 0,
     },
     Key {
-        magic: 0x0000_0844_1104_2202,
-        offset: 41723,
+        magic: 0x00ffffec00280028,
+        offset: 14967,
     },
     Key {
-        magic: 0x0100_1004_0008_0092,
-        offset: 90640,
+        magic: 0x007fff75ff7fbfd8,
+        offset: 80361,
     },
     Key {
-        magic: 0x0300_4004_0801_4011,
-        offset: 80047,
+        magic: 0x003fff863fbf7fd8,
+        offset: 40905,
     },
     Key {
-        magic: 0x4400_2004_0002_0020,
-        offset: 94758,
+        magic: 0x001fffbfdfd7ffd8,
+        offset: 58347,
     },
     Key {
-        magic: 0x0000_2001_0002_0020,
-        offset: 95782,
+        magic: 0x000ffff810280028,
+        offset: 20381,
     },
     Key {
-        magic: 0x0180_2001_0020_0080,
-        offset: 96806,
+        magic: 0x0007ffd7f7feffd8,
+        offset: 81868,
     },
     Key {
-        magic: 0x0080_4000_4000_8001,
-        offset: 97830,
+        magic: 0x0003fffc0c480048,
+        offset: 59381,
     },
     Key {
-        magic: 0x0000_2000_4084_0020,
-        offset: 50261,
+        magic: 0x0001ffffafd7ffd8,
+        offset: 84404,
     },
     Key {
-        magic: 0x8240_0020_0010_0020,
-        offset: 70799,
+        magic: 0x00ffffe4ffdfa3ba,
+        offset: 45811,
     },
     Key {
-        magic: 0x4084_0010_0008_0150,
-        offset: 88520,
+        magic: 0x007fffef7ff3d3da,
+        offset: 62898,
     },
     Key {
-        magic: 0x0004_0008_0801_0200,
-        offset: 78511,
+        magic: 0x003fffbfdfeff7fa,
+        offset: 45796,
     },
     Key {
-        magic: 0x0402_0020_0420_2062,
-        offset: 86360,
+        magic: 0x001fffeff7fbfc22,
+        offset: 66994,
     },
     Key {
-        magic: 0x0001_0020_2002_0001,
-        offset: 98854,
+        magic: 0x0000020408001001,
+        offset: 67204,
     },
     Key {
-        magic: 0x0001_0020_0080_2001,
-        offset: 99878,
+        magic: 0x0007fffeffff77fd,
+        offset: 32448,
     },
     Key {
-        magic: 0x4080_8010_1020_0040,
-        offset: 100902,
+        magic: 0x0003ffffbf7dfeec,
+        offset: 62946,
     },
     Key {
-        magic: 0x1020_8020_0040_0020,
-        offset: 56460,
-    },
-    Key {
-        magic: 0x1804_1080_0822_4480,
-        offset: 43892,
-    },
-    Key {
-        magic: 0x0410_0400_0802_0009,
-        offset: 101926,
-    },
-    Key {
-        magic: 0x8400_0480_1002_0010,
-        offset: 76943,
-    },
-    Key {
-        magic: 0x0040_0200_2004_0021,
-        offset: 102950,
-    },
-    Key {
-        magic: 0x4000_0100_2002_0020,
-        offset: 103974,
-    },
-    Key {
-        magic: 0x1108_0100_2000_8020,
-        offset: 104998,
-    },
-    Key {
-        magic: 0x1000_0080_2020_0040,
-        offset: 106022,
-    },
-    Key {
-        magic: 0x0000_8200_2000_4020,
-        offset: 52345,
-    },
-    Key {
-        magic: 0x0440_0010_0020_0020,
-        offset: 72847,
-    },
-    Key {
-        magic: 0x8004_0008_0010_0010,
-        offset: 107046,
-    },
-    Key {
-        magic: 0x0200_4009_0041_0010,
-        offset: 85202,
-    },
-    Key {
-        magic: 0x0000_0402_0020_2002,
-        offset: 92708,
-    },
-    Key {
-        magic: 0x0000_0201_0020_2003,
-        offset: 91680,
-    },
-    Key {
-        magic: 0x4000_2000_8020_0110,
-        offset: 89584,
-    },
-    Key {
-        magic: 0x0200_2000_8020_0C40,
-        offset: 87448,
-    },
-    Key {
-        magic: 0x1200_8020_0020_0040,
-        offset: 58509,
-    },
-    Key {
-        magic: 0x1021_1042_0400_0801,
-        offset: 46060,
-    },
-    Key {
-        magic: 0x0014_0802_0300_0400,
-        offset: 83985,
-    },
-    Key {
-        magic: 0x2000_0440_8800_4010,
-        offset: 81391,
-    },
-    Key {
-        magic: 0x0800_0400_0200_2020,
-        offset: 108070,
-    },
-    Key {
-        magic: 0x0400_0100_0200_2020,
-        offset: 109094,
-    },
-    Key {
-        magic: 0x0250_0100_0080_2020,
-        offset: 110118,
-    },
-    Key {
-        magic: 0x0920_0080_4000_4001,
-        offset: 93733,
-    },
-    Key {
-        magic: 0xBA48_4400_8800_4402,
-        offset: 39533,
-    },
-    Key {
-        magic: 0x0440_0010_0020_0020,
-        offset: 74895,
-    },
-    Key {
-        magic: 0x0000_0804_0010_0010,
-        offset: 111142,
-    },
-    Key {
-        magic: 0x0081_0008_0604_0008,
-        offset: 82703,
-    },
-    Key {
-        magic: 0x0800_0400_2002_0020,
-        offset: 112166,
-    },
-    Key {
-        magic: 0x4020_2001_0002_0020,
-        offset: 113190,
-    },
-    Key {
-        magic: 0x0018_2001_0000_8020,
-        offset: 114214,
-    },
-    Key {
-        magic: 0x0204_2000_4000_8020,
-        offset: 115238,
-    },
-    Key {
-        magic: 0x0180_8020_0040_0020,
-        offset: 60558,
-    },
-    Key {
-        magic: 0x0280_2300_8040_1602,
-        offset: 4096,
-    },
-    Key {
-        magic: 0x1080_2080_1009_0041,
-        offset: 20349,
-    },
-    Key {
-        magic: 0x6000_0810_2004_8042,
-        offset: 16381,
-    },
-    Key {
-        magic: 0x0408_4004_1020_0802,
-        offset: 24189,
-    },
-    Key {
-        magic: 0x0000_1004_2001_0802,
-        offset: 28029,
-    },
-    Key {
-        magic: 0x0000_0480_0204_1801,
-        offset: 31869,
-    },
-    Key {
-        magic: 0xC424_0082_4002_0401,
-        offset: 35701,
-    },
-    Key {
-        magic: 0x0000_0902_2884_024A,
-        offset: 8192,
+        magic: 0x0001ffff9dffa333,
+        offset: 17005,
     },
 ];
 
@@ -272,262 +272,264 @@ pub const ROOK_KEYS: [Key; 64] = [
 #[allow(clippy::unreadable_literal)]
 pub const BISHOP_KEYS: [Key; 64] = [
     Key {
-        magic: 0x0008_0100_4080_0C04,
-        offset: 120136,
+        magic: 0x0000404040404040,
+        offset: 33104,
     },
     Key {
-        magic: 0x0000_2040_1040_1000,
-        offset: 121555,
+        magic: 0x0000a060401007fc,
+        offset: 4094,
     },
     Key {
-        magic: 0x1000_8020_4002_8000,
-        offset: 121587,
+        magic: 0x0000401020200000,
+        offset: 24764,
     },
     Key {
-        magic: 0x0000_8060_0400_0500,
-        offset: 121178,
+        magic: 0x0000806004000000,
+        offset: 13882,
     },
     Key {
-        magic: 0x0040_4402_0A01_2004,
-        offset: 120266,
+        magic: 0x0000440200000000,
+        offset: 23090,
     },
     Key {
-        magic: 0x8120_4042_0084_0000,
-        offset: 120329,
+        magic: 0x0000080100800000,
+        offset: 32640,
     },
     Key {
-        magic: 0x2000_1041_0400_6130,
-        offset: 120644,
+        magic: 0x0000104104004000,
+        offset: 11558,
     },
     Key {
-        magic: 0x1840_1042_0200_80A0,
-        offset: 118857,
+        magic: 0x0000020020820080,
+        offset: 32912,
     },
     Key {
-        magic: 0x0000_8042_0040_1020,
-        offset: 121619,
+        magic: 0x0000040100202004,
+        offset: 13674,
     },
     Key {
-        magic: 0x0001_0200_8020_0802,
-        offset: 121651,
+        magic: 0x0000020080200802,
+        offset: 6109,
     },
     Key {
-        magic: 0x0010_0080_0840_08A1,
-        offset: 121683,
+        magic: 0x0000010040080200,
+        offset: 26494,
     },
     Key {
-        magic: 0x0441_0080_4810_8080,
-        offset: 121226,
+        magic: 0x0000008060040000,
+        offset: 17919,
     },
     Key {
-        magic: 0x0010_4044_0221_1841,
-        offset: 120392,
+        magic: 0x0000004402000000,
+        offset: 25757,
     },
     Key {
-        magic: 0x4120_0041_0080_6408,
-        offset: 120455,
+        magic: 0x00000021c100b200,
+        offset: 17338,
     },
     Key {
-        magic: 0x0090_4020_2104_0080,
-        offset: 120518,
+        magic: 0x0000000400410080,
+        offset: 16983,
     },
     Key {
-        magic: 0x8820_0440_1080_8028,
-        offset: 120706,
+        magic: 0x000003f7f05fffc0,
+        offset: 16659,
     },
     Key {
-        magic: 0x3000_8004_0100_1020,
-        offset: 121715,
+        magic: 0x0004228040808010,
+        offset: 13610,
     },
     Key {
-        magic: 0x1840_8902_0010_1020,
-        offset: 121747,
+        magic: 0x0000200040404040,
+        offset: 2224,
     },
     Key {
-        magic: 0x8100_4004_0100_0810,
-        offset: 118985,
+        magic: 0x0000400080808080,
+        offset: 60405,
     },
     Key {
-        magic: 0x0000_2002_0080_1100,
-        offset: 119113,
+        magic: 0x0000200200801000,
+        offset: 7983,
     },
     Key {
-        magic: 0x0000_2500_8084_0045,
-        offset: 118454,
+        magic: 0x0000240080840000,
+        offset: 17,
     },
     Key {
-        magic: 0x8100_2200_8084_0080,
-        offset: 118310,
+        magic: 0x000018000c03fff8,
+        offset: 34321,
     },
     Key {
-        magic: 0x0880_08C8_5020_8020,
-        offset: 121447,
+        magic: 0x00000a5840208020,
+        offset: 33216,
     },
     Key {
-        magic: 0x4080_0200_2080_4040,
-        offset: 120768,
+        magic: 0x0000058408404010,
+        offset: 17127,
     },
     Key {
-        magic: 0x8000_8040_0082_01A1,
-        offset: 121128,
+        magic: 0x0002022000408020,
+        offset: 6397,
     },
     Key {
-        magic: 0x3000_4200_4020_2040,
-        offset: 121779,
+        magic: 0x0000402000408080,
+        offset: 22169,
     },
     Key {
-        magic: 0x6002_0100_0080_0880,
-        offset: 119241,
+        magic: 0x0000804000810100,
+        offset: 42727,
     },
     Key {
-        magic: 0x0044_0C00_00C1_0200,
-        offset: 116262,
+        magic: 0x000100403c0403ff,
+        offset: 155,
     },
     Key {
-        magic: 0x4003_0045_2100_4000,
-        offset: 116774,
+        magic: 0x00078402a8802000,
+        offset: 8601,
     },
     Key {
-        magic: 0x0402_0008_0080_8042,
-        offset: 119369,
+        magic: 0x0000101000804400,
+        offset: 21101,
     },
     Key {
-        magic: 0x0000_1004_4020_2140,
-        offset: 121483,
+        magic: 0x0000080800104100,
+        offset: 29885,
     },
     Key {
-        magic: 0x2030_0820_8410_1009,
-        offset: 121811,
+        magic: 0x0000400480101008,
+        offset: 29340,
     },
     Key {
-        magic: 0x0400_8080_8802_4210,
-        offset: 121370,
+        magic: 0x0001010102004040,
+        offset: 19785,
     },
     Key {
-        magic: 0x4000_8080_2500_8020,
-        offset: 121843,
+        magic: 0x0000808090402020,
+        offset: 12258,
     },
     Key {
-        magic: 0x0180_4200_4000_8101,
-        offset: 119497,
+        magic: 0x0007fefe08810010,
+        offset: 50451,
     },
     Key {
-        magic: 0x0048_1202_8028_0080,
-        offset: 117286,
+        magic: 0x0003ff0f833fc080,
+        offset: 1712,
     },
     Key {
-        magic: 0x0001_0204_0002_0102,
-        offset: 117798,
+        magic: 0x007fe08019003042,
+        offset: 78475,
     },
     Key {
-        magic: 0x2180_2020_8040_4044,
-        offset: 119625,
+        magic: 0x0000202040008040,
+        offset: 7855,
     },
     Key {
-        magic: 0x1000_8010_4100_1008,
-        offset: 121875,
+        magic: 0x0001004008381008,
+        offset: 13642,
     },
     Key {
-        magic: 0x8240_8004_0488_1010,
-        offset: 121907,
+        magic: 0x0000802003700808,
+        offset: 8156,
     },
     Key {
-        magic: 0x0200_4100_8080_005C,
-        offset: 121939,
+        magic: 0x0000208200400080,
+        offset: 4348,
     },
     Key {
-        magic: 0x8000_6040_4120_0041,
-        offset: 121274,
+        magic: 0x0000104100200040,
+        offset: 28794,
     },
     Key {
-        magic: 0x0040_8880_8080_0040,
-        offset: 118725,
+        magic: 0x0003ffdf7f833fc0,
+        offset: 22578,
     },
     Key {
-        magic: 0x1020_0888_4020_0040,
-        offset: 118592,
+        magic: 0x0000008840450020,
+        offset: 50315,
     },
     Key {
-        magic: 0x0001_0200_4010_0100,
-        offset: 119753,
+        magic: 0x0000020040100100,
+        offset: 85452,
     },
     Key {
-        magic: 0x0000_4044_0020_0040,
-        offset: 119881,
+        magic: 0x007fffdd80140028,
+        offset: 32816,
     },
     Key {
-        magic: 0x5101_0040_0840_0009,
-        offset: 121971,
+        magic: 0x0000202020200040,
+        offset: 13930,
     },
     Key {
-        magic: 0x0500_4040_0828_2002,
-        offset: 121519,
+        magic: 0x0001004010039004,
+        offset: 17967,
     },
     Key {
-        magic: 0x0200_1041_0400_4008,
-        offset: 120830,
+        magic: 0x0000040041008000,
+        offset: 33200,
     },
     Key {
-        magic: 0x8400_0820_8200_2001,
-        offset: 120892,
+        magic: 0x0003ffefe0c02200,
+        offset: 32456,
     },
     Key {
-        magic: 0x0408_0410_3080_9010,
-        offset: 121322,
+        magic: 0x0000001010806000,
+        offset: 7762,
     },
     Key {
-        magic: 0x8800_2050_0840_30A8,
-        offset: 120954,
+        magic: 0x0000000008403000,
+        offset: 7794,
     },
     Key {
-        magic: 0x0120_4181_0020_2081,
-        offset: 122003,
+        magic: 0x0000000100202000,
+        offset: 22761,
     },
     Key {
-        magic: 0x0002_0040_8100_1000,
-        offset: 122035,
+        magic: 0x0000040100200800,
+        offset: 14918,
     },
     Key {
-        magic: 0x4104_0080_2040_0508,
-        offset: 122067,
+        magic: 0x0000404040404000,
+        offset: 11620,
     },
     Key {
-        magic: 0x0000_4040_9828_0288,
-        offset: 121410,
+        magic: 0x00006020601803f4,
+        offset: 15925,
     },
     Key {
-        magic: 0x0020_1100_8200_8081,
-        offset: 120009,
+        magic: 0x0003ffdfdfc28048,
+        offset: 32528,
     },
     Key {
-        magic: 0x0001_0040_2021_0042,
-        offset: 120581,
+        magic: 0x0000000820820020,
+        offset: 12196,
     },
     Key {
-        magic: 0x8402_20B0_1011_0062,
-        offset: 121076,
+        magic: 0x0000000010108060,
+        offset: 32720,
     },
     Key {
-        magic: 0x4200_4005_0408_4032,
-        offset: 121015,
+        magic: 0x0000000000084030,
+        offset: 26781,
     },
     Key {
-        magic: 0x8180_0001_8100_2020,
-        offset: 122099,
+        magic: 0x0000000001002020,
+        offset: 19817,
     },
     Key {
-        magic: 0x0020_2102_0040_1020,
-        offset: 122131,
+        magic: 0x0000000040408020,
+        offset: 24732,
     },
     Key {
-        magic: 0x0000_0200_4100_0810,
-        offset: 122163,
+        magic: 0x0000004040404040,
+        offset: 25468,
     },
     Key {
-        magic: 0x0C88_0200_2040_1002,
-        offset: 120202,
+        magic: 0x0000404040404040,
+        offset: 10186,
     },
 ];
 
 /// Size of the move lookup table.
-pub const SLIDERS_TABLE_SIZE: usize = 122195;
+pub const SLIDERS_TABLE_SIZE: usize = 89524;
+
+// Magic numbers taken from http://www.talkchess.com/forum/viewtopic.php?t=60065&start=14
