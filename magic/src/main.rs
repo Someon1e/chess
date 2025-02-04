@@ -18,9 +18,6 @@ use rand_chacha::{
     ChaCha20Rng,
 };
 
-#[derive(Debug)]
-struct TableFillError;
-
 fn fill_magic_table(
     table: &mut [BitBoard],
     square: Square,
@@ -28,7 +25,7 @@ fn fill_magic_table(
     magic: u64,
     index_bits: u8,
     direction_offset: usize,
-) -> Result<usize, TableFillError> {
+) -> Result<usize, usize> {
     let mut highest_used_index = None;
     for blocker_combination in iterate_combinations(blockers) {
         let moves = if direction_offset == 0 {
@@ -53,7 +50,7 @@ fn fill_magic_table(
         if table_entry.is_empty() {
             *table_entry = moves;
         } else if *table_entry != moves {
-            return Err(TableFillError);
+            return Err(highest_used_index.unwrap());
         }
     }
     Ok(highest_used_index.unwrap())
@@ -101,25 +98,30 @@ fn find_magics(
         let mut retries = 0;
         while retries < 9000 {
             let magic = random.next_u64() & random.next_u64() & random.next_u64();
-            if let Ok(highest_used_index) = fill_magic_table(
+            let filled = fill_magic_table(
                 &mut table,
                 square,
                 blockers,
                 magic,
                 index_bits,
                 direction_offset,
-            ) {
+            );
+            if let Ok(highest_used_index) = filled {
+                table[..=highest_used_index].fill(BitBoard::EMPTY);
+
                 retries += 1;
                 // Prefer magics that cluster used entries at lower indices
                 if highest_used_index < best_highest_used_index {
                     best_highest_used_index = highest_used_index;
                     best_magic = magic;
                 }
+            } else if let Err(highest_used_index) = filled {
+                table[..=highest_used_index].fill(BitBoard::EMPTY);
             }
-            table.fill(BitBoard::EMPTY);
         }
         magics[square_index] = best_magic;
     }
+
     magics
 }
 
