@@ -5,7 +5,7 @@ use crate::{
         bit_board::BitBoard,
         square::{Square, DIRECTIONS},
     },
-    move_generator::slider_keys::{BISHOP_TABLE_SIZE, ROOK_KEYS, ROOK_TABLE_SIZE},
+    move_generator::slider_keys::{ROOK_KEYS, SLIDERS_TABLE_SIZE},
 };
 
 use super::{
@@ -145,13 +145,13 @@ pub const RELEVANT_ROOK_BLOCKERS: [BitBoard; 64] = calculate_blockers_for_each_s
 /// Lookup table for relevant bishop blockers.
 pub const RELEVANT_BISHOP_BLOCKERS: [BitBoard; 64] = calculate_blockers_for_each_square(4);
 
-fn init_lookup(
-    size: usize,
+fn fill_lookup(
+    lookup: &mut Vec<BitBoard>,
     keys: &[Key; 64],
     blockers: &[BitBoard; 64],
     direction_offset: usize,
-) -> Box<[BitBoard]> {
-    let mut lookup = vec![BitBoard::EMPTY; size];
+) {
+    let shift = 64 - if direction_offset == 0 { 12 } else { 9 };
     for square_index in 0..64 {
         let square = Square::from_index(square_index);
 
@@ -159,50 +159,36 @@ fn init_lookup(
         let blockers = blockers[square_index as usize];
         for blocker_combination in iterate_combinations(blockers) {
             let moves = gen_rook_or_bishop(square, &blocker_combination, direction_offset);
-            lookup[key.offset as usize + blocker_combination.magic_index(key.magic, key.shift)] =
-                moves;
+            lookup[key.offset as usize + blocker_combination.magic_index(key.magic, shift)] = moves;
         }
     }
+}
+fn init_lookup(size: usize) -> Box<[BitBoard]> {
+    let mut lookup = vec![BitBoard::EMPTY; size];
+    fill_lookup(&mut lookup, &BISHOP_KEYS, &RELEVANT_BISHOP_BLOCKERS, 4);
+    fill_lookup(&mut lookup, &ROOK_KEYS, &RELEVANT_ROOK_BLOCKERS, 0);
+
     lookup.into_boxed_slice()
 }
 
 #[must_use]
-fn rook_lookup() -> &'static [BitBoard; ROOK_TABLE_SIZE] {
-    static COMPUTATION: OnceLock<Box<[BitBoard; ROOK_TABLE_SIZE]>> = OnceLock::new();
-    COMPUTATION.get_or_init(|| {
-        init_lookup(ROOK_TABLE_SIZE, &ROOK_KEYS, &RELEVANT_ROOK_BLOCKERS, 0)
-            .try_into()
-            .unwrap()
-    })
+fn slider_lookup() -> &'static [BitBoard; SLIDERS_TABLE_SIZE] {
+    static COMPUTATION: OnceLock<Box<[BitBoard; SLIDERS_TABLE_SIZE]>> = OnceLock::new();
+    COMPUTATION.get_or_init(|| init_lookup(SLIDERS_TABLE_SIZE).try_into().unwrap())
 }
 
 /// Returns possible rook moves at a square given blockers which are relevant.
 #[must_use]
 pub fn get_rook_moves(square: Square, relevant_blockers: BitBoard) -> BitBoard {
     let key = ROOK_KEYS[square.usize()];
-    rook_lookup()[key.offset as usize + relevant_blockers.magic_index(key.magic, key.shift)]
-}
-
-#[must_use]
-fn bishop_lookup() -> &'static [BitBoard; BISHOP_TABLE_SIZE] {
-    static COMPUTATION: OnceLock<Box<[BitBoard; BISHOP_TABLE_SIZE]>> = OnceLock::new();
-    COMPUTATION.get_or_init(|| {
-        init_lookup(
-            BISHOP_TABLE_SIZE,
-            &BISHOP_KEYS,
-            &RELEVANT_BISHOP_BLOCKERS,
-            4,
-        )
-        .try_into()
-        .unwrap()
-    })
+    slider_lookup()[key.offset as usize + relevant_blockers.magic_index(key.magic, 64 - 12)]
 }
 
 /// Returns possible bishop moves at a square given blockers which are relevant.
 #[must_use]
 pub fn get_bishop_moves(square: Square, relevant_blockers: BitBoard) -> BitBoard {
     let key = BISHOP_KEYS[square.usize()];
-    bishop_lookup()[key.offset as usize + relevant_blockers.magic_index(key.magic, key.shift)]
+    slider_lookup()[key.offset as usize + relevant_blockers.magic_index(key.magic, 64 - 9)]
 }
 
 #[cfg(test)]
