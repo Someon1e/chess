@@ -8,8 +8,8 @@ use bitvec::prelude::*;
 use engine::{
     board::{bit_board::BitBoard, square::Square},
     move_generator::slider_lookup::{
-        gen_rook_or_bishop, get_bishop_moves, get_rook_moves, iterate_combinations,
-        RELEVANT_BISHOP_BLOCKERS, RELEVANT_ROOK_BLOCKERS,
+        get_bishop_moves, get_rook_moves, iterate_combinations, RELEVANT_BISHOP_BLOCKERS,
+        RELEVANT_ROOK_BLOCKERS,
     },
 };
 
@@ -22,7 +22,7 @@ use rand_chacha::{
 struct TableFillError;
 
 fn fill_magic_table(
-    table: &mut Vec<BitBoard>,
+    table: &mut [BitBoard],
     square: Square,
     blockers: BitBoard,
     magic: u64,
@@ -99,7 +99,7 @@ fn find_magics(
 
         // Try multiple magics to find the most compressible one
         let mut retries = 0;
-        while retries < 900 {
+        while retries < 9000 {
             let magic = random.next_u64() & random.next_u64() & random.next_u64();
             if let Ok(highest_used_index) = fill_magic_table(
                 &mut table,
