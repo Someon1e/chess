@@ -1,5 +1,6 @@
 use super::game_state::CastlingRights;
 use super::square::Square;
+use super::Board;
 
 /// Filled with random integers.
 #[derive(Debug)]
@@ -59,6 +60,30 @@ impl Zobrist {
     #[must_use]
     pub const fn distribute(&self, size: usize) -> u64 {
         ((self.0 as u128 * size as u128) >> 64) as u64
+    }
+
+    #[must_use]
+    pub const fn modulo(&self, size: u64) -> u64 {
+        self.0 % size
+    }
+}
+
+use crate::board::piece::Piece;
+use crate::consume_bit_board;
+impl Zobrist {
+    pub fn pawn_key(board: &Board) -> Self {
+        let mut key = Self::EMPTY;
+
+        let mut black_pawns = *board.get_bit_board(Piece::BlackPawn);
+        consume_bit_board!(black_pawns, square {
+            key.xor_piece(Piece::BlackPawn as usize, square.usize());
+        });
+        let mut white_pawns = *board.get_bit_board(Piece::BlackPawn);
+        consume_bit_board!(white_pawns, square {
+            key.xor_piece(Piece::BlackPawn  as usize, square.usize());
+        });
+
+        key
     }
 }
 

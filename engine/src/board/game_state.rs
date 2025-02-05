@@ -128,6 +128,6 @@ pub struct GameState {
     /// The last captured piece.
     pub captured: Option<Piece>,
 
-    /// Zobrist key.
+    /// Position zobrist key.
     pub zobrist_key: Zobrist,
 }

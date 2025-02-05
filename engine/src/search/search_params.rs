@@ -23,6 +23,7 @@ pub struct Tunable {
 
     pub aspiration_window_start: i32,
     pub aspiration_window_growth: i32,
+    pub pawn_correction_history_grain: i16,
 }
 
 pub const DEFAULT_TUNABLES: Tunable = Tunable {
@@ -42,4 +43,5 @@ pub const DEFAULT_TUNABLES: Tunable = Tunable {
     nmp_ply_divisor: 4,
     aspiration_window_start: 20,
     aspiration_window_growth: 43,
+    pawn_correction_history_grain: 256,
 };
