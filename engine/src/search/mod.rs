@@ -683,8 +683,10 @@ mod tests {
 
     #[test]
     fn quiescence_search_works() {
-        let board = Board::from_fen("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
-        let quiet = Board::from_fen("rnb1kbnr/ppp1pppp/8/3q4/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
+        let board =
+            Board::from_fen("rnbqkb1r/pppp1ppp/5n2/4p2Q/4P3/8/PPPPBPPP/RNB1K1NR b KQkq - 3 3");
+        let quiet =
+            Board::from_fen("rnbqkb1r/pppp1ppp/8/4p2B/4P3/8/PPPP1PPP/RNB1K1NR b KQkq - 0 4");
         assert_eq!(
             Search::new(
                 board,
