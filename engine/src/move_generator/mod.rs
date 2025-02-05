@@ -1,6 +1,8 @@
+use precomputed::get_between_rays;
+
 use crate::board::bit_board::BitBoard;
 use crate::board::piece::Piece;
-use crate::board::square::{Square, DIRECTIONS};
+use crate::board::square::Square;
 use crate::board::Board;
 use crate::consume_bit_board;
 
@@ -18,7 +20,7 @@ pub mod slider_keys;
 pub mod slider_lookup;
 
 use self::move_data::{Flag, Move};
-use self::precomputed::{KING_MOVES_AT_SQUARE, KNIGHT_MOVES_AT_SQUARE, SQUARES_FROM_EDGE};
+use self::precomputed::{KING_MOVES_AT_SQUARE, KNIGHT_MOVES_AT_SQUARE};
 use self::slider_lookup::{
     get_bishop_moves, get_rook_moves, RELEVANT_BISHOP_BLOCKERS, RELEVANT_ROOK_BLOCKERS,
 };
@@ -308,58 +310,41 @@ impl MoveGenerator {
 
 impl MoveGenerator {
     fn calculate_pin_rays(
-        friendly_piece_bit_board: BitBoard,
-        friendly_king_square: Square,
-
+        friendly_pieces: BitBoard,
+        king_square: Square,
         enemy_orthogonal: BitBoard,
         enemy_diagonal: BitBoard,
-        enemy_piece_bit_board: BitBoard,
+        enemy_pieces: BitBoard,
     ) -> (BitBoard, BitBoard) {
-        let mut orthogonal_pin_rays = BitBoard::EMPTY;
-        let mut diagonal_pin_rays = BitBoard::EMPTY;
+        let mut diagonal_pins = BitBoard::EMPTY;
+        let mut orthogonal_pins = BitBoard::EMPTY;
 
-        for (index, (direction, distance_from_edge)) in DIRECTIONS
-            .iter()
-            .zip(&SQUARES_FROM_EDGE[friendly_king_square.usize()])
-            .enumerate()
-        {
-            let is_rook_movement = index < 4;
+        let mut bishop_attackers = enemy_diagonal
+            & get_bishop_moves(
+                king_square,
+                enemy_pieces & RELEVANT_BISHOP_BLOCKERS[king_square.usize()],
+            );
 
-            let mut ray = BitBoard::EMPTY;
-            let mut is_friendly_piece_on_ray = false;
-            for count in 1..=*distance_from_edge {
-                let to = friendly_king_square.offset(direction * count);
-                ray.set(&to);
-
-                if friendly_piece_bit_board.get(&to) {
-                    // Friendly piece blocks ray
-
-                    if is_friendly_piece_on_ray {
-                        // This is the second time a friendly piece has blocked the ray
-                        // Not pinned.
-                        break;
-                    }
-                    is_friendly_piece_on_ray = true;
-                } else if enemy_piece_bit_board.get(&to) {
-                    let can_pin = if is_rook_movement {
-                        enemy_orthogonal.get(&to)
-                    } else {
-                        enemy_diagonal.get(&to)
-                    };
-                    if can_pin && is_friendly_piece_on_ray {
-                        // Friendly piece is blocking check, it is pinned
-                        if is_rook_movement {
-                            orthogonal_pin_rays |= ray;
-                        } else {
-                            diagonal_pin_rays |= ray;
-                        }
-                    };
-                    break;
-                }
+        consume_bit_board!(bishop_attackers, attacker {
+            let ray = get_between_rays(king_square, attacker);
+            if (ray & friendly_pieces).count() == 1 {
+                diagonal_pins |= ray;
             }
-        }
+        });
 
-        (orthogonal_pin_rays, diagonal_pin_rays)
+        let mut rook_attackers = enemy_orthogonal
+            & get_rook_moves(
+                king_square,
+                enemy_pieces & RELEVANT_ROOK_BLOCKERS[king_square.usize()],
+            );
+        consume_bit_board!(rook_attackers, attacker {
+            let ray = get_between_rays(king_square, attacker);
+            if (ray & friendly_pieces).count() == 1 {
+                orthogonal_pins |= ray;
+            }
+        });
+
+        (orthogonal_pins, diagonal_pins)
     }
 
     /// Creates a move generator for the current position.

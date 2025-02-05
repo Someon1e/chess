@@ -86,3 +86,37 @@ pub const KING_MOVES_AT_SQUARE: [BitBoard; 64] = {
     }
     king_moves_at_square
 };
+
+/// Get the ray between two squares including the `to` square but not the `from` square.
+pub const fn get_between_rays(from: Square, to: Square) -> BitBoard {
+    const fn compute_ray_between(from: usize, to: usize) -> BitBoard {
+        const M1: u64 = !0;
+        const A2A7: u64 = 0x0001010101010100;
+        const B2G7: u64 = 0x0040201008040200;
+        const H1B7: u64 = 0x0002040810204080;
+
+        let btwn = (M1 << from) ^ (M1 << to);
+        let file = (to & 7) as isize - (from & 7) as isize;
+        let rank = (((to | 7).wrapping_sub(from)) >> 3) as isize;
+        let mut line = (((file & 7) - 1) as u64) & A2A7;
+        line += 2 * ((((rank & 7) - 1) as u64) >> 58);
+        line += ((((rank - file) & 15) - 1) as u64) & B2G7;
+        line += ((((rank + file) & 15) - 1) as u64) & H1B7;
+        line = line.wrapping_mul(btwn & btwn.wrapping_neg());
+        BitBoard::new((line & btwn) | (1 << to))
+    }
+    const BETWEEN_RAYS: [[BitBoard; 64]; 64] = {
+        let mut table = [[BitBoard::EMPTY; 64]; 64];
+        let mut from = 0;
+        while from < table.len() {
+            let mut to = 0;
+            while to < table[from].len() {
+                table[from][to] = compute_ray_between(from as usize, to as usize);
+                to += 1;
+            }
+            from += 1;
+        }
+        table
+    };
+    BETWEEN_RAYS[from.index() as usize][to.index() as usize]
+}
