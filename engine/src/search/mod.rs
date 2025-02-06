@@ -75,6 +75,8 @@ pub struct DepthSearchInfo<'a> {
     pub quiescence_call_count: u32,
 }
 
+const PAWN_CORRECTION_HISTORY_LENGTH: usize = 8192;
+
 /// Looks for the best outcome in a position.
 pub struct Search {
     board: Board,
@@ -85,7 +87,7 @@ pub struct Search {
 
     killer_moves: [EncodedMove; 64],
     quiet_history: [[i16; 64 * 64]; 2],
-    pawn_correction_history: [[i16; 8192]; 2],
+    pawn_correction_history: [[i16; PAWN_CORRECTION_HISTORY_LENGTH]; 2],
 
     pub pv: Pv,
     pub highest_depth: Ply,
@@ -114,7 +116,7 @@ impl Search {
             killer_moves: [EncodedMove::NONE; 64],
             quiet_history: [[0; 64 * 64]; 2],
 
-            pawn_correction_history: [[0; 8192]; 2],
+            pawn_correction_history: [[0; PAWN_CORRECTION_HISTORY_LENGTH]; 2],
 
             pv: Pv::new(),
             highest_depth: 0,
@@ -320,7 +322,7 @@ impl Search {
         let pawn_index = self
             .board
             .pawn_zobrist_key()
-            .modulo(self.pawn_correction_history.len() as u64);
+            .modulo(PAWN_CORRECTION_HISTORY_LENGTH as u64);
         let static_eval = {
             let mut static_eval = Eval::evaluate(&self.board);
             if let Some(saved) = saved {
