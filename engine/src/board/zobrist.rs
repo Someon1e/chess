@@ -78,9 +78,9 @@ impl Zobrist {
         consume_bit_board!(black_pawns, square {
             key.xor_piece(Piece::BlackPawn as usize, square.usize());
         });
-        let mut white_pawns = *board.get_bit_board(Piece::BlackPawn);
+        let mut white_pawns = *board.get_bit_board(Piece::WhitePawn);
         consume_bit_board!(white_pawns, square {
-            key.xor_piece(Piece::BlackPawn  as usize, square.usize());
+            key.xor_piece(Piece::WhitePawn as usize, square.usize());
         });
 
         key
