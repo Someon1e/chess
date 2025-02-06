@@ -129,5 +129,8 @@ pub struct GameState {
     pub captured: Option<Piece>,
 
     /// Position zobrist key.
-    pub zobrist_key: Zobrist,
+    pub position_zobrist_key: Zobrist,
+
+    // Pawn zobrist key.
+    pub pawn_zobrist_key: Zobrist,
 }

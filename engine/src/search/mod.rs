@@ -216,7 +216,8 @@ impl Search {
 
     /// Adds the position into the repetition table and makes a move.
     pub fn make_move(&mut self, move_data: &Move) -> GameState {
-        self.repetition_table.push(self.board.zobrist_key());
+        self.repetition_table
+            .push(self.board.position_zobrist_key());
 
         self.board.make_move(move_data)
     }
@@ -229,7 +230,10 @@ impl Search {
     pub fn unmake_move(&mut self, move_data: &Move, old_state: &GameState) {
         self.board.unmake_move(move_data, old_state);
 
-        assert_eq!(self.repetition_table.pop(), self.board.zobrist_key());
+        assert_eq!(
+            self.repetition_table.pop(),
+            self.board.position_zobrist_key()
+        );
     }
     fn negamax(
         &mut self,
@@ -251,7 +255,7 @@ impl Search {
         self.pv.set_pv_length(ply_from_root, ply_from_root);
 
         // Get the zobrist key
-        let zobrist_key = self.board.zobrist_key();
+        let zobrist_key = self.board.position_zobrist_key();
 
         // Check for repetition
         if ply_from_root != 0 && self.repetition_table.contains(zobrist_key) {
@@ -313,8 +317,10 @@ impl Search {
 
         let move_generator = MoveGenerator::new(&self.board);
 
-        let pawn_index =
-            Zobrist::pawn_key(&self.board).modulo(self.pawn_correction_history.len() as u64);
+        let pawn_index = self
+            .board
+            .pawn_zobrist_key()
+            .modulo(self.pawn_correction_history.len() as u64);
         let static_eval = {
             let mut static_eval = Eval::evaluate(&self.board);
             if let Some(saved) = saved {
@@ -435,7 +441,7 @@ impl Search {
                 use core::arch::aarch64::{_prefetch, _PREFETCH_LOCALITY0, _PREFETCH_READ};
                 let index =
                     self.board
-                        .zobrist_key()
+                        .position_zobrist_key()
                         .distribute(self.transposition_table.len()) as usize;
                 unsafe {
                     _prefetch::<_PREFETCH_READ, _PREFETCH_LOCALITY0>(

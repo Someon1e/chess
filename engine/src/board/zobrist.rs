@@ -1,6 +1,5 @@
 use super::game_state::CastlingRights;
 use super::square::Square;
-use super::Board;
 
 /// Filled with random integers.
 #[derive(Debug)]
@@ -68,32 +67,16 @@ impl Zobrist {
     }
 }
 
-use crate::board::piece::Piece;
-use crate::consume_bit_board;
-impl Zobrist {
-    pub fn pawn_key(board: &Board) -> Self {
-        let mut key = Self::EMPTY;
-
-        let mut black_pawns = *board.get_bit_board(Piece::BlackPawn);
-        consume_bit_board!(black_pawns, square {
-            key.xor_piece(Piece::BlackPawn as usize, square.usize());
-        });
-        let mut white_pawns = *board.get_bit_board(Piece::WhitePawn);
-        consume_bit_board!(white_pawns, square {
-            key.xor_piece(Piece::WhitePawn as usize, square.usize());
-        });
-
-        key
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use crate::{board::Board, consume_bit_board};
+    use crate::{
+        board::{piece::Piece, Board},
+        consume_bit_board,
+    };
 
     impl crate::board::Zobrist {
         /// For debugging only.
-        /// Computes the zobrist key.
+        /// Computes the position zobrist key.
         pub fn compute(board: &Board) -> Self {
             let mut key = Self::EMPTY;
 
@@ -113,6 +96,23 @@ mod tests {
             }
 
             key.xor_castling_rights(&board.game_state.castling_rights);
+
+            key
+        }
+
+        /// For debugging only.
+        /// Computes the pawn zobrist key.
+        pub fn pawn_key(board: &Board) -> Self {
+            let mut key = Self::EMPTY;
+
+            let mut black_pawns = *board.get_bit_board(Piece::BlackPawn);
+            consume_bit_board!(black_pawns, square {
+                key.xor_piece(Piece::BlackPawn as usize, square.usize());
+            });
+            let mut white_pawns = *board.get_bit_board(Piece::WhitePawn);
+            consume_bit_board!(white_pawns, square {
+                key.xor_piece(Piece::WhitePawn as usize, square.usize());
+            });
 
             key
         }

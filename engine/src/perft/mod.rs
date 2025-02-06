@@ -19,7 +19,10 @@ fn perft(board: &mut Board, depth: u16) -> u64 {
             let old_state = board.make_move(&move_data);
 
             #[cfg(test)]
-            assert!(Zobrist::compute(board) == board.zobrist_key());
+            assert!(Zobrist::compute(board) == board.position_zobrist_key());
+
+            #[cfg(test)]
+            assert!(Zobrist::pawn_key(board) == board.pawn_zobrist_key());
 
             move_count += perft(board, depth - 1);
             board.unmake_move(&move_data, &old_state);
@@ -44,7 +47,10 @@ pub fn perft_root(board: &mut Board, depth: u16, log: fn(&str)) -> u64 {
             let old_state = board.make_move(&move_data);
 
             #[cfg(test)]
-            assert!(Zobrist::compute(board) == board.zobrist_key());
+            assert!(Zobrist::compute(board) == board.position_zobrist_key());
+
+            #[cfg(test)]
+            assert!(Zobrist::pawn_key(board) == board.pawn_zobrist_key());
 
             let inner = perft(board, depth - 1);
             move_count += inner;
