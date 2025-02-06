@@ -174,6 +174,14 @@ impl Search {
         self.quiescence_call_count += 1;
 
         let mut best_score = Eval::evaluate(&self.board);
+        let pawn_index = self
+            .board
+            .pawn_zobrist_key()
+            .modulo(PAWN_CORRECTION_HISTORY_LENGTH as u64);
+        let correction = self.pawn_correction_history[if self.board.white_to_move { 1 } else { 0 }]
+            [pawn_index as usize];
+        best_score += (correction / param!(self).pawn_correction_history_grain) as i32;
+
         if best_score > alpha {
             alpha = best_score;
 
