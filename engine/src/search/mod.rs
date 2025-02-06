@@ -597,7 +597,14 @@ impl Search {
                     ) && !move_generator.enemy_piece_bit_board().get(&best_move.to())
                 }
             };
-            if not_loud_move {
+
+            if not_loud_move
+                && match node_type {
+                    NodeType::Beta => best_score > static_eval,
+                    NodeType::Alpha => best_score < static_eval,
+                    NodeType::Exact => true,
+                }
+            {
                 const CORRECTION_HISTORY_WEIGHT_SCALE: i16 = 1024;
                 const CORRECTION_HISTORY_MAX: i16 = 16384;
 
