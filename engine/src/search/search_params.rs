@@ -8,6 +8,7 @@ pub struct Tunable {
     pub futility_margin: i32,
 
     pub static_null_margin: i32,
+    pub improving_static_null_margin: i32,
     pub static_null_min_depth: u8,
 
     pub lmr_min_index: usize,
@@ -32,6 +33,7 @@ pub const DEFAULT_TUNABLES: Tunable = Tunable {
     iir_depth_reduction: 2,
     futility_margin: 116,
     static_null_margin: 55,
+    improving_static_null_margin: 40,
     static_null_min_depth: 7,
     lmr_min_index: 6,
     lmr_min_depth: 3,

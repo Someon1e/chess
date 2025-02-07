@@ -88,6 +88,7 @@ pub struct Search {
     killer_moves: [EncodedMove; 64],
     quiet_history: [[i16; 64 * 64]; 2],
     pawn_correction_history: [[i16; PAWN_CORRECTION_HISTORY_LENGTH]; 2],
+    eval_history: [EvalNumber; 256],
 
     pub pv: Pv,
     pub highest_depth: Ply,
@@ -117,6 +118,7 @@ impl Search {
             quiet_history: [[0; 64 * 64]; 2],
 
             pawn_correction_history: [[0; PAWN_CORRECTION_HISTORY_LENGTH]; 2],
+            eval_history: [0; 256],
 
             pv: Pv::new(),
             highest_depth: 0,
@@ -351,13 +353,30 @@ impl Search {
             static_eval
         };
 
+        let improving = if move_generator.is_in_check() {
+            if ply_from_root >= 2 {
+                self.eval_history[ply_from_root as usize] =
+                    self.eval_history[ply_from_root as usize - 2];
+            }
+            false
+        } else {
+            self.eval_history[ply_from_root as usize] = static_eval;
+            ply_from_root >= 2 && static_eval > self.eval_history[ply_from_root as usize - 2]
+        };
+
         if is_not_pv_node && !move_generator.is_in_check() {
             // Static null move pruning (also known as reverse futility pruning)
-            if USE_STATIC_NULL_MOVE_PRUNING
-                && ply_remaining < param!(self).static_null_min_depth
-                && static_eval - i32::from(ply_remaining) * param!(self).static_null_margin > beta
-            {
-                return static_eval;
+            if USE_STATIC_NULL_MOVE_PRUNING {
+                let static_null_margin = if improving {
+                    param!(self).improving_static_null_margin
+                } else {
+                    param!(self).static_null_margin
+                };
+                if ply_remaining < param!(self).static_null_min_depth
+                    && static_eval - i32::from(ply_remaining) * static_null_margin > beta
+                {
+                    return static_eval;
+                }
             }
 
             // Null move pruning
