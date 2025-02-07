@@ -22,7 +22,8 @@ impl Board {
         let mut components = fen.split_whitespace();
 
         let mut bit_boards = [BitBoard::EMPTY; 12];
-        let mut zobrist_key = Zobrist::EMPTY;
+        let mut position_zobrist_key = Zobrist::EMPTY;
+        let mut pawn_zobrist_key = Zobrist::EMPTY;
 
         let (mut rank, mut file) = (7, 0);
 
@@ -40,7 +41,10 @@ impl Board {
                     Piece::from_fen_char(&character).expect("Failed to parse FEN character");
                 let square = &Square::from_coords(rank, file);
                 bit_boards[piece as usize].set(square);
-                zobrist_key.xor_piece(piece as usize, square.usize());
+                position_zobrist_key.xor_piece(piece as usize, square.usize());
+                if matches!(piece, Piece::WhitePawn | Piece::BlackPawn) {
+                    pawn_zobrist_key.xor_piece(piece as usize, square.usize());
+                }
 
                 file += 1;
             }
@@ -57,7 +61,7 @@ impl Board {
         let white_to_move = match components.next().expect("Missing w/b to move") {
             "w" => true,
             "b" => {
-                zobrist_key.flip_side_to_move();
+                position_zobrist_key.flip_side_to_move();
                 false
             }
             _ => panic!("No w/b to move"),
@@ -65,14 +69,14 @@ impl Board {
 
         let castling_rights =
             CastlingRights::from_fen_section(components.next().expect("Missing castling rights"));
-        zobrist_key.xor_castling_rights(&castling_rights);
+        position_zobrist_key.xor_castling_rights(&castling_rights);
 
         let en_passant = components.next().expect("Missing en passant");
         let en_passant_square = if en_passant == "-" {
             None
         } else {
             let en_passant_square = Square::from_notation(en_passant);
-            zobrist_key.xor_en_passant(&en_passant_square);
+            position_zobrist_key.xor_en_passant(&en_passant_square);
             Some(en_passant_square)
         };
         let half_move_clock = components
@@ -94,10 +98,11 @@ impl Board {
             half_move_clock,
             captured: None,
 
-            zobrist_key,
+            position_zobrist_key,
+            pawn_zobrist_key,
         };
 
-        Self {
+        let board = Self {
             white_to_move,
 
             bit_boards,
@@ -105,7 +110,12 @@ impl Board {
             full_move_counter,
 
             game_state,
-        }
+        };
+
+        #[cfg(test)]
+        assert_eq!(Zobrist::pawn_key(&board), board.pawn_zobrist_key());
+
+        board
     }
 
     /// Gets the Forsyth-Edwards Notation of the Board.

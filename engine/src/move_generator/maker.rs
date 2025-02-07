@@ -8,12 +8,12 @@ impl Board {
         let old_state = self.game_state;
 
         self.white_to_move = !self.white_to_move;
-        self.game_state.zobrist_key.flip_side_to_move();
+        self.game_state.position_zobrist_key.flip_side_to_move();
 
         let en_passant_square = self.game_state.en_passant_square;
         if let Some(en_passant_square) = en_passant_square {
             self.game_state
-                .zobrist_key
+                .position_zobrist_key
                 .xor_en_passant(&en_passant_square);
         }
         self.game_state.en_passant_square = None;
@@ -36,18 +36,23 @@ impl Board {
 
         let white_to_move = self.white_to_move;
 
-        self.game_state.zobrist_key.flip_side_to_move();
+        self.game_state.position_zobrist_key.flip_side_to_move();
 
         let piece = self.friendly_piece_at(move_data.from).unwrap();
 
         self.game_state
-            .zobrist_key
+            .position_zobrist_key
             .xor_piece(piece as usize, move_data.from.usize());
+        if matches!(piece, Piece::WhitePawn | Piece::BlackPawn) {
+            self.game_state
+                .pawn_zobrist_key
+                .xor_piece(piece as usize, move_data.from.usize());
+        }
 
         let flag = move_data.flag;
 
         self.game_state
-            .zobrist_key
+            .position_zobrist_key
             .xor_castling_rights(&self.game_state.castling_rights);
 
         if piece == Piece::WhiteKing {
@@ -72,7 +77,7 @@ impl Board {
         }
 
         self.game_state
-            .zobrist_key
+            .position_zobrist_key
             .xor_castling_rights(&self.game_state.castling_rights);
 
         let promotion_piece = flag.get_promotion_piece(white_to_move);
@@ -83,20 +88,25 @@ impl Board {
             moving_bit_board.toggle(&move_data.from);
             self.get_bit_board_mut(promotion_piece).set(&move_data.to);
             self.game_state
-                .zobrist_key
+                .position_zobrist_key
                 .xor_piece(promotion_piece as usize, move_data.to.usize());
         } else {
             moving_bit_board.toggle_two(&move_data.from, &move_data.to);
             self.game_state
-                .zobrist_key
+                .position_zobrist_key
                 .xor_piece(piece as usize, move_data.to.usize());
+            if matches!(piece, Piece::WhitePawn | Piece::BlackPawn) {
+                self.game_state
+                    .pawn_zobrist_key
+                    .xor_piece(piece as usize, move_data.to.usize());
+            }
         }
 
         let en_passant_square = self.game_state.en_passant_square;
 
         if let Some(en_passant_square) = en_passant_square {
             self.game_state
-                .zobrist_key
+                .position_zobrist_key
                 .xor_en_passant(&en_passant_square);
         }
         self.game_state.en_passant_square = None;
@@ -106,7 +116,7 @@ impl Board {
                 let en_passant_square = move_data.from.up(if self.white_to_move { 1 } else { -1 });
                 self.game_state.en_passant_square = Some(en_passant_square);
                 self.game_state
-                    .zobrist_key
+                    .position_zobrist_key
                     .xor_en_passant(&en_passant_square);
                 self.game_state.captured = None;
             }
@@ -124,10 +134,10 @@ impl Board {
                 let rook_to = &move_data.to.offset(rook_to_offset);
                 rook_bit_board.toggle_two(rook_from, rook_to);
                 self.game_state
-                    .zobrist_key
+                    .position_zobrist_key
                     .xor_piece(rook as usize, rook_from.usize());
                 self.game_state
-                    .zobrist_key
+                    .position_zobrist_key
                     .xor_piece(rook as usize, rook_to.usize());
             }
             Flag::EnPassant => {
@@ -145,7 +155,10 @@ impl Board {
                 let capturing_bit_board = self.get_bit_board_mut(captured);
                 capturing_bit_board.toggle(&capture_position);
                 self.game_state
-                    .zobrist_key
+                    .position_zobrist_key
+                    .xor_piece(captured as usize, capture_position.usize());
+                self.game_state
+                    .pawn_zobrist_key
                     .xor_piece(captured as usize, capture_position.usize());
             }
             _ => {
@@ -154,8 +167,13 @@ impl Board {
                     let capturing_bit_board = self.get_bit_board_mut(captured);
                     capturing_bit_board.toggle(&move_data.to);
                     self.game_state
-                        .zobrist_key
+                        .position_zobrist_key
                         .xor_piece(captured as usize, move_data.to.usize());
+                    if matches!(captured, Piece::WhitePawn | Piece::BlackPawn) {
+                        self.game_state
+                            .pawn_zobrist_key
+                            .xor_piece(captured as usize, move_data.to.usize());
+                    }
                 }
             }
         }

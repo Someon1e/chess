@@ -105,10 +105,16 @@ impl Board {
         }
     }
 
-    /// Returns the current zobrist key
+    /// Returns the current position zobrist key
     #[must_use]
-    pub const fn zobrist_key(&self) -> Zobrist {
-        self.game_state.zobrist_key
+    pub const fn position_zobrist_key(&self) -> Zobrist {
+        self.game_state.position_zobrist_key
+    }
+
+    /// Returns the current pawn zobrist key
+    #[must_use]
+    pub const fn pawn_zobrist_key(&self) -> Zobrist {
+        self.game_state.pawn_zobrist_key
     }
 
     /// Returns a reference to a piece type's bit board.

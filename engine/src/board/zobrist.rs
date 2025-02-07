@@ -60,15 +60,23 @@ impl Zobrist {
     pub const fn distribute(&self, size: usize) -> u64 {
         ((self.0 as u128 * size as u128) >> 64) as u64
     }
+
+    #[must_use]
+    pub const fn modulo(&self, size: u64) -> u64 {
+        self.0 % size
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{board::Board, consume_bit_board};
+    use crate::{
+        board::{piece::Piece, Board},
+        consume_bit_board,
+    };
 
     impl crate::board::Zobrist {
         /// For debugging only.
-        /// Computes the zobrist key.
+        /// Computes the position zobrist key.
         pub fn compute(board: &Board) -> Self {
             let mut key = Self::EMPTY;
 
@@ -88,6 +96,23 @@ mod tests {
             }
 
             key.xor_castling_rights(&board.game_state.castling_rights);
+
+            key
+        }
+
+        /// For debugging only.
+        /// Computes the pawn zobrist key.
+        pub fn pawn_key(board: &Board) -> Self {
+            let mut key = Self::EMPTY;
+
+            let mut black_pawns = *board.get_bit_board(Piece::BlackPawn);
+            consume_bit_board!(black_pawns, square {
+                key.xor_piece(Piece::BlackPawn as usize, square.usize());
+            });
+            let mut white_pawns = *board.get_bit_board(Piece::WhitePawn);
+            consume_bit_board!(white_pawns, square {
+                key.xor_piece(Piece::WhitePawn as usize, square.usize());
+            });
 
             key
         }

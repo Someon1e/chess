@@ -13,12 +13,15 @@ use search_params::{Tunable, DEFAULT_TUNABLES};
 pub use time_manager::TimeManager;
 
 use crate::{
-    board::{game_state::GameState, Board},
+    board::{game_state::GameState, zobrist::Zobrist, Board},
     evaluation::{
         eval_data::{self, EvalNumber},
         Eval,
     },
-    move_generator::{move_data::Move, MoveGenerator},
+    move_generator::{
+        move_data::{Flag, Move},
+        MoveGenerator,
+    },
 };
 
 use self::{
@@ -72,6 +75,8 @@ pub struct DepthSearchInfo<'a> {
     pub quiescence_call_count: u32,
 }
 
+const PAWN_CORRECTION_HISTORY_LENGTH: usize = 8192;
+
 /// Looks for the best outcome in a position.
 pub struct Search {
     board: Board,
@@ -82,6 +87,7 @@ pub struct Search {
 
     killer_moves: [EncodedMove; 64],
     quiet_history: [[i16; 64 * 64]; 2],
+    pawn_correction_history: [[i16; PAWN_CORRECTION_HISTORY_LENGTH]; 2],
 
     pub pv: Pv,
     pub highest_depth: Ply,
@@ -109,6 +115,8 @@ impl Search {
 
             killer_moves: [EncodedMove::NONE; 64],
             quiet_history: [[0; 64 * 64]; 2],
+
+            pawn_correction_history: [[0; PAWN_CORRECTION_HISTORY_LENGTH]; 2],
 
             pv: Pv::new(),
             highest_depth: 0,
@@ -151,10 +159,14 @@ impl Search {
 
     /// A new match.
     pub fn clear_cache_for_new_game(&mut self) {
-        self.transposition_table.fill(None);
+        self.pawn_correction_history[0].fill(0);
+        self.pawn_correction_history[1].fill(0);
+
         for side in &mut self.quiet_history {
             side.fill(0);
         }
+
+        self.transposition_table.fill(None);
     }
 
     #[must_use]
@@ -162,6 +174,14 @@ impl Search {
         self.quiescence_call_count += 1;
 
         let mut best_score = Eval::evaluate(&self.board);
+        let pawn_index = self
+            .board
+            .pawn_zobrist_key()
+            .modulo(PAWN_CORRECTION_HISTORY_LENGTH as u64);
+        let correction = self.pawn_correction_history[if self.board.white_to_move { 1 } else { 0 }]
+            [pawn_index as usize];
+        best_score += (correction / param!(self).pawn_correction_history_grain) as i32;
+
         if best_score > alpha {
             alpha = best_score;
 
@@ -206,7 +226,8 @@ impl Search {
 
     /// Adds the position into the repetition table and makes a move.
     pub fn make_move(&mut self, move_data: &Move) -> GameState {
-        self.repetition_table.push(self.board.zobrist_key());
+        self.repetition_table
+            .push(self.board.position_zobrist_key());
 
         self.board.make_move(move_data)
     }
@@ -219,7 +240,10 @@ impl Search {
     pub fn unmake_move(&mut self, move_data: &Move, old_state: &GameState) {
         self.board.unmake_move(move_data, old_state);
 
-        assert_eq!(self.repetition_table.pop(), self.board.zobrist_key());
+        assert_eq!(
+            self.repetition_table.pop(),
+            self.board.position_zobrist_key()
+        );
     }
     fn negamax(
         &mut self,
@@ -241,7 +265,7 @@ impl Search {
         self.pv.set_pv_length(ply_from_root, ply_from_root);
 
         // Get the zobrist key
-        let zobrist_key = self.board.zobrist_key();
+        let zobrist_key = self.board.position_zobrist_key();
 
         // Check for repetition
         if ply_from_root != 0 && self.repetition_table.contains(zobrist_key) {
@@ -303,6 +327,10 @@ impl Search {
 
         let move_generator = MoveGenerator::new(&self.board);
 
+        let pawn_index = self
+            .board
+            .pawn_zobrist_key()
+            .modulo(PAWN_CORRECTION_HISTORY_LENGTH as u64);
         let static_eval = {
             let mut static_eval = Eval::evaluate(&self.board);
             if let Some(saved) = saved {
@@ -317,6 +345,9 @@ impl Search {
                     static_eval = saved.value;
                 }
             }
+            let correction = self.pawn_correction_history
+                [if self.board.white_to_move { 1 } else { 0 }][pawn_index as usize];
+            static_eval += (correction / param!(self).pawn_correction_history_grain) as i32;
             static_eval
         };
 
@@ -386,7 +417,7 @@ impl Search {
         }
 
         let mut node_type = NodeType::Alpha;
-        let (mut transposition_move, mut best_score) = (EncodedMove::NONE, -EvalNumber::MAX);
+        let (mut best_move, mut best_score) = (EncodedMove::NONE, -EvalNumber::MAX);
 
         let mut quiets_evaluated: Vec<EncodedMove> = Vec::new();
         let mut index = 0;
@@ -420,7 +451,7 @@ impl Search {
                 use core::arch::aarch64::{_prefetch, _PREFETCH_LOCALITY0, _PREFETCH_READ};
                 let index =
                     self.board
-                        .zobrist_key()
+                        .position_zobrist_key()
                         .distribute(self.transposition_table.len()) as usize;
                 unsafe {
                     _prefetch::<_PREFETCH_READ, _PREFETCH_LOCALITY0>(
@@ -488,7 +519,7 @@ impl Search {
 
             if score > best_score {
                 best_score = score;
-                transposition_move = encoded_move_data;
+                best_move = encoded_move_data;
 
                 if score > alpha {
                     alpha = score;
@@ -560,13 +591,68 @@ impl Search {
             }
         }
 
+        if !move_generator.is_in_check() && !Self::score_is_checkmate(best_score) {
+            let not_loud_move = {
+                if best_move.is_none() {
+                    true
+                } else {
+                    // Not promotion and not capture
+                    !matches!(
+                        best_move.flag(),
+                        Flag::QueenPromotion
+                            | Flag::RookPromotion
+                            | Flag::BishopPromotion
+                            | Flag::KnightPromotion
+                            | Flag::EnPassant
+                    ) && !move_generator.enemy_piece_bit_board().get(&best_move.to())
+                }
+            };
+
+            if not_loud_move
+                && match node_type {
+                    NodeType::Beta => best_score > static_eval,
+                    NodeType::Alpha => best_score < static_eval,
+                    NodeType::Exact => true,
+                }
+            {
+                const CORRECTION_HISTORY_WEIGHT_SCALE: i16 = 1024;
+                const CORRECTION_HISTORY_MAX: i16 = 16384;
+
+                let error = best_score - static_eval;
+
+                let mut entry = self.pawn_correction_history
+                    [if self.board.white_to_move { 1 } else { 0 }][pawn_index as usize]
+                    as i32;
+                let scaled_error = error * param!(self).pawn_correction_history_grain as i32;
+                let new_weight = i32::min(
+                    (ply_remaining as i32) * (ply_remaining as i32)
+                        + 2 * (ply_remaining as i32)
+                        + 1,
+                    128,
+                );
+                assert!(new_weight <= CORRECTION_HISTORY_WEIGHT_SCALE as i32);
+
+                entry = (entry * (CORRECTION_HISTORY_WEIGHT_SCALE as i32 - new_weight)
+                    + scaled_error * new_weight)
+                    / CORRECTION_HISTORY_WEIGHT_SCALE as i32;
+                entry = i32::clamp(
+                    entry,
+                    -CORRECTION_HISTORY_MAX as i32,
+                    CORRECTION_HISTORY_MAX as i32,
+                );
+
+                self.pawn_correction_history[if self.board.white_to_move { 1 } else { 0 }]
+                    [pawn_index as usize] = entry as i16;
+            }
+        }
+
         // Save to transposition table
         self.transposition_table[zobrist_index] = Some(NodeValue {
             zobrist_key_32: zobrist_key.lower_u32(),
             ply_remaining,
             node_type,
             value: best_score,
-            transposition_move,
+            transposition_move: best_move,
         });
 
         best_score
