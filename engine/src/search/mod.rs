@@ -149,6 +149,8 @@ impl Search {
 
     /// Another search.
     pub fn clear_for_new_search(&mut self) {
+        // Don't need to clear `eval_history` because each ply is overwritten before they can be read
+
         self.quiescence_call_count = 0;
         self.highest_depth = 0;
         self.killer_moves.fill(EncodedMove::NONE);
