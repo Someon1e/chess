@@ -632,7 +632,7 @@ impl Search {
                 use core::arch::x86_64::{_mm_prefetch, _MM_HINT_NTA};
                 let index =
                     self.board
-                        .zobrist_key()
+                        .position_zobrist_key()
                         .distribute(self.transposition_table.len()) as usize;
                 unsafe {
                     _mm_prefetch::<{ _MM_HINT_NTA }>(
