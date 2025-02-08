@@ -13,7 +13,7 @@ use search_params::{Tunable, DEFAULT_TUNABLES};
 pub use time_manager::TimeManager;
 
 use crate::{
-    board::{game_state::GameState, zobrist::Zobrist, Board},
+    board::{game_state::GameState, piece::Piece, square::Square, zobrist::Zobrist, Board},
     evaluation::{
         eval_data::{self, EvalNumber},
         Eval,
@@ -90,6 +90,9 @@ pub struct Search {
     pawn_correction_history: [[i16; PAWN_CORRECTION_HISTORY_LENGTH]; 2],
     eval_history: [EvalNumber; 256],
 
+    total_middle_game_score: EvalNumber,
+    total_end_game_score: EvalNumber,
+
     pub pv: Pv,
     pub highest_depth: Ply,
 
@@ -97,6 +100,12 @@ pub struct Search {
 
     #[cfg(feature = "spsa")]
     tunable: Tunable,
+}
+
+pub struct EvalState {
+    game_state: GameState,
+    total_middle_game_score: EvalNumber,
+    total_end_game_score: EvalNumber,
 }
 
 impl Search {
@@ -107,6 +116,8 @@ impl Search {
         transposition_capacity: usize,
         #[cfg(feature = "spsa")] tunable: Tunable,
     ) -> Self {
+        let (total_middle_game_score, total_end_game_score) = Eval::raw_evaluate(&board);
+
         Self {
             board,
 
@@ -119,6 +130,9 @@ impl Search {
 
             pawn_correction_history: [[0; PAWN_CORRECTION_HISTORY_LENGTH]; 2],
             eval_history: [0; 256],
+
+            total_middle_game_score,
+            total_end_game_score,
 
             pv: Pv::new(),
             highest_depth: 0,
@@ -145,6 +159,10 @@ impl Search {
     pub fn new_board(&mut self, board: Board) {
         self.board = board;
         self.repetition_table.clear();
+
+        let (total_middle_game_score, total_end_game_score) = Eval::raw_evaluate(&self.board);
+        self.total_middle_game_score = total_middle_game_score;
+        self.total_end_game_score = total_end_game_score;
     }
 
     /// Another search.
@@ -177,7 +195,7 @@ impl Search {
     fn quiescence_search(&mut self, mut alpha: EvalNumber, beta: EvalNumber) -> EvalNumber {
         self.quiescence_call_count += 1;
 
-        let mut best_score = Eval::evaluate(&self.board);
+        let mut best_score = self.static_evaluate();
         let pawn_index = self
             .board
             .pawn_zobrist_key()
@@ -208,9 +226,9 @@ impl Search {
             .move_data
             .decode();
 
-            let old_state = self.board.make_move(&move_data);
+            let old_state = self.make_move(&move_data);
             let score = -self.quiescence_search(-beta, -alpha);
-            self.board.unmake_move(&move_data, &old_state);
+            self.unmake_move(&move_data, &old_state);
 
             if score > best_score {
                 best_score = score;
@@ -228,27 +246,201 @@ impl Search {
         best_score
     }
 
-    /// Adds the position into the repetition table and makes a move.
-    pub fn make_move(&mut self, move_data: &Move) -> GameState {
+    fn evaluation_remove_piece(&mut self, piece: Piece, square: Square) {
+        let is_white = match piece {
+            Piece::WhitePawn
+            | Piece::WhiteKnight
+            | Piece::WhiteBishop
+            | Piece::WhiteRook
+            | Piece::WhiteQueen
+            | Piece::WhiteKing => true,
+            Piece::BlackPawn
+            | Piece::BlackKnight
+            | Piece::BlackBishop
+            | Piece::BlackRook
+            | Piece::BlackQueen
+            | Piece::BlackKing => false,
+        };
+        let piece_index = if is_white {
+            piece as usize
+        } else {
+            piece as usize - 6
+        };
+        let actual_square = if is_white { square.flip() } else { square };
+        let (middle_game_value, end_game_value) = Eval::get_piece_value(
+            &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLES,
+            &eval_data::END_GAME_PIECE_SQUARE_TABLES,
+            piece_index,
+            actual_square.usize(),
+        );
+
+        if is_white {
+            self.total_middle_game_score -= i32::from(middle_game_value);
+            self.total_end_game_score -= i32::from(end_game_value);
+        } else {
+            self.total_middle_game_score += i32::from(middle_game_value);
+            self.total_end_game_score += i32::from(end_game_value);
+        }
+    }
+    fn evaluation_add_piece(&mut self, piece: Piece, square: Square) {
+        let is_white = match piece {
+            Piece::WhitePawn
+            | Piece::WhiteKnight
+            | Piece::WhiteBishop
+            | Piece::WhiteRook
+            | Piece::WhiteQueen
+            | Piece::WhiteKing => true,
+            Piece::BlackPawn
+            | Piece::BlackKnight
+            | Piece::BlackBishop
+            | Piece::BlackRook
+            | Piece::BlackQueen
+            | Piece::BlackKing => false,
+        };
+        let piece_index = if is_white {
+            piece as usize
+        } else {
+            piece as usize - 6
+        };
+        let actual_square = if is_white { square.flip() } else { square };
+        let (middle_game_value, end_game_value) = Eval::get_piece_value(
+            &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLES,
+            &eval_data::END_GAME_PIECE_SQUARE_TABLES,
+            piece_index,
+            actual_square.usize(),
+        );
+
+        if is_white {
+            self.total_middle_game_score += i32::from(middle_game_value);
+            self.total_end_game_score += i32::from(end_game_value);
+        } else {
+            self.total_middle_game_score -= i32::from(middle_game_value);
+            self.total_end_game_score -= i32::from(end_game_value);
+        }
+    }
+
+    pub fn static_evaluate(&self) -> EvalNumber {
+        let phases = eval_data::PHASES;
+        #[rustfmt::skip]
+        let total_phase = {
+            phases[0] * 16
+            + phases[1] * 4
+            + phases[2] * 4
+            + phases[3] * 4
+            + phases[4] * 2
+        };
+        let phase = Eval::get_phase(&self.board, &phases);
+
+        let static_eval = Eval::calculate_score(
+            phase,
+            total_phase,
+            self.total_middle_game_score,
+            self.total_end_game_score,
+        ) * if self.board.white_to_move { 1 } else { -1 };
+
+        #[cfg(debug_assertions)]
+        {
+            assert_eq!(static_eval, Eval::evaluate(&self.board));
+        }
+
+        static_eval
+    }
+
+    /// Makes a move and updates the evaluation.
+    pub fn make_move(&mut self, move_data: &Move) -> EvalState {
+        let (old_total_middle_game_score, old_total_end_game_score) =
+            (self.total_middle_game_score, self.total_end_game_score);
+
+        let piece = self.board.friendly_piece_at(move_data.from).unwrap();
+
+        self.evaluation_remove_piece(piece, move_data.from);
+
+        let flag = move_data.flag;
+
+        let promotion_piece = flag.get_promotion_piece(self.board.white_to_move);
+
+        if let Some(promotion_piece) = promotion_piece {
+            self.evaluation_add_piece(promotion_piece, move_data.to);
+        } else {
+            self.evaluation_add_piece(piece, move_data.to);
+        }
+
+        match flag {
+            Flag::PawnTwoUp => {}
+            Flag::Castle => {
+                let is_king_side = move_data.to.file() == 6;
+                let rook_to_offset = if is_king_side { -1 } else { 1 };
+                let rook_from_offset = if is_king_side { 1 } else { -2 };
+                let rook = if self.board.white_to_move {
+                    Piece::WhiteRook
+                } else {
+                    Piece::BlackRook
+                };
+                let rook_from = move_data.to.offset(rook_from_offset);
+                let rook_to = move_data.to.offset(rook_to_offset);
+                self.evaluation_remove_piece(rook, rook_from);
+                self.evaluation_add_piece(rook, rook_to);
+            }
+            Flag::EnPassant => {
+                let capture_position = self
+                    .board
+                    .game_state
+                    .en_passant_square
+                    .unwrap()
+                    .down(if self.board.white_to_move { 1 } else { -1 });
+                let captured = if self.board.white_to_move {
+                    Piece::BlackPawn
+                } else {
+                    Piece::WhitePawn
+                };
+
+                self.evaluation_remove_piece(captured, capture_position);
+            }
+            _ => {
+                if let Some(captured) = self.board.enemy_piece_at(move_data.to) {
+                    self.evaluation_remove_piece(captured, move_data.to);
+                }
+            }
+        }
+
+        let game_state = self.board.make_move(move_data);
+
+        EvalState {
+            game_state,
+            total_middle_game_score: old_total_middle_game_score,
+            total_end_game_score: old_total_end_game_score,
+        }
+    }
+
+    /// Adds the position into the repetition table then calls `self.make_move`.
+    pub fn make_move_repetition(&mut self, move_data: &Move) -> EvalState {
         self.repetition_table
             .push(self.board.position_zobrist_key());
 
-        self.board.make_move(move_data)
+        self.make_move(move_data)
     }
 
-    /// Unmakes a move, then removes the position from the repetition table.
+    /// Calls unmake_move, then removes the position from the repetition table.
     ///
     /// # Panics
     ///
     /// Will panic if the zobrist key after playing the move does not match the previous position's.
-    pub fn unmake_move(&mut self, move_data: &Move, old_state: &GameState) {
-        self.board.unmake_move(move_data, old_state);
+    pub fn unmake_move_repetition(&mut self, move_data: &Move, old_state: &EvalState) {
+        self.unmake_move(move_data, old_state);
 
         assert_eq!(
             self.repetition_table.pop(),
             self.board.position_zobrist_key()
         );
     }
+
+    /// Unmakes a move and updates the evaluation.
+    pub fn unmake_move(&mut self, move_data: &Move, old_state: &EvalState) {
+        self.total_middle_game_score = old_state.total_middle_game_score;
+        self.total_end_game_score = old_state.total_end_game_score;
+        self.board.unmake_move(move_data, &old_state.game_state);
+    }
+
     fn negamax(
         &mut self,
 
@@ -336,7 +528,7 @@ impl Search {
             .pawn_zobrist_key()
             .modulo(PAWN_CORRECTION_HISTORY_LENGTH as u64);
         let static_eval = {
-            let mut static_eval = Eval::evaluate(&self.board);
+            let mut static_eval = self.static_evaluate();
             if let Some(saved) = saved {
                 // Use saved value as better static evaluation
                 if !Self::score_is_checkmate(saved.value)
@@ -453,13 +645,13 @@ impl Search {
             let move_data = encoded_move_data.decode();
 
             let is_capture = move_generator.enemy_piece_bit_board().get(&move_data.to);
-            let old_state = self.make_move(&move_data);
+            let old_state = self.make_move_repetition(&move_data);
             #[cfg(target_feature = "sse")]
             {
                 use core::arch::x86_64::{_mm_prefetch, _MM_HINT_NTA};
                 let index =
                     self.board
-                        .zobrist_key()
+                        .position_zobrist_key()
                         .distribute(self.transposition_table.len()) as usize;
                 unsafe {
                     _mm_prefetch::<{ _MM_HINT_NTA }>(
@@ -532,7 +724,7 @@ impl Search {
                 );
             }
 
-            self.unmake_move(&move_data, &old_state);
+            self.unmake_move_repetition(&move_data, &old_state);
 
             if ply_remaining > 1 && time_manager.hard_stop_inner_search() {
                 return 0;
@@ -783,7 +975,7 @@ impl Search {
 #[cfg(test)]
 mod tests {
     use crate::{
-        board::Board,
+        board::{piece::Piece, square::Square, Board},
         evaluation::{eval_data::EvalNumber, Eval},
         search::{search_params::DEFAULT_TUNABLES, transposition::megabytes_to_capacity, Search},
     };
@@ -803,6 +995,48 @@ mod tests {
             )
             .quiescence_search(-EvalNumber::MAX, EvalNumber::MAX),
             Eval::evaluate(&quiet)
+        );
+    }
+
+    #[test]
+    fn evaluation_add_piece_works() {
+        let board = Board::from_fen("8/8/4k3/8/8/8/2K3P1/8 w - - 0 1");
+        let board_without_pawn = Board::from_fen("8/8/4k3/8/8/8/2K5/8 w - - 0 1");
+
+        dbg!(Eval::raw_evaluate(&board));
+        dbg!(Eval::raw_evaluate(&board_without_pawn));
+
+        let mut search = Search::new(
+            board_without_pawn,
+            megabytes_to_capacity(8),
+            #[cfg(feature = "spsa")]
+            DEFAULT_TUNABLES,
+        );
+
+        search.evaluation_add_piece(Piece::WhitePawn, Square::from_notation("g2"));
+
+        assert_eq!(Eval::evaluate(&board), search.static_evaluate());
+    }
+    #[test]
+    fn evaluation_remove_piece_works() {
+        let board = Board::from_fen("8/8/4k3/8/8/8/2K3P1/8 w - - 0 1");
+        let board_without_pawn = Board::from_fen("8/8/4k3/8/8/8/2K5/8 w - - 0 1");
+
+        dbg!(Eval::raw_evaluate(&board));
+        dbg!(Eval::raw_evaluate(&board_without_pawn));
+
+        let mut search = Search::new(
+            board,
+            megabytes_to_capacity(8),
+            #[cfg(feature = "spsa")]
+            DEFAULT_TUNABLES,
+        );
+
+        search.evaluation_remove_piece(Piece::WhitePawn, Square::from_notation("g2"));
+
+        assert_eq!(
+            Eval::evaluate(&board_without_pawn),
+            search.static_evaluate()
         );
     }
 }
