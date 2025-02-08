@@ -41,7 +41,7 @@ impl Eval {
     }
 
     #[must_use]
-    const fn get_piece_value(
+    pub const fn get_piece_value(
         middle_game_piece_square_tables: &PieceSquareTable,
         end_game_piece_square_tables: &PieceSquareTable,
         piece_index: usize,
@@ -55,7 +55,7 @@ impl Eval {
     }
 
     #[must_use]
-    fn calculate_score(
+    pub fn calculate_score(
         phase: EvalNumber,
         total_phase: EvalNumber,
         middle_game_score: EvalNumber,
@@ -66,23 +66,12 @@ impl Eval {
         (middle_game_score * middle_game_phase + end_game_score * end_game_phase) / total_phase
     }
 
-    /// Returns an estimated score of the position for the side playing, using the provided evaluation parameters.
     #[must_use]
-    pub fn evaluate_with_parameters(
+    pub fn raw_evaluate_with_parameters(
         middle_game_piece_square_tables: &PieceSquareTable,
         end_game_piece_square_tables: &PieceSquareTable,
-        phases: &[EvalNumber; 5],
         board: &Board,
-    ) -> EvalNumber {
-        #[rustfmt::skip]
-        let total_phase = {
-            phases[0] * 16
-            + phases[1] * 4
-            + phases[2] * 4
-            + phases[3] * 4
-            + phases[4] * 2
-        };
-
+    ) -> (EvalNumber, EvalNumber) {
         let mut total_middle_game_score = 0;
         let mut total_end_game_score = 0;
 
@@ -116,6 +105,31 @@ impl Eval {
             });
         }
 
+        (total_middle_game_score, total_end_game_score)
+    }
+
+    /// Returns an estimated score of the position for the side playing, using the provided evaluation parameters.
+    #[must_use]
+    pub fn evaluate_with_parameters(
+        middle_game_piece_square_tables: &PieceSquareTable,
+        end_game_piece_square_tables: &PieceSquareTable,
+        phases: &[EvalNumber; 5],
+        board: &Board,
+    ) -> EvalNumber {
+        #[rustfmt::skip]
+        let total_phase = {
+            phases[0] * 16
+            + phases[1] * 4
+            + phases[2] * 4
+            + phases[3] * 4
+            + phases[4] * 2
+        };
+
+        let (total_middle_game_score, total_end_game_score) = Self::raw_evaluate_with_parameters(
+            middle_game_piece_square_tables,
+            end_game_piece_square_tables,
+            board,
+        );
         let phase = Self::get_phase(board, phases);
         Self::calculate_score(
             phase,
@@ -132,6 +146,15 @@ impl Eval {
             &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLES,
             &eval_data::END_GAME_PIECE_SQUARE_TABLES,
             &eval_data::PHASES,
+            board,
+        )
+    }
+
+    #[must_use]
+    pub fn raw_evaluate(board: &Board) -> (EvalNumber, EvalNumber) {
+        Self::raw_evaluate_with_parameters(
+            &eval_data::MIDDLE_GAME_PIECE_SQUARE_TABLES,
+            &eval_data::END_GAME_PIECE_SQUARE_TABLES,
             board,
         )
     }

@@ -411,7 +411,7 @@ uciok",
             search
         };
         for (from, to, promotion) in &self.moves {
-            search.make_move(&decode_move(search.board(), *from, *to, *promotion));
+            search.make_move_repetition(&decode_move(search.board(), *from, *to, *promotion));
         }
 
         let (hard_time_limit, soft_time_limit) = match parameters.move_time.unwrap() {
