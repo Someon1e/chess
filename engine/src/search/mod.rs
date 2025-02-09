@@ -793,8 +793,9 @@ impl Search {
                         break;
                     }
                     if quiets_evaluated.len() as u32 + 1
-                        > param!(self).lmp_base
-                            + u32::from(ply_remaining) * u32::from(ply_remaining)
+                        > (param!(self).lmp_base
+                            + u32::from(ply_remaining) * u32::from(ply_remaining))
+                            / (2 - u32::from(improving))
                     {
                         // Late move pruning
                         break;
