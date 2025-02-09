@@ -27,7 +27,7 @@ impl Pv {
         self.pv_table[0][0]
     }
 
-    pub fn set_pv_length(&mut self, ply_from_root: Ply, length: Ply) {
+    pub const fn set_pv_length(&mut self, ply_from_root: Ply, length: Ply) {
         self.pv_length[ply_from_root as usize] = length;
     }
 

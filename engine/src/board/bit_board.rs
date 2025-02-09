@@ -232,7 +232,7 @@ impl BitBoard {
     /// assert_eq!(bit_board.pop_square(), Square::from_index(2));
     /// ```
     #[must_use]
-    pub fn pop_square(&mut self) -> Square {
+    pub const fn pop_square(&mut self) -> Square {
         let index = self.first_square();
         self.0 &= self.0 - 1;
         index

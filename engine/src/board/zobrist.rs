@@ -30,22 +30,22 @@ impl Zobrist {
     pub const EMPTY: Self = Self(0);
 
     /// Toggles en passant square from hash.
-    pub fn xor_en_passant(&mut self, en_passant_square: &Square) {
+    pub const fn xor_en_passant(&mut self, en_passant_square: &Square) {
         self.0 ^= ZOBRIST_RANDOMS.en_passant_square_file[en_passant_square.file() as usize];
     }
 
     /// Toggles castling rights from hash.
-    pub fn xor_castling_rights(&mut self, castling_rights: &CastlingRights) {
+    pub const fn xor_castling_rights(&mut self, castling_rights: &CastlingRights) {
         self.0 ^= ZOBRIST_RANDOMS.castling_rights[castling_rights.internal_value() as usize];
     }
 
     /// Toggles piece from hash.
-    pub fn xor_piece(&mut self, piece_index: usize, square_index: usize) {
+    pub const fn xor_piece(&mut self, piece_index: usize, square_index: usize) {
         self.0 ^= ZOBRIST_RANDOMS.piece_arrays[piece_index][square_index];
     }
 
     /// Toggles side to move from hash.
-    pub fn flip_side_to_move(&mut self) {
+    pub const fn flip_side_to_move(&mut self) {
         self.0 ^= ZOBRIST_RANDOMS.side_to_move;
     }
 
@@ -77,7 +77,7 @@ mod tests {
     impl crate::board::Zobrist {
         /// For debugging only.
         /// Computes the position zobrist key.
-        pub fn compute(board: &Board) -> Self {
+        #[must_use] pub fn compute(board: &Board) -> Self {
             let mut key = Self::EMPTY;
 
             for (piece, bit_board) in board.bit_boards.iter().enumerate() {
@@ -102,7 +102,7 @@ mod tests {
 
         /// For debugging only.
         /// Computes the pawn zobrist key.
-        pub fn pawn_key(board: &Board) -> Self {
+        #[must_use] pub fn pawn_key(board: &Board) -> Self {
             let mut key = Self::EMPTY;
 
             let mut black_pawns = *board.get_bit_board(Piece::BlackPawn);

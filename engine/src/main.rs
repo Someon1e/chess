@@ -8,7 +8,7 @@ use core::cell::RefCell;
 use engine::{
     board::Board,
     search::{
-        search_params::DEFAULT_TUNABLES, transposition::megabytes_to_capacity, Search, TimeManager,
+        transposition::megabytes_to_capacity, Search, TimeManager,
     },
     timer::Time,
     uci::{SpinU16, UCIProcessor},

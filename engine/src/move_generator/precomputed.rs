@@ -105,13 +105,13 @@ pub const fn get_between_rays(from: Square, to: Square) -> BitBoard {
         line = line.wrapping_mul(btwn & btwn.wrapping_neg());
         BitBoard::new((line & btwn) | (1 << to))
     }
-    const BETWEEN_RAYS: [[BitBoard; 64]; 64] = {
+    static BETWEEN_RAYS: [[BitBoard; 64]; 64] = {
         let mut table = [[BitBoard::EMPTY; 64]; 64];
         let mut from = 0;
         while from < table.len() {
             let mut to = 0;
             while to < table[from].len() {
-                table[from][to] = compute_ray_between(from as usize, to as usize);
+                table[from][to] = compute_ray_between(from, to);
                 to += 1;
             }
             from += 1;

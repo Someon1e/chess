@@ -15,14 +15,14 @@ macro_rules! define_castling_rights {
         #[doc = "Sets "]
         #[doc = $side]
         #[doc = " castling right."]
-        pub fn $setter(&mut self) {
+        pub const fn $setter(&mut self) {
             self.0 |= 1 << $offset;
         }
 
         #[doc = "Unsets "]
         #[doc = $side]
         #[doc = " castling right."]
-        pub fn $unsetter(&mut self) {
+        pub const fn $unsetter(&mut self) {
             self.0 &= !(1 << $offset);
         }
     };

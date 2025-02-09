@@ -13,7 +13,7 @@ use search_params::{Tunable, DEFAULT_TUNABLES};
 pub use time_manager::TimeManager;
 
 use crate::{
-    board::{game_state::GameState, piece::Piece, square::Square, zobrist::Zobrist, Board},
+    board::{game_state::GameState, piece::Piece, square::Square, Board},
     evaluation::{
         eval_data::{self, EvalNumber},
         Eval,
@@ -202,7 +202,7 @@ impl Search {
             .modulo(PAWN_CORRECTION_HISTORY_LENGTH as u64);
         let correction = self.pawn_correction_history[if self.board.white_to_move { 1 } else { 0 }]
             [pawn_index as usize];
-        best_score += (correction / param!(self).pawn_correction_history_grain) as i32;
+        best_score += i32::from(correction / param!(self).pawn_correction_history_grain);
 
         if best_score > alpha {
             alpha = best_score;
@@ -319,6 +319,7 @@ impl Search {
         }
     }
 
+    #[must_use]
     pub fn static_evaluate(&self) -> EvalNumber {
         let phases = eval_data::PHASES;
         #[rustfmt::skip]
@@ -420,7 +421,7 @@ impl Search {
         self.make_move(move_data)
     }
 
-    /// Calls unmake_move, then removes the position from the repetition table.
+    /// Calls `unmake_move`, then removes the position from the repetition table.
     ///
     /// # Panics
     ///
@@ -543,7 +544,7 @@ impl Search {
             }
             let correction = self.pawn_correction_history
                 [if self.board.white_to_move { 1 } else { 0 }][pawn_index as usize];
-            static_eval += (correction / param!(self).pawn_correction_history_grain) as i32;
+            static_eval += i32::from(correction / param!(self).pawn_correction_history_grain);
             static_eval
         };
 
@@ -833,25 +834,26 @@ impl Search {
 
                 let error = best_score - static_eval;
 
-                let mut entry = self.pawn_correction_history
-                    [if self.board.white_to_move { 1 } else { 0 }][pawn_index as usize]
-                    as i32;
-                let scaled_error = error * param!(self).pawn_correction_history_grain as i32;
+                let mut entry = i32::from(
+                    self.pawn_correction_history[if self.board.white_to_move { 1 } else { 0 }]
+                        [pawn_index as usize],
+                );
+                let scaled_error = error * i32::from(param!(self).pawn_correction_history_grain);
                 let new_weight = i32::min(
-                    (ply_remaining as i32) * (ply_remaining as i32)
-                        + 2 * (ply_remaining as i32)
+                    i32::from(ply_remaining) * i32::from(ply_remaining)
+                        + 2 * i32::from(ply_remaining)
                         + 1,
                     128,
                 );
-                assert!(new_weight <= CORRECTION_HISTORY_WEIGHT_SCALE as i32);
+                assert!(new_weight <= i32::from(CORRECTION_HISTORY_WEIGHT_SCALE));
 
-                entry = (entry * (CORRECTION_HISTORY_WEIGHT_SCALE as i32 - new_weight)
+                entry = (entry * (i32::from(CORRECTION_HISTORY_WEIGHT_SCALE) - new_weight)
                     + scaled_error * new_weight)
-                    / CORRECTION_HISTORY_WEIGHT_SCALE as i32;
+                    / i32::from(CORRECTION_HISTORY_WEIGHT_SCALE);
                 entry = i32::clamp(
                     entry,
-                    -CORRECTION_HISTORY_MAX as i32,
-                    CORRECTION_HISTORY_MAX as i32,
+                    i32::from(-CORRECTION_HISTORY_MAX),
+                    i32::from(CORRECTION_HISTORY_MAX),
                 );
 
                 self.pawn_correction_history[if self.board.white_to_move { 1 } else { 0 }]

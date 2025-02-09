@@ -4,7 +4,7 @@ use super::move_data::{Flag, Move};
 
 impl Board {
     /// Skips the turn
-    pub fn make_null_move(&mut self) -> GameState {
+    pub const fn make_null_move(&mut self) -> GameState {
         let old_state = self.game_state;
 
         self.white_to_move = !self.white_to_move;
@@ -22,7 +22,7 @@ impl Board {
     }
 
     /// Unskips the turn
-    pub fn unmake_null_move(&mut self, old_state: &GameState) {
+    pub const fn unmake_null_move(&mut self, old_state: &GameState) {
         self.game_state = *old_state;
         self.white_to_move = !self.white_to_move;
     }

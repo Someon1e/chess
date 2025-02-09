@@ -99,7 +99,7 @@ mod tests {
 
         let board = &mut Board::from_fen(fen);
 
-        let move_count = perft_root(board, depth, |out| println!("{}", out));
+        let move_count = perft_root(board, depth, |out| println!("{out}"));
 
         let seconds_elapsed = start.elapsed().as_secs_f32();
         println!(
@@ -107,10 +107,10 @@ mod tests {
             seconds_elapsed,
             (move_count as f32) / seconds_elapsed
         );
-        if move_count != expected_move_count {
-            panic!("Expected {expected_move_count} got {move_count}")
-        } else {
+        if move_count == expected_move_count {
             println!("Nodes searched: {move_count}");
+        } else {
+            panic!("Expected {expected_move_count} got {move_count}")
         }
     }
 

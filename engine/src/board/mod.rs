@@ -125,7 +125,7 @@ impl Board {
 
     /// Returns a mutable reference to a piece type's bit board.
     #[must_use]
-    pub fn get_bit_board_mut(&mut self, piece: Piece) -> &mut BitBoard {
+    pub const fn get_bit_board_mut(&mut self, piece: Piece) -> &mut BitBoard {
         &mut self.bit_boards[piece as usize]
     }
 }
