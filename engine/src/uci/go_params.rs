@@ -1,5 +1,5 @@
+use core::num::{NonZeroU16, NonZeroU64};
 use core::str::SplitWhitespace;
-use std::num::{NonZeroU16, NonZeroU64};
 
 #[derive(Default)]
 pub struct SearchTimeInfo {

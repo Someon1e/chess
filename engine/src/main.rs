@@ -7,9 +7,7 @@ use std::{env, io::stdin};
 use core::cell::RefCell;
 use engine::{
     board::Board,
-    search::{
-        transposition::megabytes_to_capacity, Search, TimeManager,
-    },
+    search::{transposition::megabytes_to_capacity, Search, TimeManager},
     timer::Time,
     uci::{SpinU16, UCIProcessor},
 };

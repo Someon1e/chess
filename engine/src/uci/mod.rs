@@ -1,5 +1,5 @@
+use core::ops::{Range, RangeInclusive};
 use core::str::SplitWhitespace;
-use std::ops::{Range, RangeInclusive};
 
 mod go_params;
 

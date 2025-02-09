@@ -17,7 +17,7 @@ impl Pv {
         }
     }
 
-    pub fn best_line(&self) -> std::iter::Take<std::slice::Iter<'_, EncodedMove>> {
+    pub fn best_line(&self) -> core::iter::Take<core::slice::Iter<'_, EncodedMove>> {
         self.pv_table[0].iter().take(self.pv_length[0] as usize)
     }
 
