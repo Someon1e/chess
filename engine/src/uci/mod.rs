@@ -108,7 +108,8 @@ pub struct UCIProcessor {
     pub tunables: Tunable,
 }
 
-pub struct TunableRange {
+#[cfg(feature = "spsa")]
+struct TunableRange {
     pub history_decay: RangeInclusive<i16>,
 
     pub iir_min_depth: RangeInclusive<u8>,
@@ -134,6 +135,7 @@ pub struct TunableRange {
     pub aspiration_window_growth: RangeInclusive<i32>,
 }
 
+#[cfg(feature = "spsa")]
 const TUNABLE_RANGES: TunableRange = TunableRange {
     history_decay: 2..=20,
     iir_min_depth: 1..=6,
