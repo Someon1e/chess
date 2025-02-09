@@ -38,9 +38,9 @@ impl Square {
     /// ```
     /// use engine::board::square::Square;
     ///
-    /// assert_eq!(Square::from_index(0), Square::from_notation("a1"));
-    /// assert_eq!(Square::from_index(1), Square::from_notation("b1"));
-    /// assert_eq!(Square::from_index(63), Square::from_notation("h8"));
+    /// assert_eq!(Square::from_index(0), Square::from_notation("a1").unwrap());
+    /// assert_eq!(Square::from_index(1), Square::from_notation("b1").unwrap());
+    /// assert_eq!(Square::from_index(63), Square::from_notation("h8").unwrap());
     /// ```
     #[must_use]
     pub const fn from_index(index: i8) -> Self {
@@ -54,9 +54,9 @@ impl Square {
     /// ```
     /// use engine::board::square::Square;
     ///
-    /// assert_eq!(Square::from_coords(0, 0), Square::from_notation("a1"));
-    /// assert_eq!(Square::from_coords(1, 0), Square::from_notation("a2"));
-    /// assert_eq!(Square::from_coords(0, 1), Square::from_notation("b1"));
+    /// assert_eq!(Square::from_coords(0, 0), Square::from_notation("a1").unwrap());
+    /// assert_eq!(Square::from_coords(1, 0), Square::from_notation("a2").unwrap());
+    /// assert_eq!(Square::from_coords(0, 1), Square::from_notation("b1").unwrap());
     /// ```
     #[must_use]
     pub const fn from_coords(rank: i8, file: i8) -> Self {
@@ -70,7 +70,7 @@ impl Square {
     /// ```
     /// use engine::board::square::Square;
     ///
-    /// assert_eq!(Square::from_notation("a1").up(2), Square::from_notation("a3"));
+    /// assert_eq!(Square::from_notation("a1").unwrap().up(2), Square::from_notation("a3").unwrap());
     /// ```
     #[must_use]
     pub const fn up(&self, number: i8) -> Self {
@@ -84,7 +84,7 @@ impl Square {
     /// ```
     /// use engine::board::square::Square;
     ///
-    /// assert_eq!(Square::from_notation("a3").down(2), Square::from_notation("a1"));
+    /// assert_eq!(Square::from_notation("a3").unwrap().down(2), Square::from_notation("a1").unwrap());
     /// ```
     #[must_use]
     pub const fn down(&self, number: i8) -> Self {
@@ -98,7 +98,7 @@ impl Square {
     /// ```
     /// use engine::board::square::Square;
     ///
-    /// assert_eq!(Square::from_notation("c1").left(2), Square::from_notation("a1"));
+    /// assert_eq!(Square::from_notation("c1").unwrap().left(2), Square::from_notation("a1").unwrap());
     /// ```
     #[must_use]
     pub const fn left(&self, number: i8) -> Self {
@@ -112,7 +112,7 @@ impl Square {
     /// ```
     /// use engine::board::square::Square;
     ///
-    /// assert_eq!(Square::from_notation("a1").right(2), Square::from_notation("c1"));
+    /// assert_eq!(Square::from_notation("a1").unwrap().right(2), Square::from_notation("c1").unwrap());
     /// ```
     #[must_use]
     pub const fn right(&self, number: i8) -> Self {
@@ -162,8 +162,8 @@ impl Square {
     /// ```
     /// use engine::board::square::Square;
     ///
-    /// assert_eq!(Square::from_notation("a1").flip(), Square::from_notation("a8"));
-    /// assert_eq!(Square::from_notation("e4").flip(), Square::from_notation("e5"));
+    /// assert_eq!(Square::from_notation("a1").unwrap().flip(), Square::from_notation("a8").unwrap());
+    /// assert_eq!(Square::from_notation("e4").unwrap().flip(), Square::from_notation("e5").unwrap());
     /// ```
     #[must_use]
     pub const fn flip(&self) -> Self {
@@ -177,8 +177,8 @@ impl Square {
     /// ```
     /// use engine::board::square::Square;
     ///
-    /// assert_eq!(Square::from_notation("a1").flip(), Square::from_notation("a8"));
-    /// assert_eq!(Square::from_notation("e4").flip(), Square::from_notation("e5"));
+    /// assert_eq!(Square::from_notation("a1").unwrap().flip(), Square::from_notation("a8").unwrap());
+    /// assert_eq!(Square::from_notation("e4").unwrap().flip(), Square::from_notation("e5").unwrap());
     /// ```
     #[must_use]
     pub const fn file(&self) -> i8 {
@@ -192,8 +192,8 @@ impl Square {
     /// ```
     /// use engine::board::square::Square;
     ///
-    /// assert_eq!(Square::from_notation("a1").rank(), 0);
-    /// assert_eq!(Square::from_notation("e4").rank(), 3);
+    /// assert_eq!(Square::from_notation("a1").unwrap().rank(), 0);
+    /// assert_eq!(Square::from_notation("e4").unwrap().rank(), 3);
     /// ```
     #[must_use]
     pub const fn rank(&self) -> i8 {
@@ -207,7 +207,7 @@ impl Square {
     /// ```
     /// use engine::board::square::Square;
     ///
-    /// assert_eq!(Square::from_notation("a1").to_notation(), "a1");
+    /// assert_eq!(Square::from_notation("a1").unwrap().to_notation(), "a1");
     /// ```
     #[must_use]
     pub fn to_notation(self) -> String {
@@ -227,7 +227,7 @@ impl Square {
     /// ```
     /// use engine::board::square::Square;
     ///
-    /// assert_eq!(Square::from_notation("a1"), Square::from_index(0));
+    /// assert_eq!(Square::from_notation("a1").unwrap(), Square::from_index(0));
     /// ```
     #[must_use]
     pub fn from_notation(notation: &str) -> Result<Self, &str> {
@@ -254,7 +254,7 @@ impl Square {
     /// ```
     /// use engine::board::{square::Square, bit_board::BitBoard};
     ///
-    /// let square = Square::from_notation("a1");
+    /// let square = Square::from_notation("a1").unwrap();
     /// assert!(square.bit_board() == BitBoard::from_square(&square));
     /// ```
     #[must_use]

@@ -175,8 +175,8 @@ impl BitBoard {
     /// ```
     /// use engine::board::{bit_board::BitBoard, square::Square};
     ///
-    /// assert!(BitBoard::RANK_4.get(&Square::from_notation("a4")));
-    /// assert!(!BitBoard::RANK_4.get(&Square::from_notation("a8")));
+    /// assert!(BitBoard::RANK_4.get(&Square::from_notation("a4").unwrap()));
+    /// assert!(!BitBoard::RANK_4.get(&Square::from_notation("a8").unwrap()));
     /// ```
     #[must_use]
     pub fn get(&self, square: &Square) -> bool {
