@@ -5,7 +5,7 @@ use crate::{
 
 use super::{
     move_data::{Flag, Move},
-    slider_lookup::{get_rook_moves, RELEVANT_ROOK_BLOCKERS},
+    slider_lookup::{get_rook_moves, relevant_rook_blockers},
     MoveGenerator,
 };
 
@@ -201,7 +201,7 @@ pub fn generate(
                         (move_generator.occupied_squares
                             ^ from.bit_board()
                             ^ capture_position.bit_board())
-                            & RELEVANT_ROOK_BLOCKERS[move_generator.friendly_king_square.usize()],
+                            & relevant_rook_blockers(move_generator.friendly_king_square),
                     );
 
                     if unblocked.overlaps(&move_generator.enemy_orthogonal) {

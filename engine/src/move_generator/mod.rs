@@ -22,7 +22,7 @@ pub mod slider_lookup;
 use self::move_data::{Flag, Move};
 use self::precomputed::{KING_MOVES_AT_SQUARE, KNIGHT_MOVES_AT_SQUARE};
 use self::slider_lookup::{
-    get_bishop_moves, get_rook_moves, RELEVANT_BISHOP_BLOCKERS, RELEVANT_ROOK_BLOCKERS,
+    get_bishop_moves, get_rook_moves, relevant_bishop_blockers, relevant_rook_blockers,
 };
 
 /// Legal move generator.
@@ -99,7 +99,7 @@ impl MoveGenerator {
 
 impl MoveGenerator {
     fn gen_bishop(&self, from: Square, add_move: &mut dyn FnMut(Move), captures_only: bool) {
-        let blockers = self.occupied_squares & RELEVANT_BISHOP_BLOCKERS[from.usize()];
+        let blockers = self.occupied_squares & relevant_bishop_blockers(from);
         let possible_moves = get_bishop_moves(from, blockers);
         let mut legal_moves =
             possible_moves & !self.friendly_piece_bit_board & (self.check_mask | self.push_mask);
@@ -119,7 +119,7 @@ impl MoveGenerator {
         });
     }
     fn gen_rook(&self, from: Square, add_move: &mut dyn FnMut(Move), captures_only: bool) {
-        let blockers = self.occupied_squares & RELEVANT_ROOK_BLOCKERS[from.usize()];
+        let blockers = self.occupied_squares & relevant_rook_blockers(from);
         let possible_moves = get_rook_moves(from, blockers);
         let mut legal_moves =
             possible_moves & !self.friendly_piece_bit_board & (self.check_mask | self.push_mask);
@@ -152,14 +152,14 @@ impl MoveGenerator {
     ) -> BitBoard {
         let mut check_mask = BitBoard::EMPTY;
 
-        let diagonal_blockers = occupied_squares & RELEVANT_BISHOP_BLOCKERS[king_square.usize()];
+        let diagonal_blockers = occupied_squares & relevant_bishop_blockers(king_square);
         let diagonal_attacks = get_bishop_moves(king_square, diagonal_blockers);
         let diagonal_attacker = diagonal_attacks & enemy_diagonal;
         if diagonal_attacker.is_not_empty() {
             check_mask |= diagonal_attacker;
         }
 
-        let orthogonal_blockers = occupied_squares & RELEVANT_ROOK_BLOCKERS[king_square.usize()];
+        let orthogonal_blockers = occupied_squares & relevant_rook_blockers(king_square);
         let orthogonal_attacks = get_rook_moves(king_square, orthogonal_blockers);
         let orthogonal_attacker = orthogonal_attacks & enemy_orthogonal;
         if orthogonal_attacker.is_not_empty() {
@@ -193,18 +193,16 @@ impl MoveGenerator {
         occupied_squares: BitBoard,
     ) -> BitBoard {
         let rook_blockers_excluding_king =
-            (occupied_squares ^ king_bit_board) & RELEVANT_ROOK_BLOCKERS[from.usize()];
+            (occupied_squares ^ king_bit_board) & relevant_rook_blockers(from);
         let rook_attacks = get_rook_moves(from, rook_blockers_excluding_king);
         if rook_attacks.overlaps(&king_bit_board) {
             // This piece is checking the king
 
-            let ray = get_rook_moves(
-                from,
-                occupied_squares & RELEVANT_ROOK_BLOCKERS[from.usize()],
-            ) & !king_bit_board
+            let ray = get_rook_moves(from, occupied_squares & relevant_rook_blockers(from))
+                & !king_bit_board
                 & get_rook_moves(
                     king_square,
-                    from.bit_board() & RELEVANT_ROOK_BLOCKERS[king_square.usize()],
+                    from.bit_board() & relevant_rook_blockers(king_square),
                 );
 
             *push_mask |= ray;
@@ -221,18 +219,16 @@ impl MoveGenerator {
         occupied_squares: BitBoard,
     ) -> BitBoard {
         let bishop_blockers_excluding_king =
-            (occupied_squares ^ king_bit_board) & RELEVANT_BISHOP_BLOCKERS[from.usize()];
+            (occupied_squares ^ king_bit_board) & relevant_bishop_blockers(from);
         let bishop_attacks = get_bishop_moves(from, bishop_blockers_excluding_king);
         if bishop_attacks.overlaps(&king_bit_board) {
             // This piece is checking the king
 
-            let ray = get_bishop_moves(
-                from,
-                occupied_squares & RELEVANT_BISHOP_BLOCKERS[from.usize()],
-            ) & !king_bit_board
+            let ray = get_bishop_moves(from, occupied_squares & relevant_bishop_blockers(from))
+                & !king_bit_board
                 & get_bishop_moves(
                     king_square,
-                    from.bit_board() & RELEVANT_BISHOP_BLOCKERS[king_square.usize()],
+                    from.bit_board() & relevant_bishop_blockers(king_square),
                 );
 
             *push_mask |= ray;
@@ -322,7 +318,7 @@ impl MoveGenerator {
         let mut bishop_attackers = enemy_diagonal
             & get_bishop_moves(
                 king_square,
-                enemy_pieces & RELEVANT_BISHOP_BLOCKERS[king_square.usize()],
+                enemy_pieces & relevant_bishop_blockers(king_square),
             );
 
         consume_bit_board!(bishop_attackers, attacker {
@@ -335,7 +331,7 @@ impl MoveGenerator {
         let mut rook_attackers = enemy_orthogonal
             & get_rook_moves(
                 king_square,
-                enemy_pieces & RELEVANT_ROOK_BLOCKERS[king_square.usize()],
+                enemy_pieces & relevant_rook_blockers(king_square),
             );
         consume_bit_board!(rook_attackers, attacker {
             let ray = get_between_rays(king_square, attacker);
@@ -596,14 +592,14 @@ impl MoveGenerator {
 
         let occupied_squares = friendly_piece_bit_board | enemy_piece_bit_board;
 
-        let diagonal_blockers = occupied_squares & RELEVANT_BISHOP_BLOCKERS[king_square.usize()];
+        let diagonal_blockers = occupied_squares & relevant_bishop_blockers(king_square);
         let diagonal_attacks = get_bishop_moves(king_square, diagonal_blockers);
         let diagonal_attacker = diagonal_attacks & enemy_diagonal;
         if diagonal_attacker.is_not_empty() {
             return true;
         }
 
-        let orthogonal_blockers = occupied_squares & RELEVANT_ROOK_BLOCKERS[king_square.usize()];
+        let orthogonal_blockers = occupied_squares & relevant_rook_blockers(king_square);
         let orthogonal_attacks = get_rook_moves(king_square, orthogonal_blockers);
         let orthogonal_attacker = orthogonal_attacks & enemy_orthogonal;
         if orthogonal_attacker.is_not_empty() {

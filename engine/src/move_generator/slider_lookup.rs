@@ -139,11 +139,19 @@ const fn calculate_blockers_for_each_square(direction_offset: usize) -> [BitBoar
     blockers
 }
 
-/// Lookup table for relevant rook blockers.
-pub const RELEVANT_ROOK_BLOCKERS: [BitBoard; 64] = calculate_blockers_for_each_square(0);
+const RELEVANT_ROOK_BLOCKERS: [BitBoard; 64] = calculate_blockers_for_each_square(0);
 
-/// Lookup table for relevant bishop blockers.
-pub const RELEVANT_BISHOP_BLOCKERS: [BitBoard; 64] = calculate_blockers_for_each_square(4);
+/// Get relevant rook blockers for a square.
+pub const fn relevant_rook_blockers(square: Square) -> BitBoard {
+    RELEVANT_ROOK_BLOCKERS[square.index() as usize]
+}
+
+const RELEVANT_BISHOP_BLOCKERS: [BitBoard; 64] = calculate_blockers_for_each_square(4);
+
+/// Get relevant bishop blockers for a square.
+pub const fn relevant_bishop_blockers(square: Square) -> BitBoard {
+    RELEVANT_BISHOP_BLOCKERS[square.index() as usize]
+}
 
 fn fill_lookup(
     lookup: &mut Vec<BitBoard>,
