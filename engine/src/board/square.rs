@@ -235,16 +235,9 @@ impl Square {
             file @ Some(b'a'..=b'h') => file.unwrap() - b'a',
             _ => return Err("Invalid file"),
         };
-        let rank = {
-            if let Some(rank) = notation.chars().nth(1) {
-                if let Some(rank) = rank.to_digit(10) {
-                    rank - 1
-                } else {
-                    return Err("Invalid notation");
-                }
-            } else {
-                return Err("Invalid notation");
-            }
+        let rank = match notation.chars().nth(1) {
+            rank @ Some('1'..='8') => rank.unwrap() as u8 - b'1',
+            _ => return Err("Invalid rank"),
         };
         Ok(Self::from_coords(rank as i8, file as i8))
     }
