@@ -989,9 +989,11 @@ mod tests {
     #[test]
     fn quiescence_search_works() {
         let board =
-            Board::from_fen("rnbqkb1r/pppp1ppp/5n2/4p2Q/4P3/8/PPPPBPPP/RNB1K1NR b KQkq - 3 3");
+            Board::from_fen("rnbqkb1r/pppp1ppp/5n2/4p2Q/4P3/8/PPPPBPPP/RNB1K1NR b KQkq - 3 3")
+                .unwrap();
         let quiet =
-            Board::from_fen("rnbqkb1r/pppp1ppp/8/4p2B/4P3/8/PPPP1PPP/RNB1K1NR b KQkq - 0 4");
+            Board::from_fen("rnbqkb1r/pppp1ppp/8/4p2B/4P3/8/PPPP1PPP/RNB1K1NR b KQkq - 0 4")
+                .unwrap();
         assert_eq!(
             Search::new(
                 board,
@@ -1006,8 +1008,8 @@ mod tests {
 
     #[test]
     fn evaluation_add_piece_works() {
-        let board = Board::from_fen("8/8/4k3/8/8/8/2K3P1/8 w - - 0 1");
-        let board_without_pawn = Board::from_fen("8/8/4k3/8/8/8/2K5/8 w - - 0 1");
+        let board = Board::from_fen("8/8/4k3/8/8/8/2K3P1/8 w - - 0 1").unwrap();
+        let board_without_pawn = Board::from_fen("8/8/4k3/8/8/8/2K5/8 w - - 0 1").unwrap();
 
         dbg!(Eval::raw_evaluate(&board));
         dbg!(Eval::raw_evaluate(&board_without_pawn));
@@ -1019,14 +1021,14 @@ mod tests {
             DEFAULT_TUNABLES,
         );
 
-        search.evaluation_add_piece(Piece::WhitePawn, Square::from_notation("g2"));
+        search.evaluation_add_piece(Piece::WhitePawn, Square::from_notation("g2").unwrap());
 
         assert_eq!(Eval::evaluate(&board), search.static_evaluate());
     }
     #[test]
     fn evaluation_remove_piece_works() {
-        let board = Board::from_fen("8/8/4k3/8/8/8/2K3P1/8 w - - 0 1");
-        let board_without_pawn = Board::from_fen("8/8/4k3/8/8/8/2K5/8 w - - 0 1");
+        let board = Board::from_fen("8/8/4k3/8/8/8/2K3P1/8 w - - 0 1").unwrap();
+        let board_without_pawn = Board::from_fen("8/8/4k3/8/8/8/2K5/8 w - - 0 1").unwrap();
 
         dbg!(Eval::raw_evaluate(&board));
         dbg!(Eval::raw_evaluate(&board_without_pawn));
@@ -1038,7 +1040,7 @@ mod tests {
             DEFAULT_TUNABLES,
         );
 
-        search.evaluation_remove_piece(Piece::WhitePawn, Square::from_notation("g2"));
+        search.evaluation_remove_piece(Piece::WhitePawn, Square::from_notation("g2").unwrap());
 
         assert_eq!(
             Eval::evaluate(&board_without_pawn),

@@ -341,7 +341,10 @@ uciok",
                 "moves" => {
                     for uci_move in args.by_ref() {
                         let (from, to) = (&uci_move[0..2], &uci_move[2..4]);
-                        let (from, to) = (Square::from_notation(from), Square::from_notation(to));
+                        let (from, to) = (
+                            Square::from_notation(from).unwrap(),
+                            Square::from_notation(to).unwrap(),
+                        );
                         let promotion = match uci_move.chars().nth(4) {
                             None => Flag::None,
                             Some('q') => Flag::QueenPromotion,
@@ -378,7 +381,7 @@ uciok",
         let mut parameters = GoParameters::empty();
         parameters.parse(args);
 
-        let mut board = Board::from_fen(self.fen.as_ref().unwrap());
+        let mut board = Board::from_fen(self.fen.as_ref().unwrap()).unwrap();
 
         if matches!(parameters.search_type, SearchType::Perft) {
             for (from, to, promotion) in &self.moves {

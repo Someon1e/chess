@@ -229,20 +229,27 @@ impl Square {
     ///
     /// assert_eq!(Square::from_notation("a1"), Square::from_index(0));
     /// ```
-    /// # Panics
-    ///
-    /// Will panic if the notation is invalid.
     #[must_use]
-    pub fn from_notation(notation: &str) -> Self {
-        let file = notation.as_bytes().first().expect("Invalid notation") - b'a';
-        let rank = notation
-            .chars()
-            .nth(1)
-            .expect("Invalid notation")
-            .to_digit(10)
-            .expect("Invalid notation")
-            - 1;
-        Self::from_coords(rank as i8, file as i8)
+    pub fn from_notation(notation: &str) -> Result<Self, &str> {
+        let file = {
+            if let Some(file) = notation.as_bytes().first() {
+                file - b'a'
+            } else {
+                return Err("Invalid notation");
+            }
+        };
+        let rank = {
+            if let Some(rank) = notation.chars().nth(1) {
+                if let Some(rank) = rank.to_digit(10) {
+                    rank - 1
+                } else {
+                    return Err("Invalid notation");
+                }
+            } else {
+                return Err("Invalid notation");
+            }
+        };
+        Ok(Self::from_coords(rank as i8, file as i8))
     }
 
     /// # Examples

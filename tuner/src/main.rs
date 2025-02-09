@@ -29,7 +29,7 @@ fn parse_data_set() -> Vec<(Board, f64)> {
             _ => panic!("Unknown game result {result}"),
         };
 
-        let board = Board::from_fen(fen);
+        let board = Board::from_fen(fen).unwrap();
         parsed.push((board, result));
     }
     parsed.shrink_to_fit();

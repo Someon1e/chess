@@ -166,8 +166,9 @@ mod tests {
 
     #[test]
     fn advanced_pawn_worth_more() {
-        let starting_rank_pawn = Board::from_fen("7k/8/8/8/8/8/4P3/K7 w - - 0 1");
-        let one_step_from_promoting_pawn = Board::from_fen("7k/4P3/8/8/8/8/8/K7 w - - 0 1");
+        let starting_rank_pawn = Board::from_fen("7k/8/8/8/8/8/4P3/K7 w - - 0 1").unwrap();
+        let one_step_from_promoting_pawn =
+            Board::from_fen("7k/4P3/8/8/8/8/8/K7 w - - 0 1").unwrap();
         assert!(
             Eval::evaluate(&one_step_from_promoting_pawn) > Eval::evaluate(&starting_rank_pawn)
         );
@@ -175,8 +176,8 @@ mod tests {
 
     #[test]
     fn centralised_knight_worth_more() {
-        let centralised_knight = Board::from_fen("7k/8/8/4n3/8/8/8/K7 b - - 0 1");
-        let knight_on_the_edge = Board::from_fen("7k/8/8/8/7n/8/8/K7 b - - 0 1");
+        let centralised_knight = Board::from_fen("7k/8/8/4n3/8/8/8/K7 b - - 0 1").unwrap();
+        let knight_on_the_edge = Board::from_fen("7k/8/8/8/7n/8/8/K7 b - - 0 1").unwrap();
         assert!(Eval::evaluate(&centralised_knight) > Eval::evaluate(&knight_on_the_edge));
     }
 }

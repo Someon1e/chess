@@ -7,18 +7,28 @@ use super::{
     Board,
 };
 
+#[derive(Debug)]
+pub enum FenParseErr {
+    InvalidPiece,
+    MissingSideToMove,
+    InvalidSideToMove,
+    MissingHalfMoveClock,
+    InvalidHalfMoveClock,
+    MissingFullMoveCounter,
+    InvalidFullMoveCounter,
+    MissingEnPassant,
+    InvalidEnPassant,
+    MissingPosition,
+}
+
 impl Board {
     /// The starting position FEN in standard chess.
     pub const START_POSITION_FEN: &'static str =
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
     /// Creates a Board from Forsyth-Edwards Notation.
-    ///
-    /// # Panics
-    ///
-    /// Will panic if the FEN is invalid.
     #[must_use]
-    pub fn from_fen(fen: &str) -> Self {
+    pub fn from_fen(fen: &str) -> Result<Self, FenParseErr> {
         let mut components = fen.split_whitespace();
 
         let mut bit_boards = [BitBoard::EMPTY; 12];
@@ -27,7 +37,14 @@ impl Board {
 
         let (mut rank, mut file) = (7, 0);
 
-        let position = components.next().expect("Missing position").chars();
+        let position = {
+            let component = components.next();
+            if let Some(component) = component {
+                component.chars()
+            } else {
+                return Err(FenParseErr::MissingPosition);
+            }
+        };
 
         for character in position {
             if character == '/' {
@@ -37,16 +54,18 @@ impl Board {
             if let Some(digit) = character.to_digit(10) {
                 file += digit as i8;
             } else {
-                let piece =
-                    Piece::from_fen_char(&character).expect("Failed to parse FEN character");
-                let square = &Square::from_coords(rank, file);
-                bit_boards[piece as usize].set(square);
-                position_zobrist_key.xor_piece(piece as usize, square.usize());
-                if matches!(piece, Piece::WhitePawn | Piece::BlackPawn) {
-                    pawn_zobrist_key.xor_piece(piece as usize, square.usize());
-                }
+                if let Some(piece) = Piece::from_fen_char(&character) {
+                    let square = &Square::from_coords(rank, file);
+                    bit_boards[piece as usize].set(square);
+                    position_zobrist_key.xor_piece(piece as usize, square.usize());
+                    if matches!(piece, Piece::WhitePawn | Piece::BlackPawn) {
+                        pawn_zobrist_key.xor_piece(piece as usize, square.usize());
+                    }
 
-                file += 1;
+                    file += 1;
+                } else {
+                    return Err(FenParseErr::InvalidPiece);
+                }
             }
 
             if file == 8 {
@@ -58,37 +77,60 @@ impl Board {
             }
         }
 
-        let white_to_move = match components.next().expect("Missing w/b to move") {
-            "w" => true,
-            "b" => {
+        let white_to_move = match components.next() {
+            Some("w") => true,
+            Some("b") => {
                 position_zobrist_key.flip_side_to_move();
                 false
             }
-            _ => panic!("No w/b to move"),
+            None => return Err(FenParseErr::MissingSideToMove),
+            _ => return Err(FenParseErr::InvalidSideToMove),
         };
 
         let castling_rights =
             CastlingRights::from_fen_section(components.next().expect("Missing castling rights"));
         position_zobrist_key.xor_castling_rights(&castling_rights);
 
-        let en_passant = components.next().expect("Missing en passant");
+        let en_passant = {
+            if let Some(en_passant) = components.next() {
+                en_passant
+            } else {
+                return Err(FenParseErr::MissingEnPassant);
+            }
+        };
         let en_passant_square = if en_passant == "-" {
             None
         } else {
             let en_passant_square = Square::from_notation(en_passant);
-            position_zobrist_key.xor_en_passant(&en_passant_square);
-            Some(en_passant_square)
+            if en_passant_square.is_err() {
+                return Err(FenParseErr::InvalidEnPassant);
+            }
+            position_zobrist_key.xor_en_passant(&en_passant_square.unwrap());
+            Some(en_passant_square.unwrap())
         };
-        let half_move_clock = components
-            .next()
-            .expect("No half move clock")
-            .parse()
-            .expect("No half move clock");
-        let full_move_counter = components
-            .next()
-            .expect("No full move counter")
-            .parse()
-            .expect("No full move counter");
+        let half_move_clock = {
+            let component = components.next();
+            if component.is_none() {
+                return Err(FenParseErr::MissingHalfMoveClock);
+            }
+            let parsed = component.unwrap().parse();
+            if parsed.is_err() {
+                return Err(FenParseErr::InvalidHalfMoveClock);
+            }
+            parsed.unwrap()
+        };
+
+        let full_move_counter = {
+            let component = components.next();
+            if component.is_none() {
+                return Err(FenParseErr::MissingFullMoveCounter);
+            }
+            let parsed = component.unwrap().parse();
+            if parsed.is_err() {
+                return Err(FenParseErr::InvalidFullMoveCounter);
+            }
+            parsed.unwrap()
+        };
 
         let game_state = GameState {
             en_passant_square,
@@ -115,7 +157,7 @@ impl Board {
         #[cfg(test)]
         assert_eq!(Zobrist::pawn_key(&board), board.pawn_zobrist_key());
 
-        board
+        Ok(board)
     }
 
     /// Gets the Forsyth-Edwards Notation of the Board.
@@ -195,7 +237,7 @@ mod tests {
     #[test]
     fn test_fen_encoding() {
         for (_, _, fen) in crate::tests::TEST_FENS {
-            let board = Board::from_fen(fen);
+            let board = Board::from_fen(fen).unwrap();
             assert_eq!(fen, board.to_fen());
         }
     }

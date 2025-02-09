@@ -233,7 +233,7 @@ mod tests {
 
     #[test]
     fn move_ordering_works() {
-        let board = Board::from_fen("8/P6p/6r1/1q1n4/2P3R1/8/2K2k2/8 w - - 0 1");
+        let board = Board::from_fen("8/P6p/6r1/1q1n4/2P3R1/8/2K2k2/8 w - - 0 1").unwrap();
         let move_generator = MoveGenerator::new(&board);
 
         let (mut move_guesses, move_count) = MoveOrderer::get_move_guesses(
@@ -261,8 +261,8 @@ mod tests {
         assert!(
             next_move().0.decode()
                 == Move {
-                    from: Square::from_notation("c4"),
-                    to: Square::from_notation("b5"),
+                    from: Square::from_notation("c4").unwrap(),
+                    to: Square::from_notation("b5").unwrap(),
                     flag: Flag::None
                 }
         );

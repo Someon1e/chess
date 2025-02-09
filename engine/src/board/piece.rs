@@ -101,24 +101,24 @@ impl Piece {
     ///
     /// # Errors
     ///
-    /// Will return `Err` if `character` is not `'p', 'n', 'b', 'r', 'q', 'k', 'P', 'N', 'B', 'R', 'Q', or 'K'`.
-    pub const fn from_fen_char(character: &char) -> Result<Self, &str> {
+    /// Will return `None` if `character` is not `'p', 'n', 'b', 'r', 'q', 'k', 'P', 'N', 'B', 'R', 'Q', or 'K'`.
+    pub const fn from_fen_char(character: &char) -> Option<Self> {
         match character {
-            'P' => Ok(Self::WhitePawn),
-            'N' => Ok(Self::WhiteKnight),
-            'B' => Ok(Self::WhiteBishop),
-            'R' => Ok(Self::WhiteRook),
-            'Q' => Ok(Self::WhiteQueen),
-            'K' => Ok(Self::WhiteKing),
+            'P' => Some(Self::WhitePawn),
+            'N' => Some(Self::WhiteKnight),
+            'B' => Some(Self::WhiteBishop),
+            'R' => Some(Self::WhiteRook),
+            'Q' => Some(Self::WhiteQueen),
+            'K' => Some(Self::WhiteKing),
 
-            'p' => Ok(Self::BlackPawn),
-            'n' => Ok(Self::BlackKnight),
-            'b' => Ok(Self::BlackBishop),
-            'r' => Ok(Self::BlackRook),
-            'q' => Ok(Self::BlackQueen),
-            'k' => Ok(Self::BlackKing),
+            'p' => Some(Self::BlackPawn),
+            'n' => Some(Self::BlackKnight),
+            'b' => Some(Self::BlackBishop),
+            'r' => Some(Self::BlackRook),
+            'q' => Some(Self::BlackQueen),
+            'k' => Some(Self::BlackKing),
 
-            _ => Err("Invalid piece"),
+            _ => None,
         }
     }
 }

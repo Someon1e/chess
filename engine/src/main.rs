@@ -490,7 +490,7 @@ fn bench() {
     ];
 
     let mut search = Search::new(
-        Board::from_fen(Board::START_POSITION_FEN),
+        Board::from_fen(Board::START_POSITION_FEN).unwrap(),
         megabytes_to_capacity(32),
         #[cfg(feature = "spsa")]
         UCI_PROCESSOR.with(|uci_processor| uci_processor.borrow().tunables),
@@ -499,7 +499,7 @@ fn bench() {
     let mut total_nodes: u64 = 0;
     let time = Time::now();
     for (position, depth) in SEARCH_POSITIONS {
-        let board = Board::from_fen(position);
+        let board = Board::from_fen(position).unwrap();
         search.new_board(board);
         search.clear_cache_for_new_game();
         search.clear_for_new_search();

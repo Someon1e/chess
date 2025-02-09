@@ -97,7 +97,7 @@ mod tests {
     fn debug_perft(fen: &str, depth: u16, expected_move_count: u64) {
         let start = Instant::now();
 
-        let board = &mut Board::from_fen(fen);
+        let board = &mut Board::from_fen(fen).unwrap();
 
         let move_count = perft_root(board, depth, |out| println!("{out}"));
 

@@ -213,7 +213,7 @@ mod tests {
 
     #[test]
     fn blocker_combinations() {
-        let d4 = Square::from_notation("d4");
+        let d4 = Square::from_notation("d4").unwrap();
         let rook_blockers = rook_or_bishop_blockers(d4, 0);
         let bishop_blockers = rook_or_bishop_blockers(d4, 4);
 
@@ -230,9 +230,9 @@ mod tests {
     }
     #[test]
     fn move_lookup_slow() {
-        let d4 = Square::from_notation("d4");
+        let d4 = Square::from_notation("d4").unwrap();
         let mut blockers = BitBoard::EMPTY;
-        blockers.set(&Square::from_notation("h8"));
+        blockers.set(&Square::from_notation("h8").unwrap());
 
         println!("{}", blockers.last_square());
         println!("{}", blockers.first_square());
@@ -242,9 +242,9 @@ mod tests {
     }
     #[test]
     fn move_lookup() {
-        let d4 = Square::from_notation("d4");
+        let d4 = Square::from_notation("d4").unwrap();
         let mut blockers = BitBoard::EMPTY;
-        blockers.set(&Square::from_notation("f4"));
+        blockers.set(&Square::from_notation("f4").unwrap());
 
         let rook_moves = get_rook_moves(d4, blockers & RELEVANT_ROOK_BLOCKERS[d4.usize()]);
         let bishop_moves = get_bishop_moves(d4, blockers & RELEVANT_BISHOP_BLOCKERS[d4.usize()]);
