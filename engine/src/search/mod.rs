@@ -85,10 +85,12 @@ pub struct Search {
 
     transposition_table: Vec<Option<NodeValue>>,
 
-    killer_moves: [EncodedMove; 64],
-    quiet_history: [[i16; 64 * 64]; 2],
-    pawn_correction_history: [[i16; PAWN_CORRECTION_HISTORY_LENGTH]; 2],
+    quiet_history: Box<[[i16; 64 * 64]; 2]>,
+    pawn_correction_history: Box<[[i16; PAWN_CORRECTION_HISTORY_LENGTH]; 2]>,
+
     eval_history: [EvalNumber; 256],
+
+    killer_moves: [EncodedMove; 64],
 
     total_middle_game_score: EvalNumber,
     total_end_game_score: EvalNumber,
@@ -126,9 +128,11 @@ impl Search {
             transposition_table: vec![None; transposition_capacity],
 
             killer_moves: [EncodedMove::NONE; 64],
-            quiet_history: [[0; 64 * 64]; 2],
+            quiet_history: vec![[0; 64 * 64]; 2].try_into().unwrap(),
 
-            pawn_correction_history: [[0; PAWN_CORRECTION_HISTORY_LENGTH]; 2],
+            pawn_correction_history: vec![[0; PAWN_CORRECTION_HISTORY_LENGTH]; 2]
+                .try_into()
+                .unwrap(),
             eval_history: [0; 256],
 
             total_middle_game_score,
@@ -172,10 +176,11 @@ impl Search {
         self.quiescence_call_count = 0;
         self.highest_depth = 0;
         self.killer_moves.fill(EncodedMove::NONE);
-        for side in &mut self.quiet_history {
-            for value in side {
-                *value /= param!(self).history_decay;
-            }
+        for value in &mut self.quiet_history[0] {
+            *value /= param!(self).history_decay;
+        }
+        for value in &mut self.quiet_history[1] {
+            *value /= param!(self).history_decay;
         }
     }
 
@@ -184,9 +189,8 @@ impl Search {
         self.pawn_correction_history[0].fill(0);
         self.pawn_correction_history[1].fill(0);
 
-        for side in &mut self.quiet_history {
-            side.fill(0);
-        }
+        self.quiet_history[0].fill(0);
+        self.quiet_history[1].fill(0);
 
         self.transposition_table.fill(None);
     }
