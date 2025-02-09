@@ -19,6 +19,8 @@ pub enum FenParseErr {
     MissingEnPassant,
     InvalidEnPassant,
     MissingPosition,
+    InvalidDigit,
+    MissingCastling,
 }
 
 impl Board {
@@ -52,7 +54,13 @@ impl Board {
             }
 
             if let Some(digit) = character.to_digit(10) {
+                if digit > 8 {
+                    return Err(FenParseErr::InvalidDigit);
+                }
                 file += digit as i8;
+                if file > 8 {
+                    return Err(FenParseErr::InvalidDigit);
+                }
             } else {
                 if let Some(piece) = Piece::from_fen_char(&character) {
                     let square = &Square::from_coords(rank, file);
@@ -87,8 +95,13 @@ impl Board {
             _ => return Err(FenParseErr::InvalidSideToMove),
         };
 
-        let castling_rights =
-            CastlingRights::from_fen_section(components.next().expect("Missing castling rights"));
+        let castling_rights = CastlingRights::from_fen_section({
+            if let Some(component) = components.next() {
+                component
+            } else {
+                return Err(FenParseErr::MissingCastling);
+            }
+        });
         position_zobrist_key.xor_castling_rights(&castling_rights);
 
         let en_passant = {

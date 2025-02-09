@@ -231,12 +231,9 @@ impl Square {
     /// ```
     #[must_use]
     pub fn from_notation(notation: &str) -> Result<Self, &str> {
-        let file = {
-            if let Some(file) = notation.as_bytes().first() {
-                file - b'a'
-            } else {
-                return Err("Invalid notation");
-            }
+        let file = match notation.as_bytes().first() {
+            file @ Some(b'a'..=b'h') => file.unwrap() - b'a',
+            _ => return Err("Invalid file"),
         };
         let rank = {
             if let Some(rank) = notation.chars().nth(1) {
