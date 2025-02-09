@@ -167,6 +167,8 @@ impl Search {
 
     /// Another search.
     pub fn clear_for_new_search(&mut self) {
+        // Don't need to clear `eval_history` because each ply is overwritten before they can be read
+
         self.quiescence_call_count = 0;
         self.highest_depth = 0;
         self.killer_moves.fill(EncodedMove::NONE);
@@ -545,13 +547,30 @@ impl Search {
             static_eval
         };
 
+        let improving = if move_generator.is_in_check() {
+            if ply_from_root >= 2 {
+                self.eval_history[ply_from_root as usize] =
+                    self.eval_history[ply_from_root as usize - 2];
+            }
+            false
+        } else {
+            self.eval_history[ply_from_root as usize] = static_eval;
+            ply_from_root >= 2 && static_eval > self.eval_history[ply_from_root as usize - 2]
+        };
+
         if is_not_pv_node && !move_generator.is_in_check() {
             // Static null move pruning (also known as reverse futility pruning)
-            if USE_STATIC_NULL_MOVE_PRUNING
-                && ply_remaining < param!(self).static_null_min_depth
-                && static_eval - i32::from(ply_remaining) * param!(self).static_null_margin > beta
-            {
-                return static_eval;
+            if USE_STATIC_NULL_MOVE_PRUNING {
+                let static_null_margin = if improving {
+                    param!(self).improving_static_null_margin
+                } else {
+                    param!(self).static_null_margin
+                };
+                if ply_remaining < param!(self).static_null_min_depth
+                    && static_eval - i32::from(ply_remaining) * static_null_margin > beta
+                {
+                    return static_eval;
+                }
             }
 
             // Null move pruning
