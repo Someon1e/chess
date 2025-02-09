@@ -15,7 +15,8 @@ pub fn get_move_list(move_list: &mut Vec<Move>, board: &mut Board) {
 
 pub fn make_unmake_move_benchmark(c: &mut Criterion) {
     let mut board =
-        Board::from_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1");
+        Board::from_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1")
+            .unwrap();
     let mut move_list = Vec::new();
     get_move_list(&mut move_list, &mut board);
     c.bench_function("kiwipete", |bencher| {
