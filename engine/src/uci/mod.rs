@@ -38,7 +38,7 @@ pub fn encode_move(move_data: Move) -> String {
         Flag::KnightPromotion => encoded.push('n'),
         Flag::BishopPromotion => encoded.push('b'),
         _ => {}
-    };
+    }
     encoded
 }
 

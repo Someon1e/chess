@@ -101,7 +101,7 @@ impl GoParameters {
                         }
 
                         _ => unreachable!(),
-                    };
+                    }
                 }
 
                 "depth" => {

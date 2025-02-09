@@ -341,7 +341,7 @@ impl Search {
         #[cfg(debug_assertions)]
         {
             assert_eq!(static_eval, Eval::evaluate(&self.board));
-        }
+        };
 
         static_eval
     }
@@ -519,7 +519,7 @@ impl Search {
         if ply_remaining == 0 {
             // Enter quiescence search
             return self.quiescence_search(alpha, beta);
-        };
+        }
 
         let move_generator = MoveGenerator::new(&self.board);
 

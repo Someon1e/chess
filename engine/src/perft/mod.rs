@@ -6,7 +6,7 @@ use crate::board::zobrist::Zobrist;
 fn perft(board: &mut Board, depth: u16) -> u64 {
     if depth == 0 {
         return 1;
-    };
+    }
 
     let mut move_count = 0;
     MoveGenerator::new(board).gen(

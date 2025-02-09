@@ -443,14 +443,14 @@ impl MoveGenerator {
             };
 
             king_danger_bit_board |= enemy_pawn_attacks;
-        }
+        };
         {
             let mut enemy_knights = enemy_knights;
             consume_bit_board!(enemy_knights, from {
                 let knight_attacks = Self::knight_attack_bit_board(from);
                 king_danger_bit_board |= knight_attacks;
             });
-        }
+        };
         {
             let mut enemy_diagonal = enemy_diagonal;
             consume_bit_board!(enemy_diagonal, from {
@@ -463,7 +463,7 @@ impl MoveGenerator {
                 );
                 king_danger_bit_board |= dangerous;
             });
-        }
+        };
         {
             let mut enemy_orthogonal = enemy_orthogonal;
             consume_bit_board!(enemy_orthogonal, from {
@@ -476,13 +476,13 @@ impl MoveGenerator {
                 );
                 king_danger_bit_board |= dangerous;
             });
-        }
+        };
         {
             let mut enemy_king = enemy_king;
             consume_bit_board!(enemy_king, from {
                 king_danger_bit_board |= Self::king_attack_bit_board(from);
             });
-        }
+        };
 
         if !is_in_check {
             check_mask = BitBoard::FULL;

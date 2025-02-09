@@ -170,7 +170,7 @@ impl Board {
             if self.game_state.castling_rights.get_black_queen_side() {
                 fen.push('q');
             }
-        };
+        }
         fen.push(' ');
 
         if let Some(en_passant_square) = &self.game_state.en_passant_square {

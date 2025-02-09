@@ -274,6 +274,6 @@ impl Board {
                 });
                 moving_bit_board.toggle_two(&move_data.from, &move_data.to);
             }
-        };
+        }
     }
 }

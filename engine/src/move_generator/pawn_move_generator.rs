@@ -168,7 +168,7 @@ pub fn generate(
         let mut capture_left_no_promotions = capture_left & !capture_left_promotions;
         promotion_captures!(capture_left_promotions, capture_left_offset);
         captures_no_promotions!(capture_left_no_promotions, capture_left_offset);
-    }
+    };
 
     if let Some(en_passant_square) = move_generator.en_passant_square {
         // En passant
@@ -258,7 +258,7 @@ pub fn generate(
                 gen_promotions(add_move, from, to);
             }
         });
-    }
+    };
 
     {
         // Move pawn two squares up
