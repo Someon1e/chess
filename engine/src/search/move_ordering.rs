@@ -26,42 +26,8 @@ const KNIGHT_PROMOTION_BONUS: MoveGuessNum = 20_000_000;
 const ROOK_PROMOTION_BONUS: MoveGuessNum = 0;
 const BISHOP_PROMOTION_BONUS: MoveGuessNum = 0;
 
-macro_rules! repeat_array {
-    // Base case: When no elements are left to process
-    (@internal [$($acc:expr),*] []) => {
-        [$($acc),*]
-    };
-
-    // Recursive case: Process the first element and recurse on the rest
-    (@internal [$($acc:expr),*] [$head:expr $(, $tail:expr)*]) => {
-        repeat_array!(@internal [$($acc,)* $head] [$($tail),*])
-    };
-
-    // Entry point: Duplicate the array by calling the internal rule twice
-    ([$($arr:expr),*]) => {
-        repeat_array!(@internal [$($arr),*] [$($arr),*])
-    };
-}
-
-const MVV_LVA_PAWN: [u8; 12] = repeat_array!([15, 14, 13, 12, 11, 10]); // Victim P > Attacker P, N, B, R, Q, K
-const MVV_LVA_KNIGHT: [u8; 12] = repeat_array!([25, 24, 23, 22, 21, 20]); // Victim N > Attacker P, N, B, R, Q, K
-const MVV_LVA_BISHOP: [u8; 12] = repeat_array!([35, 34, 33, 32, 31, 30]); // Victim B > Attacker P, N, B, R, Q, K
-const MVV_LVA_ROOK: [u8; 12] = repeat_array!([45, 44, 43, 42, 41, 40]); // Victim R > Attacker P, N, B, R, Q, K
-const MVV_LVA_QUEEN: [u8; 12] = repeat_array!([55, 54, 53, 52, 51, 50]); // Victim Q > Attacker P, N, B, R, Q, K
-const MVV_LVA_KING: [u8; 12] = repeat_array!([0, 0, 0, 0, 0, 0]); // Victim K > Attacker P, N, B, R, Q, K
-const MVV_LVA: [[u8; 12]; 12] = [
-    MVV_LVA_PAWN,
-    MVV_LVA_KNIGHT,
-    MVV_LVA_BISHOP,
-    MVV_LVA_ROOK,
-    MVV_LVA_QUEEN,
-    MVV_LVA_KING,
-    MVV_LVA_PAWN,
-    MVV_LVA_KNIGHT,
-    MVV_LVA_BISHOP,
-    MVV_LVA_ROOK,
-    MVV_LVA_QUEEN,
-    MVV_LVA_KING,
+const MVV: [i32; 12] = [
+    100000, 200000, 300000, 400000, 500000, 600000, 100000, 200000, 300000, 400000, 500000, 600000,
 ];
 
 pub struct MoveOrderer;
@@ -93,7 +59,18 @@ impl MoveOrderer {
             score += CAPTURE_BONUS;
 
             let moving_piece = search.board.friendly_piece_at(moving_from).unwrap();
-            score += MoveGuessNum::from(MVV_LVA[capturing as usize][moving_piece as usize]);
+
+            score += MoveGuessNum::from(MVV[capturing as usize])
+                + i32::from(
+                    search.capture_history[moving_piece as usize][moving_to.usize()][if search
+                        .board
+                        .white_to_move
+                    {
+                        capturing as usize - 6
+                    } else {
+                        capturing as usize
+                    }],
+                );
         } else {
             score += MoveGuessNum::from(
                 search.quiet_history[usize::from(search.board.white_to_move)]
@@ -156,6 +133,43 @@ impl MoveOrderer {
         let capturing = search.board.enemy_piece_at(move_data.to).unwrap();
         let moving_piece = search.board.friendly_piece_at(move_data.from).unwrap();
 
+        macro_rules! repeat_array {
+            // Base case: When no elements are left to process
+            (@internal [$($acc:expr),*] []) => {
+                [$($acc),*]
+            };
+
+            // Recursive case: Process the first element and recurse on the rest
+            (@internal [$($acc:expr),*] [$head:expr $(, $tail:expr)*]) => {
+                repeat_array!(@internal [$($acc,)* $head] [$($tail),*])
+            };
+
+            // Entry point: Duplicate the array by calling the internal rule twice
+            ([$($arr:expr),*]) => {
+                repeat_array!(@internal [$($arr),*] [$($arr),*])
+            };
+        }
+
+        const MVV_LVA_PAWN: [u8; 12] = repeat_array!([15, 14, 13, 12, 11, 10]); // Victim P > Attacker P, N, B, R, Q, K
+        const MVV_LVA_KNIGHT: [u8; 12] = repeat_array!([25, 24, 23, 22, 21, 20]); // Victim N > Attacker P, N, B, R, Q, K
+        const MVV_LVA_BISHOP: [u8; 12] = repeat_array!([35, 34, 33, 32, 31, 30]); // Victim B > Attacker P, N, B, R, Q, K
+        const MVV_LVA_ROOK: [u8; 12] = repeat_array!([45, 44, 43, 42, 41, 40]); // Victim R > Attacker P, N, B, R, Q, K
+        const MVV_LVA_QUEEN: [u8; 12] = repeat_array!([55, 54, 53, 52, 51, 50]); // Victim Q > Attacker P, N, B, R, Q, K
+        const MVV_LVA_KING: [u8; 12] = repeat_array!([0, 0, 0, 0, 0, 0]); // Victim K > Attacker P, N, B, R, Q, K
+        const MVV_LVA: [[u8; 12]; 12] = [
+            MVV_LVA_PAWN,
+            MVV_LVA_KNIGHT,
+            MVV_LVA_BISHOP,
+            MVV_LVA_ROOK,
+            MVV_LVA_QUEEN,
+            MVV_LVA_KING,
+            MVV_LVA_PAWN,
+            MVV_LVA_KNIGHT,
+            MVV_LVA_BISHOP,
+            MVV_LVA_ROOK,
+            MVV_LVA_QUEEN,
+            MVV_LVA_KING,
+        ];
         score += MoveGuessNum::from(MVV_LVA[capturing as usize][moving_piece as usize]);
 
         score

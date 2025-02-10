@@ -86,6 +86,7 @@ pub struct Search {
     transposition_table: Vec<Option<NodeValue>>,
 
     quiet_history: Box<[[i16; 64 * 64]; 2]>,
+    capture_history: Box<[[[i16; 6]; 64]; 12]>, // Inner table length is 6 because outer table already gives information about the piece colour
     pawn_correction_history: Box<[[i16; PAWN_CORRECTION_HISTORY_LENGTH]; 2]>,
 
     eval_history: [EvalNumber; 256],
@@ -102,6 +103,11 @@ pub struct Search {
 
     #[cfg(feature = "spsa")]
     tunable: Tunable,
+}
+
+const MAX_HISTORY: i32 = 16384;
+fn history_gravity(current_value: i16, history_bonus: i32) -> i16 {
+    (history_bonus - i32::from(current_value) * history_bonus / MAX_HISTORY) as i16
 }
 
 pub struct EvalState {
@@ -129,6 +135,7 @@ impl Search {
 
             killer_moves: [EncodedMove::NONE; 64],
             quiet_history: vec![[0; 64 * 64]; 2].try_into().unwrap(),
+            capture_history: vec![[[0; 6]; 64]; 12].try_into().unwrap(),
 
             pawn_correction_history: vec![[0; PAWN_CORRECTION_HISTORY_LENGTH]; 2]
                 .try_into()
@@ -176,6 +183,13 @@ impl Search {
         self.quiescence_call_count = 0;
         self.highest_depth = 0;
         self.killer_moves.fill(EncodedMove::NONE);
+
+        for x in self.capture_history.iter_mut() {
+            for y in x.iter_mut() {
+                y.fill(0);
+            }
+        }
+
         for value in &mut self.quiet_history[0] {
             *value /= param!(self).history_decay;
         }
@@ -649,7 +663,9 @@ impl Search {
             .move_data;
             let move_data = encoded_move_data.decode();
 
+            // This won't consider en passant
             let is_capture = move_generator.enemy_piece_bit_board().get(&move_data.to);
+
             let old_state = self.make_move_repetition(&move_data);
             #[cfg(target_feature = "sse")]
             {
@@ -747,18 +763,28 @@ impl Search {
                     node_type = NodeType::Exact;
 
                     if score >= beta {
-                        if !is_capture {
+                        if is_capture {
+                            let moving_piece =
+                                self.board.friendly_piece_at(move_data.from).unwrap();
+                            let captured = self.board.enemy_piece_at(move_data.to).unwrap();
+                            let entry = &mut self.capture_history[moving_piece as usize]
+                                [move_data.to.usize()][if self
+                                .board
+                                .white_to_move
+                            {
+                                captured as usize - 6
+                            } else {
+                                captured as usize
+                            }];
+                            let history_bonus = (i32::from(ply_remaining)
+                                * i32::from(ply_remaining))
+                            .min(MAX_HISTORY);
+                            *entry += history_gravity(*entry, history_bonus);
+                        } else {
                             // Not a capture but still caused beta cutoff, sort this higher later
 
                             if (ply_from_root as usize) < self.killer_moves.len() {
                                 self.killer_moves[usize::from(ply_from_root)] = encoded_move_data;
-                            }
-
-                            const MAX_HISTORY: i32 = 16384;
-                            fn history_gravity(current_value: i16, history_bonus: i32) -> i16 {
-                                (history_bonus
-                                    - i32::from(current_value) * history_bonus / MAX_HISTORY)
-                                    as i16
                             }
 
                             let history_bonus = (i32::from(ply_remaining)
