@@ -152,7 +152,10 @@ fn main() {
     merge_profile_data();
     build_optimised(&target_triple);
     fs::copy(
-        format!("target/{target_triple}/release/engine"),
+        format!(
+            "target/{target_triple}/release/engine{}",
+            env::consts::EXE_SUFFIX
+        ),
         output_file,
     )
     .unwrap();
