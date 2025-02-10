@@ -2,30 +2,41 @@
 
 ## Features:
 - UCI
+- Bit boards
 - Legal move generator
 - Stalemate and checkmate detection
 - Repetition detection
+- Profile-guided optimisation
+
+### Search
+- SPSA-tuned search parameters
 - Fail-soft alpha-beta pruning
 - Iterative deepening
-- Principal Variation Search
+- Principal variation search
 - Aspiration windows
 - Quiescence search
 - Transposition table
-- Tuned piece-square-table-only evaluation
 - Check extensions
+- `improving` heuristic
 
 ### Search pruning and reductions
 - Late move reduction
 - Late move pruning
-- Futility Pruning
+- Futility pruning
 - Static null move pruning (also known as reverse futility pruning)
 - Null move heuristic
 - Internal iterative reduction
 
+### Evaluation
+- Tuned piece-square-table-only evaluation
+- Pawn correction history
+
 ### Search move ordering
-- History heuristic
+- Butterfly history heuristic
 - Killer move heuristic
 - MVV-LVA
 
 ## TODO:
+- Static exchange evaluation
+- Tablebases
 - Opening book
