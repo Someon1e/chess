@@ -26,9 +26,20 @@ const KNIGHT_PROMOTION_BONUS: MoveGuessNum = 20_000_000;
 const ROOK_PROMOTION_BONUS: MoveGuessNum = 0;
 const BISHOP_PROMOTION_BONUS: MoveGuessNum = 0;
 
-const MVV: [i32; 12] = [
-    100000, 200000, 300000, 400000, 500000, 600000, 100000, 200000, 300000, 400000, 500000, 600000,
-];
+const CAPTURING_SCORE: [i32; 12] = {
+    const PAWN: i32 = 10_000;
+    const KNIGHT: i32 = 20_000;
+    const BISHOP: i32 = 21_000;
+    const ROOK: i32 = 30_000;
+    const QUEEN: i32 = 40_000;
+
+    // Should not be possible
+    const KING: i32 = 0;
+
+    [
+        PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING,
+    ]
+};
 
 pub struct MoveOrderer;
 impl MoveOrderer {
@@ -60,7 +71,7 @@ impl MoveOrderer {
 
             let moving_piece = search.board.friendly_piece_at(moving_from).unwrap();
 
-            score += MoveGuessNum::from(MVV[capturing as usize])
+            score += MoveGuessNum::from(CAPTURING_SCORE[capturing as usize])
                 + i32::from(
                     search.capture_history[moving_piece as usize][moving_to.usize()][if search
                         .board
