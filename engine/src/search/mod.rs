@@ -75,7 +75,7 @@ pub struct DepthSearchInfo<'a> {
     pub quiescence_call_count: u32,
 }
 
-const PAWN_CORRECTION_HISTORY_LENGTH: usize = 8192;
+const PAWN_CORRECTION_HISTORY_LENGTH: usize = 16384;
 
 /// Looks for the best outcome in a position.
 pub struct Search {
