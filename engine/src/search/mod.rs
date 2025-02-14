@@ -934,6 +934,10 @@ impl Search {
     ) -> (Ply, EvalNumber) {
         let mut depth = 0;
         let mut previous_best_score = -EvalNumber::MAX;
+
+        let mut best_move_stability = 0;
+        let mut previous_best_move = EncodedMove::NONE;
+
         loop {
             depth += 1;
             let best_score = self.aspiration_search(time_manager, previous_best_score, depth);
@@ -947,6 +951,13 @@ impl Search {
             if self.pv.root_best_move().is_none() || Self::score_is_checkmate(best_score) {
                 // No point searching more.
                 break;
+            }
+
+            if self.pv.root_best_move() == previous_best_move {
+                best_move_stability += 1;
+            } else {
+                best_move_stability = 0;
+                previous_best_move = self.pv.root_best_move();
             }
 
             // Depth was completed
@@ -963,7 +974,7 @@ impl Search {
                 break;
             }
 
-            if time_manager.soft_stop() {
+            if time_manager.soft_stop(best_move_stability) {
                 // It would probably be a waste of time to start another iteration
                 break;
             }
