@@ -155,28 +155,20 @@ impl MoveGenerator {
         let diagonal_blockers = occupied_squares & relevant_bishop_blockers(king_square);
         let diagonal_attacks = get_bishop_moves(king_square, diagonal_blockers);
         let diagonal_attacker = diagonal_attacks & enemy_diagonal;
-        if diagonal_attacker.is_not_empty() {
-            check_mask |= diagonal_attacker;
-        }
+        check_mask |= diagonal_attacker;
 
         let orthogonal_blockers = occupied_squares & relevant_rook_blockers(king_square);
         let orthogonal_attacks = get_rook_moves(king_square, orthogonal_blockers);
         let orthogonal_attacker = orthogonal_attacks & enemy_orthogonal;
-        if orthogonal_attacker.is_not_empty() {
-            check_mask |= orthogonal_attacker;
-        }
+        check_mask |= orthogonal_attacker;
 
         let pawn_check = pawn_move_generator::attack_bit_board(king_square, white_to_move);
         let pawn_attacker = pawn_check & enemy_pawns;
-        if pawn_attacker.is_not_empty() {
-            check_mask |= pawn_attacker;
-        }
+        check_mask |= pawn_attacker;
 
         let knight_check = Self::knight_attack_bit_board(king_square);
         let knight_attacker = knight_check & enemy_knights;
-        if knight_attacker.is_not_empty() {
-            check_mask |= knight_attacker;
-        }
+        check_mask |= knight_attacker;
 
         check_mask
     }
