@@ -61,7 +61,7 @@ impl<'a> TimeManager<'a> {
             Mode::Time {
                 timer,
                 soft_time_limit,
-                ..
+                hard_time_limit,
             } => {
                 const BEST_MOVE_STABILITY_MULTIPLIERS: [u64; 8] =
                     [150, 130, 120, 110, 100, 95, 90, 85];
@@ -69,7 +69,7 @@ impl<'a> TimeManager<'a> {
                     .min(BEST_MOVE_STABILITY_MULTIPLIERS.len() as u8 - 1)
                     as usize];
                 let adjusted_time = (soft_time_limit * multiplier) / 100;
-                timer.milliseconds() > adjusted_time
+                timer.milliseconds() > adjusted_time.min(hard_time_limit)
             }
             Mode::Depth(_) => false,
         }
