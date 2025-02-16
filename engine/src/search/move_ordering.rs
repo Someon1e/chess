@@ -27,13 +27,13 @@ const ROOK_PROMOTION_BONUS: MoveGuessNum = 0;
 const BISHOP_PROMOTION_BONUS: MoveGuessNum = 0;
 
 const CAPTURING_SCORE: [i32; 12] = {
-    const SCALE: i32 = 1300;
+    const SCALE: i32 = 800;
 
     const PAWN: i32 = 10 * SCALE;
-    const KNIGHT: i32 = 20 * SCALE;
-    const BISHOP: i32 = 21 * SCALE;
-    const ROOK: i32 = 30 * SCALE;
-    const QUEEN: i32 = 40 * SCALE;
+    const KNIGHT: i32 = 30 * SCALE;
+    const BISHOP: i32 = 31 * SCALE;
+    const ROOK: i32 = 50 * SCALE;
+    const QUEEN: i32 = 90 * SCALE;
 
     // Should not be possible
     const KING: i32 = 0;
