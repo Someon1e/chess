@@ -19,7 +19,7 @@ use crate::{
     timer::Time,
 };
 
-use self::go_params::GoParameters;
+pub use self::go_params::GoParameters;
 
 /// An value within a range.
 pub struct SpinU16 {
@@ -331,19 +331,16 @@ uciok",
     /// # Panics
     ///
     /// Will panic if there are missing parameters.
-    pub fn go(&mut self, args: &mut SplitWhitespace) {
-        let mut parameters = GoParameters::empty();
-        parameters.parse(args);
-
+    pub fn go(&mut self, parameters: GoParameters) {
         let mut board = Board::from_fen(self.fen.as_ref().unwrap()).unwrap();
 
-        if matches!(parameters.search_type, SearchType::Perft) {
+        if matches!(parameters.search_type(), SearchType::Perft) {
             for (from, to, promotion) in &self.moves {
                 board.make_move(&decode_move(&board, *from, *to, *promotion));
             }
 
             let search_start = Time::now();
-            let nodes = perft_root(&mut board, parameters.depth.unwrap(), self.out);
+            let nodes = perft_root(&mut board, parameters.depth().unwrap(), self.out);
             let time = search_start.milliseconds();
             let nodes_per_second = if time == 0 { 0 } else { (nodes * 1000) / time };
             (self.out)(&format!(
@@ -373,7 +370,7 @@ uciok",
             search.make_move_repetition(&decode_move(search.board(), *from, *to, *promotion));
         }
 
-        let (hard_time_limit, soft_time_limit) = match parameters.move_time.unwrap() {
+        let (hard_time_limit, soft_time_limit) = match parameters.move_time().unwrap() {
             SearchTime::Infinite => (self.max_thinking_time, self.max_thinking_time),
             SearchTime::Fixed(move_time) => (move_time, move_time),
             SearchTime::Info(info) => {

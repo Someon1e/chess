@@ -9,7 +9,7 @@ use engine::{
     board::Board,
     search::{transposition::megabytes_to_capacity, Search, TimeManager},
     timer::Time,
-    uci::{SpinU16, UCIProcessor},
+    uci::{GoParameters, SpinU16, UCIProcessor},
 };
 
 /// Max time for thinking.
@@ -523,7 +523,11 @@ fn process_input(input: &str) -> bool {
     let mut args = input.split_whitespace();
     UCI_PROCESSOR.with(|uci_processor| match args.next().expect("Empty input") {
         "isready" => uci_processor.borrow().isready(),
-        "go" => uci_processor.borrow_mut().go(&mut args),
+        "go" => {
+            let mut parameters = GoParameters::empty();
+            parameters.parse(&mut args);
+            uci_processor.borrow_mut().go(parameters)
+        }
         "position" => uci_processor.borrow_mut().position(&mut args),
         "ucinewgame" => uci_processor.borrow_mut().ucinewgame(),
         "setoption" => uci_processor.borrow_mut().setoption(input),

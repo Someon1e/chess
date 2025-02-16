@@ -22,15 +22,15 @@ pub enum SearchType {
 }
 
 pub struct GoParameters {
-    pub nodes: Option<u64>,
+    nodes: Option<u64>,
 
-    pub depth: Option<u16>,
+    depth: Option<u16>,
 
-    pub find_mate: Option<u16>,
+    find_mate: Option<u16>,
 
-    pub search_type: SearchType,
+    search_type: SearchType,
 
-    pub move_time: Option<SearchTime>,
+    move_time: Option<SearchTime>,
 }
 
 impl GoParameters {
@@ -38,13 +38,9 @@ impl GoParameters {
     pub const fn empty() -> Self {
         Self {
             nodes: None,
-
             depth: None,
-
             find_mate: None,
-
             search_type: SearchType::None,
-
             move_time: None,
         }
     }
@@ -131,5 +127,20 @@ impl GoParameters {
                 _ => panic!("Unknown parameter"),
             }
         }
+    }
+    pub fn search_type(&self) -> &SearchType {
+        &self.search_type
+    }
+    pub fn move_time(self) -> Option<SearchTime> {
+        self.move_time
+    }
+    pub fn find_mate(&self) -> Option<u16> {
+        self.find_mate
+    }
+    pub fn depth(&self) -> Option<u16> {
+        self.depth
+    }
+    pub fn nodes(&self) -> Option<u64> {
+        self.nodes
     }
 }
