@@ -9,7 +9,7 @@ fn perft(board: &mut Board, depth: u16) -> u64 {
     }
 
     let mut move_count = 0;
-    MoveGenerator::new(board).gen(
+    MoveGenerator::new(board).generate(
         &mut |move_data| {
             if !cfg!(test) && depth == 1 {
                 move_count += 1;
@@ -36,7 +36,7 @@ fn perft(board: &mut Board, depth: u16) -> u64 {
 /// Starts a perft test.
 pub fn perft_root(board: &mut Board, depth: u16, log: fn(&str)) -> u64 {
     let mut move_count = 0;
-    MoveGenerator::new(board).gen(
+    MoveGenerator::new(board).generate(
         &mut |move_data| {
             if !cfg!(test) && depth == 1 {
                 log(&format!("{}: 1", uci::encode_move(move_data)));

@@ -123,7 +123,7 @@ impl MoveOrderer {
             .skip(unsorted_index)
         {
             // Iterate part of the array that is unsorted
-            let guess = item.assume_init().guess;
+            let guess = unsafe { item.assume_init() }.guess;
             if guess > highest_guess {
                 // New highest guess
                 highest_guess = guess;
@@ -136,7 +136,7 @@ impl MoveOrderer {
             move_guesses.swap(index_of_highest_move, unsorted_index);
         }
 
-        move_guesses[unsorted_index].assume_init()
+        unsafe { move_guesses[unsorted_index].assume_init() }
     }
 
     fn guess_capture_value(search: &Search, move_data: Move) -> MoveGuessNum {
@@ -168,7 +168,7 @@ impl MoveOrderer {
         let mut move_guesses = [MaybeUninit::uninit(); MAX_CAPTURES];
 
         let mut index = 0;
-        move_generator.gen(
+        move_generator.generate(
             &mut |move_data| {
                 let encoded = EncodedMove::new(move_data);
                 move_guesses[index].write(MoveGuess {
@@ -192,7 +192,7 @@ impl MoveOrderer {
         let mut move_guesses = [MaybeUninit::uninit(); MAX_LEGAL_MOVES];
 
         let mut index = 0;
-        move_generator.gen(
+        move_generator.generate(
             &mut |move_data| {
                 let encoded = EncodedMove::new(move_data);
 

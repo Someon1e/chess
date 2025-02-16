@@ -5,7 +5,7 @@ use engine::{
 };
 
 pub fn get_move_list(move_list: &mut Vec<Move>, board: &mut Board) {
-    MoveGenerator::new(board).gen(
+    MoveGenerator::new(board).generate(
         &mut |move_data| {
             move_list.push(move_data);
         },

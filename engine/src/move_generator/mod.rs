@@ -515,7 +515,7 @@ impl MoveGenerator {
     }
 
     /// Generates all friendly piece moves
-    pub fn gen(&self, add_move: &mut dyn FnMut(Move), captures_only: bool) {
+    pub fn generate(&self, add_move: &mut dyn FnMut(Move), captures_only: bool) {
         self.gen_king(add_move, captures_only);
         if self.is_in_double_check {
             // Only king can move in double check

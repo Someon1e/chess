@@ -2,7 +2,7 @@
 name = "zobrist"
 version = "0.1.0"
 description = "Generates random 64 bit numbers used for zobrist hashing"
-edition = "2021"
+edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
