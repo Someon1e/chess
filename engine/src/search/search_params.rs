@@ -25,6 +25,8 @@ pub(crate) struct Tunable {
     pub aspiration_window_start: i32,
     pub aspiration_window_growth: i32,
     pub pawn_correction_history_grain: i16,
+
+    pub lmr_not_improving: u8,
 }
 
 pub(crate) const DEFAULT_TUNABLES: Tunable = Tunable {
@@ -37,8 +39,8 @@ pub(crate) const DEFAULT_TUNABLES: Tunable = Tunable {
     static_null_min_depth: 7,
     lmr_min_index: 6,
     lmr_min_depth: 3,
-    lmr_ply_divisor: 9,
-    lmr_index_divisor: 9,
+    lmr_ply_divisor: 10,
+    lmr_index_divisor: 10,
     lmp_base: 2,
     nmp_min_depth: 2,
     nmp_base_reduction: 3,
@@ -46,4 +48,5 @@ pub(crate) const DEFAULT_TUNABLES: Tunable = Tunable {
     aspiration_window_start: 20,
     aspiration_window_growth: 43,
     pawn_correction_history_grain: 256,
+    lmr_not_improving: 1,
 };
