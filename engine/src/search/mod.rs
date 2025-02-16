@@ -988,6 +988,19 @@ impl Search {
     pub const fn quiescence_call_count(&self) -> u32 {
         self.quiescence_call_count
     }
+
+    #[must_use]
+    pub fn calculate_time(
+        &self,
+        clock_time: u64,
+        increment: u64,
+        max_thinking_time: u64,
+    ) -> (u64, u64) {
+        let max_time = max_thinking_time.min(clock_time / 2);
+        let hard_time_limit = (clock_time / 6 + increment * 2).min(max_time);
+        let soft_time_limit = (clock_time / 24 + increment / 2).min(hard_time_limit);
+        (hard_time_limit, soft_time_limit)
+    }
 }
 
 #[cfg(test)]
