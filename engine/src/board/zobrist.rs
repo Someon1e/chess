@@ -77,7 +77,8 @@ mod tests {
     impl crate::board::Zobrist {
         /// For debugging only.
         /// Computes the position zobrist key.
-        #[must_use] pub fn compute(board: &Board) -> Self {
+        #[must_use]
+        pub fn compute(board: &Board) -> Self {
             let mut key = Self::EMPTY;
 
             for (piece, bit_board) in board.bit_boards.iter().enumerate() {
@@ -102,7 +103,8 @@ mod tests {
 
         /// For debugging only.
         /// Computes the pawn zobrist key.
-        #[must_use] pub fn pawn_key(board: &Board) -> Self {
+        #[must_use]
+        pub fn pawn_key(board: &Board) -> Self {
             let mut key = Self::EMPTY;
 
             let mut black_pawns = *board.get_bit_board(Piece::BlackPawn);

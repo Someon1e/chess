@@ -10,7 +10,7 @@ use super::{encoded_move::EncodedMove, Search};
 pub type MoveGuessNum = i32;
 
 #[derive(Clone, Copy)]
-pub struct MoveGuess {
+pub(crate) struct MoveGuess {
     guess: MoveGuessNum,
     pub move_data: EncodedMove,
 }
@@ -64,7 +64,7 @@ const MVV_LVA: [[u8; 12]; 12] = [
     MVV_LVA_KING,
 ];
 
-pub struct MoveOrderer;
+pub(crate) struct MoveOrderer;
 impl MoveOrderer {
     fn guess_move_value(search: &Search, move_data: Move) -> MoveGuessNum {
         let moving_from = move_data.from;

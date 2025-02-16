@@ -1,6 +1,6 @@
 use crate::board::zobrist::Zobrist;
 
-pub struct RepetitionTable {
+pub(crate) struct RepetitionTable {
     positions: Vec<Zobrist>,
 }
 

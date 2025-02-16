@@ -1,5 +1,5 @@
 #[derive(Clone, Copy)]
-pub struct Tunable {
+pub(crate) struct Tunable {
     pub history_decay: i16,
 
     pub iir_min_depth: u8,
@@ -27,7 +27,7 @@ pub struct Tunable {
     pub pawn_correction_history_grain: i16,
 }
 
-pub const DEFAULT_TUNABLES: Tunable = Tunable {
+pub(crate) const DEFAULT_TUNABLES: Tunable = Tunable {
     history_decay: 9,
     iir_min_depth: 5,
     iir_depth_reduction: 2,
