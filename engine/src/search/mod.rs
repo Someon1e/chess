@@ -764,33 +764,29 @@ impl Search {
                     node_type = NodeType::Exact;
 
                     if score >= beta {
-                        if is_capture {
-                            fn get_entry(
-                                search: &mut Search,
-                                from: Square,
-                                to: Square,
-                            ) -> &mut i16 {
-                                let moving_piece = search.board.friendly_piece_at(from).unwrap();
-                                let captured = search.board.enemy_piece_at(to).unwrap();
-                                &mut search.capture_history[moving_piece as usize][to.usize()]
-                                    [if search.board.white_to_move {
-                                        captured as usize - 6
-                                    } else {
-                                        captured as usize
-                                    }]
-                            }
+                        fn get_capture_entry(
+                            search: &mut Search,
+                            from: Square,
+                            to: Square,
+                        ) -> &mut i16 {
+                            let moving_piece = search.board.friendly_piece_at(from).unwrap();
+                            let captured = search.board.enemy_piece_at(to).unwrap();
+                            &mut search.capture_history[moving_piece as usize][to.usize()][if search
+                                .board
+                                .white_to_move
+                            {
+                                captured as usize - 6
+                            } else {
+                                captured as usize
+                            }]
+                        }
 
+                        if is_capture {
                             let history_bonus = (i32::from(ply_remaining)
                                 * i32::from(ply_remaining))
                             .min(MAX_HISTORY);
-                            let entry = get_entry(self, move_data.from, move_data.to);
+                            let entry = get_capture_entry(self, move_data.from, move_data.to);
                             *entry += history_gravity(*entry, history_bonus);
-
-                            for previous_capture in captures_evaluated {
-                                let previous_entry =
-                                    get_entry(self, previous_capture.from(), previous_capture.to());
-                                *previous_entry += history_gravity(*previous_entry, -history_bonus);
-                            }
                         } else {
                             // Not a capture but still caused beta cutoff, sort this higher later
 
@@ -815,6 +811,19 @@ impl Search {
                                 *history += history_gravity(*history, -history_bonus);
                             }
                         }
+
+                        let history_malus = -((i32::from(ply_remaining)
+                            * i32::from(ply_remaining))
+                        .min(MAX_HISTORY));
+                        for previous_capture in captures_evaluated {
+                            let previous_entry = get_capture_entry(
+                                self,
+                                previous_capture.from(),
+                                previous_capture.to(),
+                            );
+                            *previous_entry += history_gravity(*previous_entry, history_malus);
+                        }
+
                         node_type = NodeType::Beta;
                         break;
                     }
