@@ -1,7 +1,9 @@
 use crate::timer::Time;
 
+use super::Ply;
+
 enum Mode<'a> {
-    Depth(u8),
+    Depth(Ply),
     Time {
         timer: &'a Time,
         hard_time_limit: u64,
@@ -26,7 +28,7 @@ impl<'a> TimeManager<'a> {
         }
     }
     #[must_use]
-    pub const fn depth_limited(depth: u8) -> Self {
+    pub const fn depth_limited(depth: Ply) -> Self {
         Self {
             mode: Mode::Depth(depth),
         }
@@ -43,7 +45,7 @@ impl<'a> TimeManager<'a> {
         }
     }
     #[must_use]
-    pub fn hard_stop_iterative_deepening(&self, depth: u8) -> bool {
+    pub fn hard_stop_iterative_deepening(&self, depth: Ply) -> bool {
         match self.mode {
             Mode::Time {
                 timer,
@@ -54,13 +56,21 @@ impl<'a> TimeManager<'a> {
         }
     }
     #[must_use]
-    pub fn soft_stop(&self) -> bool {
+    pub fn soft_stop(&self, best_move_stability: Ply) -> bool {
         match self.mode {
             Mode::Time {
                 timer,
                 soft_time_limit,
-                ..
-            } => timer.milliseconds() > soft_time_limit,
+                hard_time_limit,
+            } => {
+                const BEST_MOVE_STABILITY_MULTIPLIERS: [u64; 8] =
+                    [150, 130, 120, 110, 100, 95, 90, 85];
+                let multiplier = BEST_MOVE_STABILITY_MULTIPLIERS[best_move_stability
+                    .min(BEST_MOVE_STABILITY_MULTIPLIERS.len() as u8 - 1)
+                    as usize];
+                let adjusted_time = (soft_time_limit * multiplier) / 100;
+                timer.milliseconds() > adjusted_time.min(hard_time_limit)
+            }
             Mode::Depth(_) => false,
         }
     }
