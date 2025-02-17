@@ -128,4 +128,70 @@ impl Board {
     pub const fn get_bit_board_mut(&mut self, piece: Piece) -> &mut BitBoard {
         &mut self.bit_boards[piece as usize]
     }
+
+    /// Returns true if any of the below are true:
+    /// - Both sides have a bare King
+    /// - King and a Minor Piece versus a bare King
+    /// - Both sides have a King and a Bishop, the Bishops being the same Color
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use engine::board::Board;
+    ///
+    /// // Both sides have a bare King
+    /// assert!(Board::from_fen("8/8/8/6k1/1K6/8/8/8 w - - 0 1").unwrap().is_insufficient_material());
+    /// assert!(Board::from_fen("8/3K4/8/8/8/8/3k4/8 w - - 0 1").unwrap().is_insufficient_material());
+    ///
+    /// // One side has a King and a Minor Piece against a bare King
+    /// assert!(Board::from_fen("8/4bk2/8/8/8/8/3K4/8 w - - 0 1").unwrap().is_insufficient_material());
+    /// assert!(Board::from_fen("8/5k2/8/8/8/3B4/3K4/8 w - - 0 1").unwrap().is_insufficient_material());
+    ///
+    /// // Both sides have a King and a Bishop, the Bishops being the same Color
+    /// assert!(Board::from_fen("8/3KB3/8/8/8/4b3/3k4/8 w - - 0 1").unwrap().is_insufficient_material());
+    ///
+    /// // Normal position
+    /// assert!(!Board::from_fen(Board::START_POSITION_FEN).unwrap().is_insufficient_material());
+    /// ```
+    #[must_use]
+    pub fn is_insufficient_material(&self) -> bool {
+        let white_nonking = *self.get_bit_board(Piece::WhitePawn)
+            | *self.get_bit_board(Piece::WhiteKnight)
+            | *self.get_bit_board(Piece::WhiteBishop)
+            | *self.get_bit_board(Piece::WhiteRook)
+            | *self.get_bit_board(Piece::WhiteQueen);
+        let black_nonking = *self.get_bit_board(Piece::BlackPawn)
+            | *self.get_bit_board(Piece::BlackKnight)
+            | *self.get_bit_board(Piece::BlackBishop)
+            | *self.get_bit_board(Piece::BlackRook)
+            | *self.get_bit_board(Piece::BlackQueen);
+
+        // Both sides have a bare King
+        if white_nonking.is_empty() && black_nonking.is_empty() {
+            return true;
+        }
+
+        let kings = *self.get_bit_board(Piece::WhiteKing) | *self.get_bit_board(Piece::BlackKing);
+
+        let bishops =
+            *self.get_bit_board(Piece::WhiteBishop) | *self.get_bit_board(Piece::BlackBishop);
+        let all_pieces = white_nonking | black_nonking | kings;
+
+        // King and a Minor Piece versus a bare King
+        let minor_pieces = *self.get_bit_board(Piece::BlackKnight)
+            | *self.get_bit_board(Piece::WhiteKnight)
+            | bishops;
+        if all_pieces == (kings | minor_pieces) && minor_pieces.count() == 1 {
+            return true;
+        }
+
+        // Both sides have a King and a Bishop, the Bishops being the same Color
+        if (all_pieces == kings | (bishops & BitBoard::LIGHT_SQUARES))
+            || (all_pieces == kings | (bishops & BitBoard::DARK_SQUARES))
+        {
+            return true;
+        }
+
+        false
+    }
 }

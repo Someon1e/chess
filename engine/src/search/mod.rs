@@ -9,18 +9,18 @@ mod time_manager;
 pub mod transposition;
 
 use pv::Pv;
-use search_params::{Tunable, DEFAULT_TUNABLES};
+use search_params::{DEFAULT_TUNABLES, Tunable};
 pub use time_manager::TimeManager;
 
 use crate::{
-    board::{game_state::GameState, piece::Piece, square::Square, Board},
+    board::{Board, game_state::GameState, piece::Piece, square::Square},
     evaluation::{
-        eval_data::{self, EvalNumber},
         Eval,
+        eval_data::{self, EvalNumber},
     },
     move_generator::{
-        move_data::{Flag, Move},
         MoveGenerator,
+        move_data::{Flag, Move},
     },
 };
 
@@ -469,8 +469,13 @@ impl Search {
         let zobrist_key = self.board.position_zobrist_key();
 
         // Check for repetition
-        if ply_from_root != 0 && self.repetition_table.contains(zobrist_key) {
-            return 0;
+        if ply_from_root != 0 {
+            if self.repetition_table.contains(zobrist_key) {
+                return 0;
+            }
+            if self.board.is_insufficient_material() {
+                return 0;
+            }
         }
 
         // Turn zobrist key into an index into the transposition table
@@ -653,7 +658,7 @@ impl Search {
             let old_state = self.make_move_repetition(&move_data);
             #[cfg(target_feature = "sse")]
             {
-                use core::arch::x86_64::{_mm_prefetch, _MM_HINT_NTA};
+                use core::arch::x86_64::{_MM_HINT_NTA, _mm_prefetch};
                 let index =
                     self.board
                         .position_zobrist_key()
@@ -666,7 +671,7 @@ impl Search {
             }
             #[cfg(any(target_arch = "aarch64", target_arch = "arm64ec"))]
             {
-                use core::arch::aarch64::{_prefetch, _PREFETCH_LOCALITY0, _PREFETCH_READ};
+                use core::arch::aarch64::{_PREFETCH_LOCALITY0, _PREFETCH_READ, _prefetch};
                 let index =
                     self.board
                         .position_zobrist_key()
@@ -1006,9 +1011,9 @@ impl Search {
 #[cfg(test)]
 mod tests {
     use crate::{
-        board::{piece::Piece, square::Square, Board},
-        evaluation::{eval_data::EvalNumber, Eval},
-        search::{search_params::DEFAULT_TUNABLES, transposition::megabytes_to_capacity, Search},
+        board::{Board, piece::Piece, square::Square},
+        evaluation::{Eval, eval_data::EvalNumber},
+        search::{Search, search_params::DEFAULT_TUNABLES, transposition::megabytes_to_capacity},
     };
 
     #[test]
