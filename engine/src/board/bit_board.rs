@@ -76,6 +76,9 @@ impl BitBoard {
     /// Bit board with all bits set.
     pub const FULL: Self = Self(!0);
 
+    pub const LIGHT_SQUARES: Self = Self(0x55AA55AA55AA55AA);
+    pub const DARK_SQUARES: Self = Self(0xAA55AA55AA55AA55);
+
     /// Bit board from a 64 bit number.
     #[must_use]
     pub const fn new(bits: u64) -> Self {
