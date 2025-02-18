@@ -762,8 +762,8 @@ impl Search {
                             const MAX_HISTORY: i32 = 16384;
                             fn history_gravity(current_value: i16, history_bonus: i32) -> i16 {
                                 (history_bonus
-                                    - i32::from(current_value) * history_bonus / MAX_HISTORY)
-                                    as i16
+                                    - (i32::from(current_value) * history_bonus.abs()
+                                        / MAX_HISTORY)) as i16
                             }
 
                             let history_bonus = (i32::from(ply_remaining)
