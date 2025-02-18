@@ -766,9 +766,10 @@ impl Search {
                                         / MAX_HISTORY)) as i16
                             }
 
-                            let history_bonus = (i32::from(ply_remaining)
-                                * i32::from(ply_remaining))
-                            .min(MAX_HISTORY);
+                            let history_bonus = (param!(self).history_multiplier
+                                * i32::from(ply_remaining)
+                                - param!(self).history_subtraction)
+                                .min(MAX_HISTORY);
 
                             let history_side =
                                 &mut self.quiet_history[usize::from(self.board.white_to_move)];
