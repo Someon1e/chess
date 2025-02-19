@@ -14,6 +14,7 @@ enum Mode<'a> {
         hard_time_limit: u64,
         soft_time_limit: u64,
     },
+    Infinite,
 }
 
 pub struct TimeManager<'a> {
@@ -47,6 +48,13 @@ impl<'a> TimeManager<'a> {
         }
     }
     #[must_use]
+    pub const fn infinite(stopped: Arc<AtomicBool>) -> Self {
+        Self {
+            stopped,
+            mode: Mode::Infinite,
+        }
+    }
+    #[must_use]
     pub fn hard_stop_inner_search(&self) -> bool {
         self.stopped.load(Ordering::SeqCst)
             || match self.mode {
@@ -55,6 +63,7 @@ impl<'a> TimeManager<'a> {
                     hard_time_limit,
                     ..
                 } => timer.milliseconds() > hard_time_limit,
+                Mode::Infinite => false,
                 Mode::Depth(_) => false,
             }
     }
@@ -67,6 +76,7 @@ impl<'a> TimeManager<'a> {
                     hard_time_limit,
                     ..
                 } => timer.milliseconds() > hard_time_limit,
+                Mode::Infinite => false,
                 Mode::Depth(max_depth) => depth > max_depth,
             }
     }
@@ -87,6 +97,7 @@ impl<'a> TimeManager<'a> {
                     let adjusted_time = (soft_time_limit * multiplier) / 100;
                     timer.milliseconds() > adjusted_time.min(hard_time_limit)
                 }
+                Mode::Infinite => false,
                 Mode::Depth(_) => false,
             }
     }

@@ -12,6 +12,7 @@ pub struct SearchTimeInfo {
 
 pub enum SearchTime {
     Infinite,
+    Ponder,
     Fixed(u64),
     Info(SearchTimeInfo),
 }
@@ -53,7 +54,10 @@ impl GoParameters {
             }
             match label {
                 "searchmoves" => todo!(),
-                "ponder" => todo!("Pondering"),
+                "ponder" => {
+                    assert!(self.move_time.is_none(), "Conflicting move time");
+                    self.move_time = Some(SearchTime::Ponder);
+                }
 
                 "wtime" | "btime" | "winc" | "binc" | "movestogo" => {
                     if self.move_time.is_none() {

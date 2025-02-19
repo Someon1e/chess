@@ -28,6 +28,12 @@ impl Pv {
         self.pv_table[0][0]
     }
 
+    /// Returns the best reply to the best move at the first ply.
+    #[must_use]
+    pub const fn root_best_reply(&self) -> EncodedMove {
+        self.pv_table[0][1]
+    }
+
     pub const fn set_pv_length(&mut self, ply_from_root: Ply, length: Ply) {
         self.pv_length[ply_from_root as usize] = length;
     }

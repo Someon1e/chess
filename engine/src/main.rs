@@ -16,9 +16,6 @@ use engine::{
     uci::{GoParameters, SpinU16, UCIProcessor},
 };
 
-/// Max time for thinking.
-const MAX_TIME: u64 = 40 * 1000;
-
 #[cfg(target_arch = "wasm32")]
 extern "C" {
     fn print_string(output: *const u8, length: u32);
@@ -36,8 +33,6 @@ fn out(output: &str) {
 
 thread_local! {
     static UCI_PROCESSOR: RefCell<UCIProcessor> = RefCell::new(UCIProcessor::new(
-        MAX_TIME,
-
         |output: &str| {
             out(output);
         },

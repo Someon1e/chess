@@ -43,9 +43,6 @@ impl SpinU16 {
 
 /// Handles UCI input and output.
 pub struct UCIProcessor {
-    /// Maximum time to search, in milliseconds.
-    pub max_thinking_time: u64,
-
     /// FEN to be used.
     pub fen: Option<String>,
 
@@ -62,6 +59,8 @@ pub struct UCIProcessor {
     pub transposition_capacity: usize,
 
     pub stopped: Arc<AtomicBool>,
+
+    pub ponder_allowed: bool,
 
     pub search_controller: Option<SearchController>,
 
@@ -104,7 +103,7 @@ fn output_search(info: DepthSearchInfo, time: u64) {
 
 enum SearchCommand {
     SetPosition((Board, Vec<(Square, Square, Flag)>)),
-    Search((Arc<AtomicBool>, u64, u64)),
+    Search((Arc<AtomicBool>, bool, SearchTime)),
     SetTranspositionCapacity(usize),
     ClearCacheForNewGame,
 }
@@ -135,14 +134,9 @@ impl SearchController {
                             search.clear_cache_for_new_game()
                         }
                     }
-                    SearchCommand::Search((stopped, soft_time_limit, hard_time_limit)) => {
+                    SearchCommand::Search((stopped, ponder_allowed, search_time)) => {
                         let search_start = Time::now();
-                        let time_manager = TimeManager::time_limited(
-                            stopped,
-                            &search_start,
-                            hard_time_limit,
-                            soft_time_limit,
-                        );
+
                         let search = if cached_search.is_none() {
                             // First time making search
                             let search = Search::new(
@@ -171,6 +165,42 @@ impl SearchController {
                         moves = None;
                         board = None;
 
+                        let time_manager = match search_time {
+                            SearchTime::Ponder if ponder_allowed => TimeManager::infinite(stopped),
+                            SearchTime::Infinite => TimeManager::infinite(stopped),
+                            SearchTime::Fixed(move_time) => TimeManager::time_limited(
+                                stopped,
+                                &search_start,
+                                move_time,
+                                move_time,
+                            ),
+                            SearchTime::Info(info) => {
+                                let clock_time = (if search.board().white_to_move {
+                                    info.white_time
+                                } else {
+                                    info.black_time
+                                })
+                                .unwrap();
+
+                                let increment = (if search.board().white_to_move {
+                                    info.white_increment
+                                } else {
+                                    info.black_increment
+                                })
+                                .map_or_else(|| 0, core::num::NonZero::get);
+
+                                let (hard_time_limit, soft_time_limit) =
+                                    Search::calculate_time(clock_time, increment);
+                                TimeManager::time_limited(
+                                    stopped,
+                                    &search_start,
+                                    hard_time_limit,
+                                    soft_time_limit,
+                                )
+                            }
+                            _ => panic!("Unknown time control"),
+                        };
+
                         let (depth, evaluation) = search.iterative_deepening(
                             &time_manager,
                             &mut |depth_info: DepthSearchInfo| {
@@ -186,24 +216,27 @@ impl SearchController {
                             },
                             search_start.milliseconds(),
                         );
-                        println!(
-                            "{}",
-                            &format!(
-                                "bestmove {}",
-                                encode_move(search.pv.root_best_move().decode())
-                            )
+                        let mut output = format!(
+                            "bestmove {}",
+                            encode_move(search.pv.root_best_move().decode()),
                         );
+                        let root_best_reply = search.pv.root_best_reply();
+                        if !root_best_reply.is_none() {
+                            output += &format!(" ponder {}", encode_move(root_best_reply.decode()));
+                        }
+
+                        println!("{}", output);
                     }
                 }
             }
         });
         Self(sender)
     }
-    fn search(&self, stopped: Arc<AtomicBool>, soft_time_limit: u64, hard_time_limit: u64) {
+    fn search(&self, stopped: Arc<AtomicBool>, ponder_allowed: bool, search_time: SearchTime) {
         self.0.send(SearchCommand::Search((
             stopped,
-            soft_time_limit,
-            hard_time_limit,
+            ponder_allowed,
+            search_time,
         )));
     }
     fn set_position(&self, board: Board, moves: Vec<(Square, Square, Flag)>) {
@@ -267,17 +300,17 @@ const TUNABLE_RANGES: TunableRange = TunableRange {
 };
 
 impl UCIProcessor {
-    pub fn new(max_thinking_time: u64, out: fn(&str), hash_option: SpinU16) -> Self {
+    pub fn new(out: fn(&str), hash_option: SpinU16) -> Self {
         let megabytes = hash_option.default as usize;
         let transposition_capacity = megabytes_to_capacity(megabytes);
 
         Self {
-            max_thinking_time,
             fen: None,
             moves: Vec::new(),
             out,
             stopped: Arc::new(AtomicBool::new(false)),
             hash_option,
+            ponder_allowed: false,
             transposition_capacity,
             search_controller: None,
             #[cfg(feature = "spsa")]
@@ -300,6 +333,7 @@ impl UCIProcessor {
         let max_hash = self.hash_option.range.end - 1;
         let mut options = format!(
             "option name Hash type spin default {default_hash} min {min_hash} max {max_hash}
+option name Ponder type check default false
 option name Threads type spin default 1 min 1 max 1"
         );
 
@@ -410,6 +444,10 @@ uciok",
                 let threads: u16 = value.expect("Missing value").parse().unwrap();
                 assert!(threads == 1, "Only supports single thread");
             }
+            "ponder" => {
+                let ponder_allowed: bool = value.expect("Missing value").parse().unwrap();
+                self.ponder_allowed = ponder_allowed;
+            }
 
             option_name => handle_option!(
                 option_name,
@@ -507,28 +545,6 @@ uciok",
             return;
         }
 
-        let (hard_time_limit, soft_time_limit) = match parameters.move_time().unwrap() {
-            SearchTime::Infinite => (self.max_thinking_time, self.max_thinking_time),
-            SearchTime::Fixed(move_time) => (move_time, move_time),
-            SearchTime::Info(info) => {
-                let clock_time = (if board.white_to_move {
-                    info.white_time
-                } else {
-                    info.black_time
-                })
-                .unwrap();
-
-                let increment = (if board.white_to_move {
-                    info.white_increment
-                } else {
-                    info.black_increment
-                })
-                .map_or_else(|| 0, core::num::NonZero::get);
-
-                Search::calculate_time(clock_time, increment, self.max_thinking_time)
-            }
-        };
-
         self.stopped.store(false, Ordering::SeqCst);
         let search_controller = if self.search_controller.is_some() {
             self.search_controller.as_ref()
@@ -538,7 +554,11 @@ uciok",
         }
         .unwrap();
         search_controller.set_position(board, self.moves.clone());
-        search_controller.search(self.stopped.clone(), soft_time_limit, hard_time_limit);
+        search_controller.search(
+            self.stopped.clone(),
+            self.ponder_allowed,
+            parameters.move_time().unwrap(),
+        );
     }
 
     /// Stop calculating as soon as possible.
