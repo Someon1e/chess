@@ -2,12 +2,16 @@
 #![warn(clippy::pedantic)]
 #![warn(clippy::nursery)]
 
-use std::{env, io::stdin};
+use std::{
+    env,
+    io::stdin,
+    sync::{Arc, atomic::AtomicBool},
+};
 
 use core::cell::RefCell;
 use engine::{
     board::Board,
-    search::{transposition::megabytes_to_capacity, Search, TimeManager},
+    search::{Search, TimeManager, transposition::megabytes_to_capacity},
     timer::Time,
     uci::{GoParameters, SpinU16, UCIProcessor},
 };
@@ -504,7 +508,7 @@ fn bench() {
         search.clear_cache_for_new_game();
         search.clear_for_new_search();
 
-        let time_manager = TimeManager::depth_limited(depth);
+        let time_manager = TimeManager::depth_limited(Arc::new(AtomicBool::new(false)), depth);
         let result = search.iterative_deepening(&time_manager, &mut |_| {});
         out(&format!(
             "{position} {depth} {}",

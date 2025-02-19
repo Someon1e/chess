@@ -1,5 +1,8 @@
 use core::ops::{Range, RangeInclusive};
 use core::str::SplitWhitespace;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::thread::{self, JoinHandle};
 
 mod go_params;
 mod move_encoding;
@@ -7,6 +10,8 @@ mod move_encoding;
 use go_params::{SearchTime, SearchType};
 pub use move_encoding::{decode_move, encode_move};
 
+use crate::evaluation::eval_data::EvalNumber;
+use crate::search::pv::Pv;
 use crate::{
     board::{Board, square::Square},
     move_generator::move_data::Flag,
@@ -46,9 +51,6 @@ pub struct UCIProcessor {
     /// Moves to be played after FEN.
     pub moves: Vec<(Square, Square, Flag)>,
 
-    /// Search instance.
-    pub search: Option<Search>,
-
     /// Called with UCI output.
     pub out: fn(&str),
 
@@ -58,8 +60,98 @@ pub struct UCIProcessor {
     /// Maximum entry count of the transposition table.
     pub transposition_capacity: usize,
 
+    pub stopped: Arc<AtomicBool>,
+
     #[cfg(feature = "spsa")]
     pub tunables: Tunable,
+}
+
+fn output_search(info: DepthSearchInfo, time: u64) {
+    let (pv, evaluation) = info.best;
+    let depth = info.depth;
+    let highest_depth = info.highest_depth;
+    let nodes = info.quiescence_call_count;
+
+    let evaluation_info = if Search::score_is_checkmate(evaluation) {
+        format!(
+            "score mate {}",
+            (evaluation - IMMEDIATE_CHECKMATE_SCORE).abs() * evaluation.signum()
+        )
+    } else {
+        format!("score cp {evaluation}")
+    };
+    let pv_string = pv
+        .best_line()
+        .map(|encoded_move| " ".to_owned() + &encode_move(encoded_move.decode()))
+        .collect::<String>();
+
+    let nodes_per_second = if time == 0 {
+        69420
+    } else {
+        (u64::from(nodes) * 1000) / time
+    };
+
+    println!(
+        "{}",
+        &format!(
+            "info depth {depth} seldepth {highest_depth} {evaluation_info} time {time} nodes {nodes} nps {nodes_per_second} pv{pv_string}"
+        )
+    );
+}
+
+struct SearchThread {}
+impl SearchThread {
+    fn new(
+        stopped: Arc<AtomicBool>,
+        board: Board,
+        transposition_capacity: usize,
+        hard_time_limit: u64,
+        soft_time_limit: u64,
+        moves: Vec<(Square, Square, Flag)>,
+    ) -> JoinHandle<()> {
+        let mut search = Search::new(
+            board,
+            transposition_capacity,
+            #[cfg(feature = "spsa")]
+            self.tunables,
+        );
+        for (from, to, promotion) in &moves {
+            search.make_move_repetition::<false>(&decode_move(
+                search.board(),
+                *from,
+                *to,
+                *promotion,
+            ));
+        }
+
+        let handle = thread::spawn(move || {
+            let search_start = Time::now();
+            let time_manager =
+                TimeManager::time_limited(stopped, &search_start, hard_time_limit, soft_time_limit);
+            let (depth, evaluation) =
+                search.iterative_deepening(&time_manager, &mut |depth_info: DepthSearchInfo| {
+                    output_search(depth_info, search_start.milliseconds());
+                });
+            output_search(
+                DepthSearchInfo {
+                    depth,
+                    best: (search.pv, evaluation),
+                    highest_depth: search.highest_depth,
+                    quiescence_call_count: search.quiescence_call_count(),
+                },
+                search_start.milliseconds(),
+            );
+            println!(
+                "{}",
+                &format!(
+                    "bestmove {}",
+                    encode_move(search.pv.root_best_move().decode())
+                )
+            );
+        });
+
+        handle
+    }
 }
 
 #[cfg(feature = "spsa")]
@@ -118,8 +210,8 @@ impl UCIProcessor {
             max_thinking_time,
             fen: None,
             moves: Vec::new(),
-            search: None,
             out,
+            stopped: Arc::new(AtomicBool::new(false)),
             hash_option,
             transposition_capacity,
             #[cfg(feature = "spsa")]
@@ -128,9 +220,6 @@ impl UCIProcessor {
     }
     fn set_transposition_capacity(&mut self, transposition_capacity: usize) {
         self.transposition_capacity = transposition_capacity;
-        if let Some(search) = &mut self.search {
-            search.resize_transposition_table(transposition_capacity);
-        }
     }
 }
 
@@ -349,107 +438,41 @@ uciok",
             return;
         }
 
-        let search = if self.search.is_none() {
-            // First time making search
-            let search = Search::new(
-                board,
-                self.transposition_capacity,
-                #[cfg(feature = "spsa")]
-                self.tunables,
-            );
-            self.search = Some(search);
-            self.search.as_mut().unwrap()
-        } else {
-            // Using cached search
-            let search = self.search.as_mut().unwrap();
-            search.new_board(board);
-            search.clear_for_new_search();
-            search
-        };
-        for (from, to, promotion) in &self.moves {
-            search.make_move_repetition::<false>(&decode_move(
-                search.board(),
-                *from,
-                *to,
-                *promotion,
-            ));
-        }
-
         let (hard_time_limit, soft_time_limit) = match parameters.move_time().unwrap() {
             SearchTime::Infinite => (self.max_thinking_time, self.max_thinking_time),
             SearchTime::Fixed(move_time) => (move_time, move_time),
             SearchTime::Info(info) => {
-                let clock_time = (if search.board().white_to_move {
+                let clock_time = (if board.white_to_move {
                     info.white_time
                 } else {
                     info.black_time
                 })
                 .unwrap();
 
-                let increment = (if search.board().white_to_move {
+                let increment = (if board.white_to_move {
                     info.white_increment
                 } else {
                     info.black_increment
                 })
                 .map_or_else(|| 0, core::num::NonZero::get);
 
-                search.calculate_time(clock_time, increment, self.max_thinking_time)
+                Search::calculate_time(clock_time, increment, self.max_thinking_time)
             }
         };
 
-        let search_start = Time::now();
-        let output_info = |info: DepthSearchInfo| {
-            let (pv, evaluation) = info.best;
-            let depth = info.depth;
-            let highest_depth = info.highest_depth;
-            let nodes = info.quiescence_call_count;
-
-            let evaluation_info = if Search::score_is_checkmate(evaluation) {
-                format!(
-                    "score mate {}",
-                    (evaluation - IMMEDIATE_CHECKMATE_SCORE).abs() * evaluation.signum()
-                )
-            } else {
-                format!("score cp {evaluation}")
-            };
-            let time = search_start.milliseconds();
-            let pv_string = pv
-                .best_line()
-                .map(|encoded_move| " ".to_owned() + &encode_move(encoded_move.decode()))
-                .collect::<String>();
-
-            let nodes_per_second = if time == 0 {
-                69420
-            } else {
-                (u64::from(nodes) * 1000) / time
-            };
-
-            (self.out)(&format!(
-                "info depth {depth} seldepth {highest_depth} {evaluation_info} time {time} nodes {nodes} nps {nodes_per_second} pv{pv_string}"
-            ));
-        };
-
-        let time_manager =
-            TimeManager::time_limited(&search_start, hard_time_limit, soft_time_limit);
-        let (depth, evaluation) = search.iterative_deepening(&time_manager, &mut |depth_info| {
-            output_info(depth_info);
-        });
-
-        output_info(DepthSearchInfo {
-            depth,
-            best: (&search.pv, evaluation),
-            highest_depth: search.highest_depth,
-            quiescence_call_count: search.quiescence_call_count(),
-        });
-        (self.out)(&format!(
-            "bestmove {}",
-            encode_move(search.pv.root_best_move().decode())
-        ));
+        let handle = SearchThread::new(
+            self.stopped.clone(),
+            board,
+            self.transposition_capacity,
+            hard_time_limit,
+            soft_time_limit,
+            self.moves.clone(),
+        );
     }
 
     /// Stop calculating as soon as possible.
     pub fn stop(&self) {
-        todo!("Stop search immediately")
+        self.stopped.store(true, Ordering::SeqCst);
     }
 
     /// This is sent to the engine when the next search (started with "position" and "go") will be from
@@ -457,8 +480,8 @@ uciok",
     /// also the next position from a testsuite with positions only.
     pub fn ucinewgame(&mut self) {
         // New game, so old data like the transposition table will not help
-        if let Some(search) = &mut self.search {
-            search.clear_cache_for_new_game();
-        }
+        //if let Some(search) = &mut self.search {
+        //    search.clear_cache_for_new_game();
+        //}
     }
 }

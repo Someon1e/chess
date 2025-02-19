@@ -1,8 +1,9 @@
-use super::{encoded_move::EncodedMove, Ply};
+use super::{Ply, encoded_move::EncodedMove};
 
 pub type PvTable = [[EncodedMove; Ply::MAX as usize]; Ply::MAX as usize];
 pub type PvLength = [Ply; Ply::MAX as usize];
 
+#[derive(Clone, Copy)]
 pub struct Pv {
     pv_table: PvTable,
     pv_length: PvLength,
