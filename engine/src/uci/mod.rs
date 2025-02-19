@@ -1,7 +1,8 @@
 use core::ops::{Range, RangeInclusive};
 use core::str::SplitWhitespace;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::mpsc::Sender;
+use std::sync::{Arc, mpsc};
 use std::thread::{self, JoinHandle};
 
 mod go_params;
@@ -62,6 +63,8 @@ pub struct UCIProcessor {
 
     pub stopped: Arc<AtomicBool>,
 
+    pub search_controller: Option<SearchController>,
+
     #[cfg(feature = "spsa")]
     pub tunables: Tunable,
 }
@@ -99,58 +102,120 @@ fn output_search(info: DepthSearchInfo, time: u64) {
     );
 }
 
-struct SearchThread {}
-impl SearchThread {
-    fn new(
-        stopped: Arc<AtomicBool>,
-        board: Board,
-        transposition_capacity: usize,
-        hard_time_limit: u64,
-        soft_time_limit: u64,
-        moves: Vec<(Square, Square, Flag)>,
-    ) -> JoinHandle<()> {
-        let mut search = Search::new(
-            board,
-            transposition_capacity,
-            #[cfg(feature = "spsa")]
-            self.tunables,
-        );
-        for (from, to, promotion) in &moves {
-            search.make_move_repetition::<false>(&decode_move(
-                search.board(),
-                *from,
-                *to,
-                *promotion,
-            ));
-        }
+enum SearchCommand {
+    SetPosition((Board, Vec<(Square, Square, Flag)>)),
+    Search((Arc<AtomicBool>, u64, u64)),
+    SetTranspositionCapacity(usize),
+    ClearCacheForNewGame,
+}
+struct SearchController(Sender<SearchCommand>);
+impl SearchController {
+    fn new(transposition_capacity: usize) -> Self {
+        let (sender, receiver) = mpsc::channel::<SearchCommand>();
+        thread::spawn(move || {
+            let mut cached_search: Option<Search> = None;
+            let mut transposition_capacity = transposition_capacity;
+            let mut board = None;
+            let mut moves = None;
 
-        let handle = thread::spawn(move || {
-            let search_start = Time::now();
-            let time_manager =
-                TimeManager::time_limited(stopped, &search_start, hard_time_limit, soft_time_limit);
-            let (depth, evaluation) =
-                search.iterative_deepening(&time_manager, &mut |depth_info: DepthSearchInfo| {
-                    output_search(depth_info, search_start.milliseconds());
-                });
-            output_search(
-                DepthSearchInfo {
-                    depth,
-                    best: (search.pv, evaluation),
-                    highest_depth: search.highest_depth,
-                    quiescence_call_count: search.quiescence_call_count(),
-                },
-                search_start.milliseconds(),
-            );
-            println!(
-                "{}",
-                &format!(
-                    "bestmove {}",
-                    encode_move(search.pv.root_best_move().decode())
-                )
-            );
+            for command in receiver {
+                match command {
+                    SearchCommand::SetTranspositionCapacity(capacity) => {
+                        transposition_capacity = capacity;
+                        if let Some(search) = &mut cached_search {
+                            search.resize_transposition_table(transposition_capacity)
+                        }
+                    }
+                    SearchCommand::SetPosition((new_board, new_moves)) => {
+                        board = Some(new_board);
+                        moves = Some(new_moves);
+                    }
+                    SearchCommand::ClearCacheForNewGame => {
+                        if let Some(search) = &mut cached_search {
+                            search.clear_cache_for_new_game()
+                        }
+                    }
+                    SearchCommand::Search((stopped, soft_time_limit, hard_time_limit)) => {
+                        let search_start = Time::now();
+                        let time_manager = TimeManager::time_limited(
+                            stopped,
+                            &search_start,
+                            hard_time_limit,
+                            soft_time_limit,
+                        );
+                        let search = if cached_search.is_none() {
+                            // First time making search
+                            let search = Search::new(
+                                board.unwrap(),
+                                transposition_capacity,
+                                #[cfg(feature = "spsa")]
+                                self.tunables,
+                            );
+                            cached_search = Some(search);
+                            cached_search.as_mut().unwrap()
+                        } else {
+                            // Using cached search
+                            let search = cached_search.as_mut().unwrap();
+                            search.new_board(board.unwrap());
+                            search.clear_for_new_search();
+                            search
+                        };
+                        for (from, to, promotion) in &moves.unwrap() {
+                            search.make_move_repetition::<false>(&decode_move(
+                                &search.board(),
+                                *from,
+                                *to,
+                                *promotion,
+                            ));
+                        }
+                        moves = None;
+                        board = None;
+
+                        let (depth, evaluation) = search.iterative_deepening(
+                            &time_manager,
+                            &mut |depth_info: DepthSearchInfo| {
+                                output_search(depth_info, search_start.milliseconds());
+                            },
+                        );
+                        output_search(
+                            DepthSearchInfo {
+                                depth,
+                                best: (search.pv, evaluation),
+                                highest_depth: search.highest_depth,
+                                quiescence_call_count: search.quiescence_call_count(),
+                            },
+                            search_start.milliseconds(),
+                        );
+                        println!(
+                            "{}",
+                            &format!(
+                                "bestmove {}",
+                                encode_move(search.pv.root_best_move().decode())
+                            )
+                        );
+                    }
+                }
+            }
         });
-
-        handle
+        Self(sender)
+    }
+    fn search(&self, stopped: Arc<AtomicBool>, soft_time_limit: u64, hard_time_limit: u64) {
+        self.0.send(SearchCommand::Search((
+            stopped,
+            soft_time_limit,
+            hard_time_limit,
+        )));
+    }
+    fn set_position(&self, board: Board, moves: Vec<(Square, Square, Flag)>) {
+        self.0.send(SearchCommand::SetPosition((board, moves)));
+    }
+    fn set_transposition_capacity(&self, transposition_capacity: usize) {
+        self.0.send(SearchCommand::SetTranspositionCapacity(
+            transposition_capacity,
+        ));
+    }
+    fn clear_cache_for_new_game(&self) {
+        self.0.send(SearchCommand::ClearCacheForNewGame);
     }
 }
 
@@ -214,12 +279,16 @@ impl UCIProcessor {
             stopped: Arc::new(AtomicBool::new(false)),
             hash_option,
             transposition_capacity,
+            search_controller: None,
             #[cfg(feature = "spsa")]
             tunables: DEFAULT_TUNABLES,
         }
     }
     fn set_transposition_capacity(&mut self, transposition_capacity: usize) {
         self.transposition_capacity = transposition_capacity;
+        if let Some(search_controller) = &mut self.search_controller {
+            search_controller.set_transposition_capacity(transposition_capacity);
+        }
     }
 }
 
@@ -460,14 +529,15 @@ uciok",
             }
         };
 
-        let handle = SearchThread::new(
-            self.stopped.clone(),
-            board,
-            self.transposition_capacity,
-            hard_time_limit,
-            soft_time_limit,
-            self.moves.clone(),
-        );
+        let search_controller = if self.search_controller.is_some() {
+            self.search_controller.as_ref()
+        } else {
+            self.search_controller = Some(SearchController::new(self.transposition_capacity));
+            self.search_controller.as_ref()
+        }
+        .unwrap();
+        search_controller.set_position(board, self.moves.clone());
+        search_controller.search(self.stopped.clone(), soft_time_limit, hard_time_limit);
     }
 
     /// Stop calculating as soon as possible.
@@ -480,8 +550,8 @@ uciok",
     /// also the next position from a testsuite with positions only.
     pub fn ucinewgame(&mut self) {
         // New game, so old data like the transposition table will not help
-        //if let Some(search) = &mut self.search {
-        //    search.clear_cache_for_new_game();
-        //}
+        if let Some(search_controller) = &mut self.search_controller {
+            search_controller.clear_cache_for_new_game();
+        }
     }
 }
