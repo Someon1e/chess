@@ -4,9 +4,9 @@ use crate::{
 };
 
 use super::{
+    MoveGenerator,
     move_data::{Flag, Move},
     slider_lookup::{get_rook_moves, relevant_rook_blockers},
-    MoveGenerator,
 };
 
 pub(crate) struct PawnAttacks {
@@ -222,71 +222,91 @@ pub fn generate(
         return;
     }
 
-    let single_push = if move_generator.white_to_move {
-        (move_generator.friendly_pawns & !move_generator.diagonal_pin_rays) << 8
-    } else {
-        (move_generator.friendly_pawns & !move_generator.diagonal_pin_rays) >> 8
-    } & move_generator.empty_squares;
-    let one_down_offset = if move_generator.white_to_move { -8 } else { 8 };
+    let one_up_offset = if move_generator.white_to_move { 8 } else { -8 };
 
-    {
-        // Move pawn one square up
-
-        let mut push_promotions = single_push & move_generator.push_mask & promotion_rank;
-
-        let mut single_push_no_promotions =
-            single_push & move_generator.push_mask & !push_promotions;
-
-        consume_bit_board!(single_push_no_promotions, to {
-            let from = to.offset(one_down_offset);
-            if !move_generator.orthogonal_pin_rays.get(&from)
-                || move_generator.orthogonal_pin_rays.get(&to)
-            {
-                add_move(Move {
-                    from,
-                    to,
-                    flag: Flag::None,
-                });
-            }
-        });
-
-        consume_bit_board!(push_promotions, to {
-            let from = to.offset(one_down_offset);
-            if !move_generator.orthogonal_pin_rays.get(&from)
-                || move_generator.orthogonal_pin_rays.get(&to)
-            {
-                gen_promotions(add_move, from, to);
-            }
-        });
-    };
-
-    {
-        // Move pawn two squares up
-        let double_push = if move_generator.white_to_move {
-            single_push << 8
+    let __can_single_push = (move_generator.friendly_pawns & !move_generator.diagonal_pin_rays)
+        & if move_generator.white_to_move {
+            move_generator.empty_squares >> 8
         } else {
-            single_push >> 8
-        } & move_generator.push_mask;
-        let double_down_offset = one_down_offset * 2;
-        let mut double_push = double_push
-            & move_generator.empty_squares
-            & if move_generator.white_to_move {
-                BitBoard::RANK_4
-            } else {
-                BitBoard::RANK_5
-            };
+            move_generator.empty_squares << 8
+        };
+    let _can_double_push = __can_single_push
+        & if move_generator.white_to_move {
+            BitBoard::RANK_2
+        } else {
+            BitBoard::RANK_7
+        }
+        & if move_generator.white_to_move {
+            (move_generator.empty_squares & move_generator.check_mask) >> 16
+        } else {
+            (move_generator.empty_squares & move_generator.check_mask) << 16
+        };
 
-        consume_bit_board!(double_push, to {
-            let from = to.offset(double_down_offset);
-            if !move_generator.orthogonal_pin_rays.get(&from)
-                || move_generator.orthogonal_pin_rays.get(&to)
-            {
-                add_move(Move {
-                    from,
-                    to,
-                    flag: Flag::PawnTwoUp,
-                });
-            }
+    // Move pawn one square up
+    let _can_single_push = __can_single_push
+        & if move_generator.white_to_move {
+            move_generator.check_mask >> 8
+        } else {
+            move_generator.check_mask << 8
+        };
+    let can_single_push_pinned = _can_single_push
+        & if move_generator.white_to_move {
+            move_generator.orthogonal_pin_rays >> 8
+        } else {
+            move_generator.orthogonal_pin_rays << 8
+        };
+    let can_single_push_unpinned = _can_single_push & !move_generator.orthogonal_pin_rays;
+
+    let can_single_push = can_single_push_pinned | can_single_push_unpinned;
+
+    let mut push_promotions = can_single_push
+        & if move_generator.white_to_move {
+            BitBoard::RANK_7
+        } else {
+            BitBoard::RANK_2
+        };
+
+    let mut single_push_no_promotions = can_single_push
+        & !if move_generator.white_to_move {
+            BitBoard::RANK_7
+        } else {
+            BitBoard::RANK_2
+        };
+
+    consume_bit_board!(single_push_no_promotions, from {
+        let to = from.offset(one_up_offset);
+        add_move(Move {
+            from,
+            to,
+            flag: Flag::None,
         });
-    }
+    });
+
+    consume_bit_board!(push_promotions, from {
+        let to = from.offset(one_up_offset);
+        gen_promotions(add_move, from, to);
+    });
+
+    // Move pawn two squares up
+
+    let double_up_offset = one_up_offset * 2;
+
+    let can_double_push_pinned = _can_double_push
+        & if move_generator.white_to_move {
+            move_generator.orthogonal_pin_rays >> 16
+        } else {
+            move_generator.orthogonal_pin_rays << 16
+        };
+    let can_double_push_unpinned = _can_double_push & !move_generator.orthogonal_pin_rays;
+
+    let mut can_double_push = can_double_push_pinned | can_double_push_unpinned;
+
+    consume_bit_board!(can_double_push, from {
+        let to = from.offset(double_up_offset);
+        add_move(Move {
+            from,
+            to,
+            flag: Flag::PawnTwoUp,
+        });
+    });
 }

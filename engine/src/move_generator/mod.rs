@@ -1,9 +1,9 @@
 use precomputed::get_between_rays;
 
+use crate::board::Board;
 use crate::board::bit_board::BitBoard;
 use crate::board::piece::Piece;
 use crate::board::square::Square;
-use crate::board::Board;
 use crate::consume_bit_board;
 
 mod maker;
@@ -60,7 +60,6 @@ pub struct MoveGenerator {
     orthogonal_pin_rays: BitBoard,
 
     check_mask: BitBoard,
-    push_mask: BitBoard,
 }
 
 impl MoveGenerator {
@@ -78,7 +77,7 @@ impl MoveGenerator {
         let mut non_pinned_knights =
             self.friendly_knights & !(self.diagonal_pin_rays | self.orthogonal_pin_rays);
 
-        let mut mask = (self.check_mask | self.push_mask) & !self.friendly_piece_bit_board;
+        let mut mask = (self.empty_squares | self.enemy_piece_bit_board) & self.check_mask;
         if captures_only {
             mask &= self.enemy_piece_bit_board;
         }
@@ -102,7 +101,7 @@ impl MoveGenerator {
         let blockers = self.occupied_squares & relevant_bishop_blockers(from);
         let possible_moves = get_bishop_moves(from, blockers);
         let mut legal_moves =
-            possible_moves & !self.friendly_piece_bit_board & (self.check_mask | self.push_mask);
+            possible_moves & ((self.enemy_piece_bit_board | self.empty_squares) & self.check_mask);
         if captures_only {
             legal_moves &= self.enemy_piece_bit_board;
         }
@@ -122,7 +121,7 @@ impl MoveGenerator {
         let blockers = self.occupied_squares & relevant_rook_blockers(from);
         let possible_moves = get_rook_moves(from, blockers);
         let mut legal_moves =
-            possible_moves & !self.friendly_piece_bit_board & (self.check_mask | self.push_mask);
+            possible_moves & ((self.enemy_piece_bit_board | self.empty_squares) & self.check_mask);
         if captures_only {
             legal_moves &= self.enemy_piece_bit_board;
         }
@@ -410,8 +409,6 @@ impl MoveGenerator {
         let is_in_check = check_mask.is_not_empty();
         let is_in_double_check = check_mask.more_than_one_bit_set();
 
-        let mut push_mask = BitBoard::EMPTY;
-
         {
             let not_on_the_right_edge = if white_to_move {
                 BitBoard::NOT_A_FILE
@@ -449,7 +446,7 @@ impl MoveGenerator {
                 let dangerous = Self::calculate_enemy_bishop(
                     from,
                     friendly_king_square,
-                    &mut push_mask,
+                    &mut check_mask,
                     friendly_king,
                     occupied_squares,
                 );
@@ -462,7 +459,7 @@ impl MoveGenerator {
                 let dangerous = Self::calculate_enemy_rook(
                     from,
                     friendly_king_square,
-                    &mut push_mask,
+                    &mut check_mask,
                     friendly_king,
                     occupied_squares,
                 );
@@ -478,7 +475,6 @@ impl MoveGenerator {
 
         if !is_in_check {
             check_mask = BitBoard::FULL;
-            push_mask = BitBoard::FULL;
         }
 
         let (orthogonal_pin_rays, diagonal_pin_rays) = Self::calculate_pin_rays(
@@ -510,7 +506,6 @@ impl MoveGenerator {
             diagonal_pin_rays,
             orthogonal_pin_rays,
             check_mask,
-            push_mask,
         }
     }
 
