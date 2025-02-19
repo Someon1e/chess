@@ -1,10 +1,9 @@
 use super::{
+    Board,
     bit_board::BitBoard,
     game_state::{CastlingRights, GameState},
     piece::Piece,
     square::Square,
-    zobrist::Zobrist,
-    Board,
 };
 
 #[derive(Debug)]
@@ -34,8 +33,6 @@ impl Board {
         let mut components = fen.split_whitespace();
 
         let mut bit_boards = [BitBoard::EMPTY; 12];
-        let mut position_zobrist_key = Zobrist::EMPTY;
-        let mut pawn_zobrist_key = Zobrist::EMPTY;
 
         let (mut rank, mut file) = (7, 0);
 
@@ -65,10 +62,6 @@ impl Board {
                 if let Some(piece) = Piece::from_fen_char(&character) {
                     let square = &Square::from_coords(rank, file);
                     bit_boards[piece as usize].set(square);
-                    position_zobrist_key.xor_piece(piece as usize, square.usize());
-                    if matches!(piece, Piece::WhitePawn | Piece::BlackPawn) {
-                        pawn_zobrist_key.xor_piece(piece as usize, square.usize());
-                    }
 
                     file += 1;
                 } else {
@@ -87,10 +80,7 @@ impl Board {
 
         let white_to_move = match components.next() {
             Some("w") => true,
-            Some("b") => {
-                position_zobrist_key.flip_side_to_move();
-                false
-            }
+            Some("b") => false,
             None => return Err(FenParseErr::MissingSideToMove),
             _ => return Err(FenParseErr::InvalidSideToMove),
         };
@@ -102,7 +92,6 @@ impl Board {
                 return Err(FenParseErr::MissingCastling);
             }
         });
-        position_zobrist_key.xor_castling_rights(&castling_rights);
 
         let en_passant = {
             if let Some(en_passant) = components.next() {
@@ -118,7 +107,6 @@ impl Board {
             if en_passant_square.is_err() {
                 return Err(FenParseErr::InvalidEnPassant);
             }
-            position_zobrist_key.xor_en_passant(&en_passant_square.unwrap());
             Some(en_passant_square.unwrap())
         };
         let half_move_clock = {
@@ -152,9 +140,6 @@ impl Board {
 
             half_move_clock,
             captured: None,
-
-            position_zobrist_key,
-            pawn_zobrist_key,
         };
 
         let board = Self {
@@ -166,9 +151,6 @@ impl Board {
 
             game_state,
         };
-
-        #[cfg(test)]
-        assert_eq!(Zobrist::pawn_key(&board), board.pawn_zobrist_key());
 
         Ok(board)
     }

@@ -15,14 +15,11 @@ pub mod piece;
 /// Abstraction for squares.
 pub mod square;
 
-/// Zobrist key.
-pub mod zobrist;
-
 use bit_board::BitBoard;
 use piece::Piece;
 use square::Square;
 
-use self::{game_state::GameState, zobrist::Zobrist};
+use self::game_state::GameState;
 
 /// Represents a chess position.
 pub struct Board {
@@ -103,18 +100,6 @@ impl Board {
         } else {
             self.white_piece_at(square)
         }
-    }
-
-    /// Returns the current position zobrist key
-    #[must_use]
-    pub const fn position_zobrist_key(&self) -> Zobrist {
-        self.game_state.position_zobrist_key
-    }
-
-    /// Returns the current pawn zobrist key
-    #[must_use]
-    pub const fn pawn_zobrist_key(&self) -> Zobrist {
-        self.game_state.pawn_zobrist_key
     }
 
     /// Returns a reference to a piece type's bit board.

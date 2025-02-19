@@ -3,10 +3,10 @@
 #![warn(clippy::nursery)]
 
 use engine::board::piece::Piece;
-use rand_chacha::rand_core::{RngCore, SeedableRng};
 use rand_chacha::ChaCha20Rng;
+use rand_chacha::rand_core::{RngCore, SeedableRng};
 
-use engine::board::zobrist::ZobristRandoms;
+use engine::search::zobrist::ZobristRandoms;
 
 fn main() {
     let mut rng = ChaCha20Rng::seed_from_u64(69);

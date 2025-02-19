@@ -8,9 +8,13 @@ pub mod search_params;
 mod time_manager;
 pub mod transposition;
 
+/// Zobrist key.
+pub mod zobrist;
+
 use pv::Pv;
 use search_params::{DEFAULT_TUNABLES, Tunable};
 pub use time_manager::TimeManager;
+use zobrist::Zobrist;
 
 use crate::{
     board::{Board, game_state::GameState, piece::Piece, square::Square},
@@ -77,6 +81,23 @@ pub struct DepthSearchInfo<'a> {
 
 const PAWN_CORRECTION_HISTORY_LENGTH: usize = 8192;
 
+#[derive(Clone, Copy, Debug)]
+pub struct SearchState {
+    total_middle_game_score: EvalNumber,
+    total_end_game_score: EvalNumber,
+
+    /// Position zobrist key.
+    pub position_zobrist_key: Zobrist,
+
+    // Pawn zobrist key.
+    pub pawn_zobrist_key: Zobrist,
+}
+
+pub struct ExtendedState {
+    game_state: GameState,
+    search_state: SearchState,
+}
+
 /// Looks for the best outcome in a position.
 pub struct Search {
     board: Board,
@@ -92,8 +113,7 @@ pub struct Search {
 
     killer_moves: [EncodedMove; 64],
 
-    total_middle_game_score: EvalNumber,
-    total_end_game_score: EvalNumber,
+    search_state: SearchState,
 
     pub pv: Pv,
     pub highest_depth: Ply,
@@ -102,12 +122,6 @@ pub struct Search {
 
     #[cfg(feature = "spsa")]
     tunable: Tunable,
-}
-
-pub struct EvalState {
-    game_state: GameState,
-    total_middle_game_score: EvalNumber,
-    total_end_game_score: EvalNumber,
 }
 
 impl Search {
@@ -119,6 +133,8 @@ impl Search {
         #[cfg(feature = "spsa")] tunable: Tunable,
     ) -> Self {
         let (total_middle_game_score, total_end_game_score) = Eval::raw_evaluate(&board);
+        let position_zobrist_key = Zobrist::compute(&board);
+        let pawn_zobrist_key = Zobrist::pawn_key(&board);
 
         Self {
             board,
@@ -135,8 +151,12 @@ impl Search {
                 .unwrap(),
             eval_history: [0; 256],
 
-            total_middle_game_score,
-            total_end_game_score,
+            search_state: SearchState {
+                total_middle_game_score,
+                total_end_game_score,
+                position_zobrist_key,
+                pawn_zobrist_key,
+            },
 
             pv: Pv::new(),
             highest_depth: 0,
@@ -146,6 +166,35 @@ impl Search {
             #[cfg(feature = "spsa")]
             tunable,
         }
+    }
+
+    /// Skips the turn
+    pub const fn make_null_move(&mut self) -> ExtendedState {
+        let old_search_state = self.search_state;
+        let old_game_state = self.board.game_state;
+
+        self.board.white_to_move = !self.board.white_to_move;
+        self.search_state.position_zobrist_key.flip_side_to_move();
+
+        let en_passant_square = self.board.game_state.en_passant_square;
+        if let Some(en_passant_square) = en_passant_square {
+            self.search_state
+                .position_zobrist_key
+                .xor_en_passant(&en_passant_square);
+        }
+        self.board.game_state.en_passant_square = None;
+
+        ExtendedState {
+            search_state: old_search_state,
+            game_state: old_game_state,
+        }
+    }
+
+    /// Unskips the turn
+    pub const fn unmake_null_move(&mut self, old_state: &ExtendedState) {
+        self.search_state = old_state.search_state;
+        self.board.game_state = old_state.game_state;
+        self.board.white_to_move = !self.board.white_to_move;
     }
 
     /// Sets an empty transposition table with the new capacity.
@@ -164,9 +213,13 @@ impl Search {
         self.board = board;
         self.repetition_table.clear();
 
+        let position_zobrist_key = Zobrist::compute(&self.board);
+        let pawn_zobrist_key = Zobrist::pawn_key(&self.board);
         let (total_middle_game_score, total_end_game_score) = Eval::raw_evaluate(&self.board);
-        self.total_middle_game_score = total_middle_game_score;
-        self.total_end_game_score = total_end_game_score;
+        self.search_state.total_middle_game_score = total_middle_game_score;
+        self.search_state.total_end_game_score = total_end_game_score;
+        self.search_state.position_zobrist_key = position_zobrist_key;
+        self.search_state.pawn_zobrist_key = pawn_zobrist_key;
     }
 
     /// Another search.
@@ -201,7 +254,6 @@ impl Search {
 
         let mut best_score = self.static_evaluate();
         let pawn_index = self
-            .board
             .pawn_zobrist_key()
             .modulo(PAWN_CORRECTION_HISTORY_LENGTH as u64);
         let correction = self.pawn_correction_history[if self.board.white_to_move { 1 } else { 0 }]
@@ -230,7 +282,7 @@ impl Search {
             .move_data
             .decode();
 
-            let old_state = self.make_move(&move_data);
+            let old_state = self.make_move::<false>(&move_data);
             let score = -self.quiescence_search(-beta, -alpha);
             self.unmake_move(&move_data, &old_state);
 
@@ -279,11 +331,11 @@ impl Search {
         );
 
         if is_white {
-            self.total_middle_game_score -= i32::from(middle_game_value);
-            self.total_end_game_score -= i32::from(end_game_value);
+            self.search_state.total_middle_game_score -= i32::from(middle_game_value);
+            self.search_state.total_end_game_score -= i32::from(end_game_value);
         } else {
-            self.total_middle_game_score += i32::from(middle_game_value);
-            self.total_end_game_score += i32::from(end_game_value);
+            self.search_state.total_middle_game_score += i32::from(middle_game_value);
+            self.search_state.total_end_game_score += i32::from(end_game_value);
         }
     }
     fn evaluation_add_piece(&mut self, piece: Piece, square: Square) {
@@ -315,12 +367,24 @@ impl Search {
         );
 
         if is_white {
-            self.total_middle_game_score += i32::from(middle_game_value);
-            self.total_end_game_score += i32::from(end_game_value);
+            self.search_state.total_middle_game_score += i32::from(middle_game_value);
+            self.search_state.total_end_game_score += i32::from(end_game_value);
         } else {
-            self.total_middle_game_score -= i32::from(middle_game_value);
-            self.total_end_game_score -= i32::from(end_game_value);
+            self.search_state.total_middle_game_score -= i32::from(middle_game_value);
+            self.search_state.total_end_game_score -= i32::from(end_game_value);
         }
+    }
+
+    /// Returns the current position zobrist key
+    #[must_use]
+    pub const fn position_zobrist_key(&self) -> Zobrist {
+        self.search_state.position_zobrist_key
+    }
+
+    /// Returns the current pawn zobrist key
+    #[must_use]
+    pub const fn pawn_zobrist_key(&self) -> Zobrist {
+        self.search_state.pawn_zobrist_key
     }
 
     #[must_use]
@@ -339,8 +403,8 @@ impl Search {
         let static_eval = Eval::calculate_score(
             phase,
             total_phase,
-            self.total_middle_game_score,
-            self.total_end_game_score,
+            self.search_state.total_middle_game_score,
+            self.search_state.total_end_game_score,
         ) * if self.board.white_to_move { 1 } else { -1 };
 
         #[cfg(debug_assertions)]
@@ -352,26 +416,98 @@ impl Search {
     }
 
     /// Makes a move and updates the evaluation.
-    pub fn make_move(&mut self, move_data: &Move) -> EvalState {
-        let (old_total_middle_game_score, old_total_end_game_score) =
-            (self.total_middle_game_score, self.total_end_game_score);
+    pub fn make_move<const PREFETCH: bool>(&mut self, move_data: &Move) -> ExtendedState {
+        debug_assert!(Zobrist::pawn_key(&self.board) == self.pawn_zobrist_key());
+        debug_assert!(Zobrist::compute(&self.board) == self.position_zobrist_key());
+
+        let search_state = self.search_state;
+
+        self.search_state.position_zobrist_key.flip_side_to_move();
 
         let piece = self.board.friendly_piece_at(move_data.from).unwrap();
 
+        self.search_state
+            .position_zobrist_key
+            .xor_piece(piece as usize, move_data.from.usize());
+        if matches!(piece, Piece::WhitePawn | Piece::BlackPawn) {
+            self.search_state
+                .pawn_zobrist_key
+                .xor_piece(piece as usize, move_data.from.usize());
+        }
         self.evaluation_remove_piece(piece, move_data.from);
 
         let flag = move_data.flag;
+
+        self.search_state
+            .position_zobrist_key
+            .xor_castling_rights(&self.board.game_state.castling_rights);
+        {
+            let mut castling_rights = self.board.game_state.castling_rights;
+            if piece == Piece::WhiteKing {
+                castling_rights.unset_white_king_side();
+                castling_rights.unset_white_queen_side();
+            } else if piece == Piece::BlackKing {
+                castling_rights.unset_black_king_side();
+                castling_rights.unset_black_queen_side();
+            } else {
+                if move_data.from == Square::from_index(0) || move_data.to == Square::from_index(0)
+                {
+                    castling_rights.unset_white_queen_side();
+                }
+                if move_data.from == Square::from_index(7) || move_data.to == Square::from_index(7)
+                {
+                    castling_rights.unset_white_king_side();
+                }
+                if move_data.from == Square::from_index(56)
+                    || move_data.to == Square::from_index(56)
+                {
+                    castling_rights.unset_black_queen_side();
+                }
+                if move_data.from == Square::from_index(63)
+                    || move_data.to == Square::from_index(63)
+                {
+                    castling_rights.unset_black_king_side();
+                }
+            }
+            self.search_state
+                .position_zobrist_key
+                .xor_castling_rights(&castling_rights);
+        }
 
         let promotion_piece = flag.get_promotion_piece(self.board.white_to_move);
 
         if let Some(promotion_piece) = promotion_piece {
             self.evaluation_add_piece(promotion_piece, move_data.to);
+            self.search_state
+                .position_zobrist_key
+                .xor_piece(promotion_piece as usize, move_data.to.usize());
         } else {
             self.evaluation_add_piece(piece, move_data.to);
+            self.search_state
+                .position_zobrist_key
+                .xor_piece(piece as usize, move_data.to.usize());
+            if matches!(piece, Piece::WhitePawn | Piece::BlackPawn) {
+                self.search_state
+                    .pawn_zobrist_key
+                    .xor_piece(piece as usize, move_data.to.usize());
+            }
         }
 
+        if let Some(en_passant_square) = self.board.game_state.en_passant_square {
+            self.search_state
+                .position_zobrist_key
+                .xor_en_passant(&en_passant_square);
+        }
         match flag {
-            Flag::PawnTwoUp => {}
+            Flag::PawnTwoUp => {
+                let en_passant_square =
+                    move_data
+                        .from
+                        .up(if self.board.white_to_move { 1 } else { -1 });
+                self.search_state
+                    .position_zobrist_key
+                    .xor_en_passant(&en_passant_square);
+            }
             Flag::Castle => {
                 let is_king_side = move_data.to.file() == 6;
                 let rook_to_offset = if is_king_side { -1 } else { 1 };
@@ -385,6 +521,12 @@ impl Search {
                 let rook_to = move_data.to.offset(rook_to_offset);
                 self.evaluation_remove_piece(rook, rook_from);
                 self.evaluation_add_piece(rook, rook_to);
+                self.search_state
+                    .position_zobrist_key
+                    .xor_piece(rook as usize, rook_from.usize());
+                self.search_state
+                    .position_zobrist_key
+                    .xor_piece(rook as usize, rook_to.usize());
             }
             Flag::EnPassant => {
                 let capture_position = self
@@ -400,29 +542,75 @@ impl Search {
                 };
 
                 self.evaluation_remove_piece(captured, capture_position);
+                self.search_state
+                    .position_zobrist_key
+                    .xor_piece(captured as usize, capture_position.usize());
+                self.search_state
+                    .pawn_zobrist_key
+                    .xor_piece(captured as usize, capture_position.usize());
             }
             _ => {
                 if let Some(captured) = self.board.enemy_piece_at(move_data.to) {
                     self.evaluation_remove_piece(captured, move_data.to);
+                    self.search_state
+                        .position_zobrist_key
+                        .xor_piece(captured as usize, move_data.to.usize());
+                    if matches!(captured, Piece::WhitePawn | Piece::BlackPawn) {
+                        self.search_state
+                            .pawn_zobrist_key
+                            .xor_piece(captured as usize, move_data.to.usize());
+                    }
+                }
+            }
+        }
+
+        if PREFETCH {
+            #[cfg(target_feature = "sse")]
+            {
+                use core::arch::x86_64::{_MM_HINT_NTA, _mm_prefetch};
+                let index =
+                    self.board
+                        .position_zobrist_key()
+                        .distribute(self.transposition_table.len()) as usize;
+                unsafe {
+                    _mm_prefetch::<{ _MM_HINT_NTA }>(
+                        self.transposition_table.as_ptr().add(index).cast::<i8>(),
+                    );
+                }
+            }
+            #[cfg(any(target_arch = "aarch64", target_arch = "arm64ec"))]
+            {
+                use core::arch::aarch64::{_PREFETCH_LOCALITY0, _PREFETCH_READ, _prefetch};
+                let index =
+                    self.position_zobrist_key()
+                        .distribute(self.transposition_table.len()) as usize;
+                unsafe {
+                    _prefetch::<_PREFETCH_READ, _PREFETCH_LOCALITY0>(
+                        self.transposition_table.as_ptr().add(index).cast::<i8>(),
+                    );
                 }
             }
         }
 
         let game_state = self.board.make_move(move_data);
 
-        EvalState {
+        debug_assert!(Zobrist::pawn_key(&self.board) == self.pawn_zobrist_key());
+        debug_assert!(Zobrist::compute(&self.board) == self.position_zobrist_key());
+
+        ExtendedState {
             game_state,
-            total_middle_game_score: old_total_middle_game_score,
-            total_end_game_score: old_total_end_game_score,
+            search_state,
         }
     }
 
     /// Adds the position into the repetition table then calls `self.make_move`.
-    pub fn make_move_repetition(&mut self, move_data: &Move) -> EvalState {
-        self.repetition_table
-            .push(self.board.position_zobrist_key());
+    pub fn make_move_repetition<const PREFETCH: bool>(
+        &mut self,
+        move_data: &Move,
+    ) -> ExtendedState {
+        self.repetition_table.push(self.position_zobrist_key());
 
-        self.make_move(move_data)
+        self.make_move::<PREFETCH>(move_data)
     }
 
     /// Calls `unmake_move`, then removes the position from the repetition table.
@@ -430,20 +618,19 @@ impl Search {
     /// # Panics
     ///
     /// Will panic if the zobrist key after playing the move does not match the previous position's.
-    pub fn unmake_move_repetition(&mut self, move_data: &Move, old_state: &EvalState) {
+    pub fn unmake_move_repetition(&mut self, move_data: &Move, old_state: &ExtendedState) {
         self.unmake_move(move_data, old_state);
 
-        assert_eq!(
-            self.repetition_table.pop(),
-            self.board.position_zobrist_key()
-        );
+        assert_eq!(self.repetition_table.pop(), self.position_zobrist_key());
     }
 
     /// Unmakes a move and updates the evaluation.
-    pub fn unmake_move(&mut self, move_data: &Move, old_state: &EvalState) {
-        self.total_middle_game_score = old_state.total_middle_game_score;
-        self.total_end_game_score = old_state.total_end_game_score;
+    pub fn unmake_move(&mut self, move_data: &Move, old_state: &ExtendedState) {
+        self.search_state = old_state.search_state;
         self.board.unmake_move(move_data, &old_state.game_state);
+
+        debug_assert!(Zobrist::compute(&self.board) == self.position_zobrist_key());
+        debug_assert!(Zobrist::pawn_key(&self.board) == self.pawn_zobrist_key());
     }
 
     fn negamax(
@@ -466,7 +653,7 @@ impl Search {
         self.pv.set_pv_length(ply_from_root, ply_from_root);
 
         // Get the zobrist key
-        let zobrist_key = self.board.position_zobrist_key();
+        let zobrist_key = self.position_zobrist_key();
 
         // Check for repetition
         if ply_from_root != 0 {
@@ -534,7 +721,6 @@ impl Search {
         let move_generator = MoveGenerator::new(&self.board);
 
         let pawn_index = self
-            .board
             .pawn_zobrist_key()
             .modulo(PAWN_CORRECTION_HISTORY_LENGTH as u64);
         let static_eval = {
@@ -594,7 +780,7 @@ impl Search {
             && move_generator.friendly_pawns().count() + 1
                 != move_generator.friendly_pieces().count()
             {
-                let old_state = self.board.make_null_move();
+                let old_state = self.make_null_move();
 
                 let score = -self.negamax(
                     time_manager,
@@ -607,7 +793,7 @@ impl Search {
                     -beta,
                     -beta + 1,
                 );
-                self.board.unmake_null_move(&old_state);
+                self.unmake_null_move(&old_state);
 
                 if score >= beta {
                     return score;
@@ -655,33 +841,7 @@ impl Search {
             let move_data = encoded_move_data.decode();
 
             let is_capture = move_generator.enemy_piece_bit_board().get(&move_data.to);
-            let old_state = self.make_move_repetition(&move_data);
-            #[cfg(target_feature = "sse")]
-            {
-                use core::arch::x86_64::{_MM_HINT_NTA, _mm_prefetch};
-                let index =
-                    self.board
-                        .position_zobrist_key()
-                        .distribute(self.transposition_table.len()) as usize;
-                unsafe {
-                    _mm_prefetch::<{ _MM_HINT_NTA }>(
-                        self.transposition_table.as_ptr().add(index).cast::<i8>(),
-                    );
-                }
-            }
-            #[cfg(any(target_arch = "aarch64", target_arch = "arm64ec"))]
-            {
-                use core::arch::aarch64::{_PREFETCH_LOCALITY0, _PREFETCH_READ, _prefetch};
-                let index =
-                    self.board
-                        .position_zobrist_key()
-                        .distribute(self.transposition_table.len()) as usize;
-                unsafe {
-                    _prefetch::<_PREFETCH_READ, _PREFETCH_LOCALITY0>(
-                        self.transposition_table.as_ptr().add(index).cast::<i8>(),
-                    );
-                }
-            }
+            let old_state = self.make_move_repetition::<true>(&move_data);
 
             // Search deeper when in check
             let check_extension = MoveGenerator::calculate_is_in_check(&self.board);

@@ -1,6 +1,6 @@
 use crate::board::square::Square;
 
-use super::{piece::Piece, zobrist::Zobrist};
+use super::piece::Piece;
 
 macro_rules! define_castling_rights {
     ($getter:ident, $setter:ident, $unsetter:ident, $side:expr, $offset:expr) => {
@@ -127,10 +127,4 @@ pub struct GameState {
 
     /// The last captured piece.
     pub captured: Option<Piece>,
-
-    /// Position zobrist key.
-    pub position_zobrist_key: Zobrist,
-
-    // Pawn zobrist key.
-    pub pawn_zobrist_key: Zobrist,
 }

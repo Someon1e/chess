@@ -8,13 +8,13 @@ use go_params::{SearchTime, SearchType};
 pub use move_encoding::{decode_move, encode_move};
 
 use crate::{
-    board::{square::Square, Board},
+    board::{Board, square::Square},
     move_generator::move_data::Flag,
     perft::perft_root,
     search::{
-        search_params::{Tunable, DEFAULT_TUNABLES},
+        DepthSearchInfo, IMMEDIATE_CHECKMATE_SCORE, Search, TimeManager,
+        search_params::{DEFAULT_TUNABLES, Tunable},
         transposition::megabytes_to_capacity,
-        DepthSearchInfo, Search, TimeManager, IMMEDIATE_CHECKMATE_SCORE,
     },
     timer::Time,
 };
@@ -367,7 +367,12 @@ uciok",
             search
         };
         for (from, to, promotion) in &self.moves {
-            search.make_move_repetition(&decode_move(search.board(), *from, *to, *promotion));
+            search.make_move_repetition::<false>(&decode_move(
+                search.board(),
+                *from,
+                *to,
+                *promotion,
+            ));
         }
 
         let (hard_time_limit, soft_time_limit) = match parameters.move_time().unwrap() {

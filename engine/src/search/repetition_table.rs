@@ -1,4 +1,4 @@
-use crate::board::zobrist::Zobrist;
+use super::zobrist::Zobrist;
 
 pub(crate) struct RepetitionTable {
     positions: Vec<Zobrist>,

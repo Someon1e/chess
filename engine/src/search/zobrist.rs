@@ -1,5 +1,9 @@
-use super::game_state::CastlingRights;
-use super::square::Square;
+use crate::board::game_state::CastlingRights;
+use crate::board::piece::Piece;
+use crate::board::square::Square;
+use crate::consume_bit_board;
+
+use super::Board;
 
 /// Filled with random integers.
 #[derive(Debug)]
@@ -65,58 +69,46 @@ impl Zobrist {
     pub const fn modulo(&self, size: u64) -> u64 {
         self.0 % size
     }
-}
 
-#[cfg(test)]
-mod tests {
-    use crate::{
-        board::{piece::Piece, Board},
-        consume_bit_board,
-    };
+    /// Computes the position zobrist key.
+    #[must_use]
+    pub fn compute(board: &Board) -> Self {
+        let mut key = Self::EMPTY;
 
-    impl crate::board::Zobrist {
-        /// For debugging only.
-        /// Computes the position zobrist key.
-        #[must_use]
-        pub fn compute(board: &Board) -> Self {
-            let mut key = Self::EMPTY;
-
-            for (piece, bit_board) in board.bit_boards.iter().enumerate() {
-                let mut bit_board = *bit_board;
-                consume_bit_board!(bit_board, square {
-                    key.xor_piece(piece, square.usize());
-                });
-            }
-
-            if !board.white_to_move {
-                key.flip_side_to_move();
-            }
-
-            if let Some(en_passant_square) = board.game_state.en_passant_square {
-                key.xor_en_passant(&en_passant_square);
-            }
-
-            key.xor_castling_rights(&board.game_state.castling_rights);
-
-            key
+        for (piece, bit_board) in board.bit_boards.iter().enumerate() {
+            let mut bit_board = *bit_board;
+            consume_bit_board!(bit_board, square {
+                key.xor_piece(piece, square.usize());
+            });
         }
 
-        /// For debugging only.
-        /// Computes the pawn zobrist key.
-        #[must_use]
-        pub fn pawn_key(board: &Board) -> Self {
-            let mut key = Self::EMPTY;
-
-            let mut black_pawns = *board.get_bit_board(Piece::BlackPawn);
-            consume_bit_board!(black_pawns, square {
-                key.xor_piece(Piece::BlackPawn as usize, square.usize());
-            });
-            let mut white_pawns = *board.get_bit_board(Piece::WhitePawn);
-            consume_bit_board!(white_pawns, square {
-                key.xor_piece(Piece::WhitePawn as usize, square.usize());
-            });
-
-            key
+        if !board.white_to_move {
+            key.flip_side_to_move();
         }
+
+        if let Some(en_passant_square) = board.game_state.en_passant_square {
+            key.xor_en_passant(&en_passant_square);
+        }
+
+        key.xor_castling_rights(&board.game_state.castling_rights);
+
+        key
+    }
+
+    /// Computes the pawn zobrist key.
+    #[must_use]
+    pub fn pawn_key(board: &Board) -> Self {
+        let mut key = Self::EMPTY;
+
+        let mut black_pawns = *board.get_bit_board(Piece::BlackPawn);
+        consume_bit_board!(black_pawns, square {
+            key.xor_piece(Piece::BlackPawn as usize, square.usize());
+        });
+        let mut white_pawns = *board.get_bit_board(Piece::WhitePawn);
+        consume_bit_board!(white_pawns, square {
+            key.xor_piece(Piece::WhitePawn as usize, square.usize());
+        });
+
+        key
     }
 }
