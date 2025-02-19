@@ -3,7 +3,7 @@
 #![warn(clippy::nursery)]
 
 use clap::Parser;
-use std::io::Write;
+use std::io::{BufRead, BufReader, Write};
 use std::process::{Command, Stdio};
 use std::{env, fs};
 
@@ -40,7 +40,6 @@ const SEARCH_POSITIONS_QUICK: [&str; 2] = [
 ];
 const SEARCH_POSITIONS_SLOW: [&str; 2] = [
     "position startpos moves e2e4 e7e5 g1f3 b8c6 f1c4 f8c5 c2c3 g8f6 d2d3 a7a6", // Italian Game: Classical Variation, Giuoco Pianissimo, with a6
-
     "position startpos moves g1f3 d7d5 d2d4 g8f6 c2c4 e7e6 b1c3 c7c6 e2e3 b8d7 d1c2 f8d6 f1e2 e8g8 b2b3 b7b6",
 ];
 const PERFT_POSITION: [(&str, u8); 2] = [
@@ -57,35 +56,64 @@ const PERFT_POSITION: [(&str, u8); 2] = [
 fn run(target: &str) {
     let mut run = Command::new(format!("../engine/target/{target}/release/engine"))
         .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
         .spawn()
         .unwrap();
     let mut input = run.stdin.take().unwrap();
+    let output = run.stdout.take().unwrap();
+    let mut output_reader = BufReader::new(output);
 
     macro_rules! send {
         ($string:expr) => {
+            println!($string);
             writeln!(input, $string).unwrap();
             input.flush().unwrap();
         };
     }
+
+    macro_rules! wait {
+        ($expected:expr) => {
+            let mut line = String::new();
+            loop {
+                line.clear();
+                output_reader.read_line(&mut line).unwrap();
+                print!("{line}");
+                if line.contains($expected) {
+                    break;
+                }
+            }
+        };
+    }
+
     send!("uci");
+    wait!("uciok");
 
     for position in SEARCH_POSITIONS_QUICK {
         send!("isready");
+        wait!("readyok");
+
         send!("ucinewgame");
         send!("{position}");
         send!("go movetime 400");
+        wait!("bestmove");
     }
     for (position, depth) in PERFT_POSITION {
         send!("isready");
+        wait!("readyok");
+
         send!("ucinewgame");
         send!("{position}");
         send!("go perft {depth}");
+        wait!("Searched");
     }
     for position in SEARCH_POSITIONS_SLOW {
         send!("isready");
+        wait!("readyok");
+
         send!("ucinewgame");
         send!("{position}");
         send!("go movetime 2500");
+        wait!("bestmove");
     }
 
     send!("quit");
