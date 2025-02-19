@@ -529,6 +529,7 @@ uciok",
             }
         };
 
+        self.stopped.store(false, Ordering::SeqCst);
         let search_controller = if self.search_controller.is_some() {
             self.search_controller.as_ref()
         } else {
