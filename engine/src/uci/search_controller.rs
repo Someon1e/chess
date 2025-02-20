@@ -1,8 +1,9 @@
+use std::fmt::Write;
 use std::sync::atomic::AtomicBool;
 use std::sync::mpsc::{self, Sender};
 
 use std::sync::Arc;
-use std::thread::{self, JoinHandle};
+use std::thread;
 
 use crate::board::Board;
 use crate::board::square::Square;
@@ -22,7 +23,7 @@ enum SearchCommand {
     ClearCacheForNewGame,
 }
 
-fn output_search(info: DepthSearchInfo, time: u64) {
+fn output_search(info: &DepthSearchInfo, time: u64) {
     let (pv, evaluation) = info.best;
     let depth = info.depth;
     let highest_depth = info.highest_depth;
@@ -55,7 +56,7 @@ fn output_search(info: DepthSearchInfo, time: u64) {
     );
 }
 
-pub(crate) struct SearchController(Sender<SearchCommand>);
+pub struct SearchController(Sender<SearchCommand>);
 impl SearchController {
     pub fn new(transposition_capacity: usize) -> Self {
         let (sender, receiver) = mpsc::channel::<SearchCommand>();
@@ -70,7 +71,7 @@ impl SearchController {
                     SearchCommand::SetTranspositionCapacity(capacity) => {
                         transposition_capacity = capacity;
                         if let Some(search) = &mut cached_search {
-                            search.resize_transposition_table(transposition_capacity)
+                            search.resize_transposition_table(transposition_capacity);
                         }
                     }
                     SearchCommand::SetPosition((new_board, new_moves)) => {
@@ -79,7 +80,7 @@ impl SearchController {
                     }
                     SearchCommand::ClearCacheForNewGame => {
                         if let Some(search) = &mut cached_search {
-                            search.clear_cache_for_new_game()
+                            search.clear_cache_for_new_game();
                         }
                     }
                     SearchCommand::Search((stopped, search_time, ponder_info)) => {
@@ -104,7 +105,7 @@ impl SearchController {
                         };
                         for (from, to, promotion) in &moves.unwrap() {
                             search.make_move_repetition::<false>(&decode_move(
-                                &search.board(),
+                                search.board(),
                                 *from,
                                 *to,
                                 *promotion,
@@ -171,13 +172,13 @@ impl SearchController {
                             &time_manager,
                             &mut |depth_info: DepthSearchInfo| {
                                 try_update(&depth_info.best.0);
-                                output_search(depth_info, search_start.milliseconds());
+                                output_search(&depth_info, search_start.milliseconds());
                             },
                         );
 
                         try_update(&search.pv);
                         output_search(
-                            DepthSearchInfo {
+                            &DepthSearchInfo {
                                 depth,
                                 best: (search.pv, evaluation),
                                 highest_depth: search.highest_depth,
@@ -189,10 +190,11 @@ impl SearchController {
                         let mut output =
                             format!("bestmove {}", encode_move(root_best_move.decode()),);
                         if !root_best_reply.is_none() {
-                            output += &format!(" ponder {}", encode_move(root_best_reply.decode()));
+                            write!(output, " ponder {}", encode_move(root_best_reply.decode()))
+                                .unwrap();
                         }
 
-                        println!("{}", output);
+                        println!("{output}");
                     }
                 }
             }
@@ -206,17 +208,22 @@ impl SearchController {
         ponder_info: PonderInfo,
     ) {
         self.0
-            .send(SearchCommand::Search((stopped, search_time, ponder_info)));
+            .send(SearchCommand::Search((stopped, search_time, ponder_info)))
+            .unwrap();
     }
     pub fn set_position(&self, board: Board, moves: Vec<(Square, Square, Flag)>) {
-        self.0.send(SearchCommand::SetPosition((board, moves)));
+        self.0
+            .send(SearchCommand::SetPosition((board, moves)))
+            .unwrap();
     }
     pub fn set_transposition_capacity(&self, transposition_capacity: usize) {
-        self.0.send(SearchCommand::SetTranspositionCapacity(
-            transposition_capacity,
-        ));
+        self.0
+            .send(SearchCommand::SetTranspositionCapacity(
+                transposition_capacity,
+            ))
+            .unwrap();
     }
     pub fn clear_cache_for_new_game(&self) {
-        self.0.send(SearchCommand::ClearCacheForNewGame);
+        self.0.send(SearchCommand::ClearCacheForNewGame).unwrap();
     }
 }

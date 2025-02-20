@@ -41,32 +41,32 @@ impl SpinU16 {
 /// Handles UCI input and output.
 pub struct UCIProcessor {
     /// FEN to be used.
-    pub fen: Option<String>,
+    fen: Option<String>,
 
     /// Moves to be played after FEN.
-    pub moves: Vec<(Square, Square, Flag)>,
+    moves: Vec<(Square, Square, Flag)>,
 
     /// Called with UCI output.
-    pub out: fn(&str),
+    out: fn(&str),
 
     /// Range and default size of the transposition table in megabytes.
-    pub hash_option: SpinU16,
+    hash_option: SpinU16,
 
     /// Maximum entry count of the transposition table.
-    pub transposition_capacity: usize,
+    transposition_capacity: usize,
 
-    pub stopped: Arc<AtomicBool>,
+    stopped: Arc<AtomicBool>,
 
-    pub ponder_info: PonderInfo,
+    ponder_info: PonderInfo,
 
-    pub search_controller: Option<SearchController>,
+    search_controller: Option<SearchController>,
 
     #[cfg(feature = "spsa")]
     pub tunables: Tunable,
 }
 
 #[derive(Clone)]
-struct PonderInfo {
+pub struct PonderInfo {
     ponder_allowed: bool,
     is_pondering: Arc<AtomicBool>,
 }
@@ -373,13 +373,10 @@ uciok",
             Ordering::SeqCst,
         );
 
-        let search_controller = if self.search_controller.is_some() {
-            self.search_controller.as_ref()
-        } else {
+        if self.search_controller.is_none() {
             self.search_controller = Some(SearchController::new(self.transposition_capacity));
-            self.search_controller.as_ref()
         }
-        .unwrap();
+        let search_controller = self.search_controller.as_ref().unwrap();
         search_controller.set_position(board, self.moves.clone());
         search_controller.search(
             self.stopped.clone(),

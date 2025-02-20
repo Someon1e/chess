@@ -134,22 +134,28 @@ impl GoParameters {
             }
         }
     }
-    pub fn search_type(&self) -> &SearchType {
+    #[must_use]
+    pub const fn search_type(&self) -> &SearchType {
         &self.search_type
     }
-    pub fn move_time(self) -> Option<SearchTime> {
+    #[must_use]
+    pub const fn move_time(self) -> Option<SearchTime> {
         self.move_time
     }
-    pub fn find_mate(&self) -> Option<u16> {
+    #[must_use]
+    pub const fn find_mate(&self) -> Option<u16> {
         self.find_mate
     }
-    pub fn depth(&self) -> Option<u16> {
+    #[must_use]
+    pub const fn depth(&self) -> Option<u16> {
         self.depth
     }
-    pub fn nodes(&self) -> Option<u64> {
+    #[must_use]
+    pub const fn nodes(&self) -> Option<u64> {
         self.nodes
     }
-    pub fn pondering(&self) -> Option<bool> {
+    #[must_use]
+    pub const fn pondering(&self) -> Option<bool> {
         self.pondering
     }
 }
