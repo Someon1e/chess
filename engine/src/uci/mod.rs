@@ -12,6 +12,7 @@ use go_params::{SearchTime, SearchType};
 pub use move_encoding::{decode_move, encode_move};
 
 use crate::evaluation::eval_data::EvalNumber;
+use crate::search::encoded_move::EncodedMove;
 use crate::search::pv::Pv;
 use crate::{
     board::{Board, square::Square},
@@ -60,7 +61,7 @@ pub struct UCIProcessor {
 
     pub stopped: Arc<AtomicBool>,
 
-    pub ponder_allowed: bool,
+    pub ponder_info: PonderInfo,
 
     pub search_controller: Option<SearchController>,
 
@@ -101,9 +102,16 @@ fn output_search(info: DepthSearchInfo, time: u64) {
     );
 }
 
+#[derive(Clone)]
+struct PonderInfo {
+    ponder_allowed: bool,
+    is_pondering: Arc<AtomicBool>,
+    ponder_hit: Arc<AtomicBool>,
+}
+
 enum SearchCommand {
     SetPosition((Board, Vec<(Square, Square, Flag)>)),
-    Search((Arc<AtomicBool>, bool, SearchTime)),
+    Search((Arc<AtomicBool>, SearchTime, PonderInfo)),
     SetTranspositionCapacity(usize),
     ClearCacheForNewGame,
 }
@@ -134,7 +142,7 @@ impl SearchController {
                             search.clear_cache_for_new_game()
                         }
                     }
-                    SearchCommand::Search((stopped, ponder_allowed, search_time)) => {
+                    SearchCommand::Search((stopped, search_time, ponder_info)) => {
                         let search_start = Time::now();
 
                         let search = if cached_search.is_none() {
@@ -165,11 +173,14 @@ impl SearchController {
                         moves = None;
                         board = None;
 
+                        let was_pondering = ponder_info.is_pondering.load(Ordering::SeqCst);
                         let time_manager = match search_time {
-                            SearchTime::Ponder if ponder_allowed => TimeManager::infinite(stopped),
-                            SearchTime::Infinite => TimeManager::infinite(stopped),
+                            SearchTime::Infinite => {
+                                TimeManager::infinite(stopped, ponder_info.is_pondering)
+                            }
                             SearchTime::Fixed(move_time) => TimeManager::time_limited(
                                 stopped,
+                                ponder_info.is_pondering,
                                 &search_start,
                                 move_time,
                                 move_time,
@@ -193,6 +204,7 @@ impl SearchController {
                                     Search::calculate_time(clock_time, increment);
                                 TimeManager::time_limited(
                                     stopped,
+                                    ponder_info.is_pondering,
                                     &search_start,
                                     hard_time_limit,
                                     soft_time_limit,
@@ -201,9 +213,14 @@ impl SearchController {
                             _ => panic!("Unknown time control"),
                         };
 
+                        let mut root_best_reply = EncodedMove::NONE;
                         let (depth, evaluation) = search.iterative_deepening(
                             &time_manager,
                             &mut |depth_info: DepthSearchInfo| {
+                                let new_best_reply = depth_info.best.0.root_best_reply();
+                                if !new_best_reply.is_none() {
+                                    root_best_reply = new_best_reply;
+                                }
                                 output_search(depth_info, search_start.milliseconds());
                             },
                         );
@@ -216,28 +233,30 @@ impl SearchController {
                             },
                             search_start.milliseconds(),
                         );
-                        let mut output = format!(
-                            "bestmove {}",
-                            encode_move(search.pv.root_best_move().decode()),
-                        );
-                        let root_best_reply = search.pv.root_best_reply();
-                        if !root_best_reply.is_none() {
-                            output += &format!(" ponder {}", encode_move(root_best_reply.decode()));
-                        }
 
-                        println!("{}", output);
+                        if !was_pondering || ponder_info.ponder_hit.load(Ordering::SeqCst) {
+                            // Don't output if it was pondering and the expected move was not played
+
+                            let mut output = format!(
+                                "bestmove {}",
+                                encode_move(search.pv.root_best_move().decode()),
+                            );
+                            if !root_best_reply.is_none() {
+                                output +=
+                                    &format!(" ponder {}", encode_move(root_best_reply.decode()));
+                            }
+
+                            println!("{}", output);
+                        }
                     }
                 }
             }
         });
         Self(sender)
     }
-    fn search(&self, stopped: Arc<AtomicBool>, ponder_allowed: bool, search_time: SearchTime) {
-        self.0.send(SearchCommand::Search((
-            stopped,
-            ponder_allowed,
-            search_time,
-        )));
+    fn search(&self, stopped: Arc<AtomicBool>, search_time: SearchTime, ponder_info: PonderInfo) {
+        self.0
+            .send(SearchCommand::Search((stopped, search_time, ponder_info)));
     }
     fn set_position(&self, board: Board, moves: Vec<(Square, Square, Flag)>) {
         self.0.send(SearchCommand::SetPosition((board, moves)));
@@ -310,7 +329,11 @@ impl UCIProcessor {
             out,
             stopped: Arc::new(AtomicBool::new(false)),
             hash_option,
-            ponder_allowed: false,
+            ponder_info: PonderInfo {
+                ponder_allowed: false,
+                is_pondering: Arc::new(AtomicBool::new(false)),
+                ponder_hit: Arc::new(AtomicBool::new(false)),
+            },
             transposition_capacity,
             search_controller: None,
             #[cfg(feature = "spsa")]
@@ -446,7 +469,7 @@ uciok",
             }
             "ponder" => {
                 let ponder_allowed: bool = value.expect("Missing value").parse().unwrap();
-                self.ponder_allowed = ponder_allowed;
+                self.ponder_info.ponder_allowed = ponder_allowed;
             }
 
             option_name => handle_option!(
@@ -546,6 +569,12 @@ uciok",
         }
 
         self.stopped.store(false, Ordering::SeqCst);
+        self.ponder_info.ponder_hit.store(true, Ordering::SeqCst);
+        self.ponder_info.is_pondering.store(
+            self.ponder_info.ponder_allowed && parameters.pondering().unwrap_or(false),
+            Ordering::SeqCst,
+        );
+
         let search_controller = if self.search_controller.is_some() {
             self.search_controller.as_ref()
         } else {
@@ -556,14 +585,19 @@ uciok",
         search_controller.set_position(board, self.moves.clone());
         search_controller.search(
             self.stopped.clone(),
-            self.ponder_allowed,
             parameters.move_time().unwrap(),
+            self.ponder_info.clone(),
         );
     }
 
     /// Stop calculating as soon as possible.
     pub fn stop(&self) {
         self.stopped.store(true, Ordering::SeqCst);
+    }
+
+    pub fn ponderhit(&self) {
+        self.ponder_info.is_pondering.store(false, Ordering::SeqCst);
+        self.ponder_info.ponder_hit.store(true, Ordering::SeqCst);
     }
 
     /// This is sent to the engine when the next search (started with "position" and "go") will be from

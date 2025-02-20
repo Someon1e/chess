@@ -503,7 +503,11 @@ fn bench() {
         search.clear_cache_for_new_game();
         search.clear_for_new_search();
 
-        let time_manager = TimeManager::depth_limited(Arc::new(AtomicBool::new(false)), depth);
+        let time_manager = TimeManager::depth_limited(
+            Arc::new(AtomicBool::new(false)),
+            Arc::new(AtomicBool::new(false)),
+            depth,
+        );
         let result = search.iterative_deepening(&time_manager, &mut |_| {});
         out(&format!(
             "{position} {depth} {}",
@@ -530,6 +534,8 @@ fn process_input(input: &str) -> bool {
         "position" => uci_processor.borrow_mut().position(&mut args),
         "ucinewgame" => uci_processor.borrow_mut().ucinewgame(),
         "setoption" => uci_processor.borrow_mut().setoption(input),
+
+        "ponderhit" => uci_processor.borrow().ponderhit(),
 
         "uci" => uci_processor.borrow().uci(),
         "stop" => uci_processor.borrow().stop(),

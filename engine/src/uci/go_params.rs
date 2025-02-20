@@ -12,7 +12,6 @@ pub struct SearchTimeInfo {
 
 pub enum SearchTime {
     Infinite,
-    Ponder,
     Fixed(u64),
     Info(SearchTimeInfo),
 }
@@ -29,6 +28,8 @@ pub struct GoParameters {
 
     find_mate: Option<u16>,
 
+    pondering: Option<bool>,
+
     search_type: SearchType,
 
     move_time: Option<SearchTime>,
@@ -43,6 +44,7 @@ impl GoParameters {
             find_mate: None,
             search_type: SearchType::None,
             move_time: None,
+            pondering: None,
         }
     }
     pub fn parse(&mut self, args: &mut SplitWhitespace) {
@@ -55,8 +57,8 @@ impl GoParameters {
             match label {
                 "searchmoves" => todo!(),
                 "ponder" => {
-                    assert!(self.move_time.is_none(), "Conflicting move time");
-                    self.move_time = Some(SearchTime::Ponder);
+                    assert!(self.pondering.is_none(), "Pondering defined twice");
+                    self.pondering = Some(true);
                 }
 
                 "wtime" | "btime" | "winc" | "binc" | "movestogo" => {
@@ -146,5 +148,8 @@ impl GoParameters {
     }
     pub fn nodes(&self) -> Option<u64> {
         self.nodes
+    }
+    pub fn pondering(&self) -> Option<bool> {
+        self.pondering
     }
 }
