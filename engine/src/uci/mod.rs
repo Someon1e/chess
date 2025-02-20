@@ -106,7 +106,6 @@ fn output_search(info: DepthSearchInfo, time: u64) {
 struct PonderInfo {
     ponder_allowed: bool,
     is_pondering: Arc<AtomicBool>,
-    ponder_hit: Arc<AtomicBool>,
 }
 
 enum SearchCommand {
@@ -234,20 +233,15 @@ impl SearchController {
                             search_start.milliseconds(),
                         );
 
-                        if !was_pondering || ponder_info.ponder_hit.load(Ordering::SeqCst) {
-                            // Don't output if it was pondering and the expected move was not played
-
-                            let mut output = format!(
-                                "bestmove {}",
-                                encode_move(search.pv.root_best_move().decode()),
-                            );
-                            if !root_best_reply.is_none() {
-                                output +=
-                                    &format!(" ponder {}", encode_move(root_best_reply.decode()));
-                            }
-
-                            println!("{}", output);
+                        let mut output = format!(
+                            "bestmove {}",
+                            encode_move(search.pv.root_best_move().decode()),
+                        );
+                        if !root_best_reply.is_none() {
+                            output += &format!(" ponder {}", encode_move(root_best_reply.decode()));
                         }
+
+                        println!("{}", output);
                     }
                 }
             }
@@ -332,7 +326,6 @@ impl UCIProcessor {
             ponder_info: PonderInfo {
                 ponder_allowed: false,
                 is_pondering: Arc::new(AtomicBool::new(false)),
-                ponder_hit: Arc::new(AtomicBool::new(false)),
             },
             transposition_capacity,
             search_controller: None,
@@ -569,7 +562,6 @@ uciok",
         }
 
         self.stopped.store(false, Ordering::SeqCst);
-        self.ponder_info.ponder_hit.store(true, Ordering::SeqCst);
         self.ponder_info.is_pondering.store(
             self.ponder_info.ponder_allowed && parameters.pondering().unwrap_or(false),
             Ordering::SeqCst,
@@ -597,7 +589,6 @@ uciok",
 
     pub fn ponderhit(&self) {
         self.ponder_info.is_pondering.store(false, Ordering::SeqCst);
-        self.ponder_info.ponder_hit.store(true, Ordering::SeqCst);
     }
 
     /// This is sent to the engine when the next search (started with "position" and "go") will be from
