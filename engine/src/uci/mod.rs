@@ -211,17 +211,30 @@ impl SearchController {
                             _ => panic!("Unknown time control"),
                         };
 
-                        let mut root_best_reply = EncodedMove::NONE;
+                        let (mut root_best_move, mut root_best_reply) =
+                            (EncodedMove::NONE, EncodedMove::NONE);
+                        let mut try_update = |pv: &Pv| {
+                            let new_best_move = pv.root_best_move();
+                            if new_best_move != root_best_move {
+                                root_best_reply = EncodedMove::NONE;
+                                root_best_move = new_best_move;
+                            }
+
+                            let new_best_reply = pv.root_best_reply();
+                            if !new_best_reply.is_none() {
+                                root_best_reply = new_best_reply;
+                            }
+                        };
+
                         let (depth, evaluation) = search.iterative_deepening(
                             &time_manager,
                             &mut |depth_info: DepthSearchInfo| {
-                                let new_best_reply = depth_info.best.0.root_best_reply();
-                                if !new_best_reply.is_none() {
-                                    root_best_reply = new_best_reply;
-                                }
+                                try_update(&depth_info.best.0);
                                 output_search(depth_info, search_start.milliseconds());
                             },
                         );
+
+                        try_update(&search.pv);
                         output_search(
                             DepthSearchInfo {
                                 depth,
@@ -232,10 +245,8 @@ impl SearchController {
                             search_start.milliseconds(),
                         );
 
-                        let mut output = format!(
-                            "bestmove {}",
-                            encode_move(search.pv.root_best_move().decode()),
-                        );
+                        let mut output =
+                            format!("bestmove {}", encode_move(root_best_move.decode()),);
                         if !root_best_reply.is_none() {
                             output += &format!(" ponder {}", encode_move(root_best_reply.decode()));
                         }
