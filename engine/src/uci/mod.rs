@@ -387,6 +387,7 @@ uciok",
 
     /// Stop calculating as soon as possible.
     pub fn stop(&self) {
+        self.ponder_info.is_pondering.store(false, Ordering::SeqCst);
         self.stopped.store(true, Ordering::SeqCst);
     }
 
