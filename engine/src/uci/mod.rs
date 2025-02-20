@@ -172,7 +172,6 @@ impl SearchController {
                         moves = None;
                         board = None;
 
-                        let was_pondering = ponder_info.is_pondering.load(Ordering::SeqCst);
                         let time_manager = match search_time {
                             SearchTime::Infinite => {
                                 TimeManager::infinite(stopped, ponder_info.is_pondering)

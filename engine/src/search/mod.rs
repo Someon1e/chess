@@ -1115,7 +1115,9 @@ impl Search {
             }
             previous_best_score = best_score;
 
-            if self.pv.root_best_move().is_none() || Self::score_is_checkmate(best_score) {
+            if !time_manager.is_pondering()
+                && (self.pv.root_best_move().is_none() || Self::score_is_checkmate(best_score))
+            {
                 // No point searching more.
                 break;
             }
@@ -1137,6 +1139,7 @@ impl Search {
             });
 
             if depth == Ply::MAX {
+                while time_manager.is_pondering() {}
                 // Maximum depth, can not continue
                 break;
             }

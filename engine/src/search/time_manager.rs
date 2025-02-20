@@ -68,7 +68,7 @@ impl<'a> TimeManager<'a> {
         if self.stopped.load(Ordering::SeqCst) {
             return true;
         }
-        if self.pondering.load(Ordering::SeqCst) {
+        if self.is_pondering() {
             return false;
         }
         match self.mode {
@@ -81,12 +81,13 @@ impl<'a> TimeManager<'a> {
             Mode::Depth(_) => false,
         }
     }
+
     #[must_use]
     pub fn hard_stop_iterative_deepening(&self, depth: Ply) -> bool {
         if self.stopped.load(Ordering::SeqCst) {
             return true;
         }
-        if self.pondering.load(Ordering::SeqCst) {
+        if self.is_pondering() {
             return false;
         }
 
@@ -100,6 +101,11 @@ impl<'a> TimeManager<'a> {
             Mode::Depth(max_depth) => depth > max_depth,
         }
     }
+
+    pub fn is_pondering(&self) -> bool {
+        self.pondering.load(Ordering::SeqCst)
+    }
+
     #[must_use]
     pub fn soft_stop(&self, best_move_stability: Ply) -> bool {
         if self.stopped.load(Ordering::SeqCst) {
