@@ -17,17 +17,23 @@ enum Mode<'a> {
     Infinite,
 }
 
+#[cfg(target_arch = "wasm32")]
+type Bool = bool;
+
+#[cfg(not(target_arch = "wasm32"))]
+type Bool = Arc<AtomicBool>;
+
 pub struct TimeManager<'a> {
     mode: Mode<'a>,
-    stopped: Arc<AtomicBool>,
-    pondering: Arc<AtomicBool>,
+    stopped: Bool,
+    pondering: Bool,
 }
 
 impl<'a> TimeManager<'a> {
     #[must_use]
     pub fn time_limited(
-        stopped: Arc<AtomicBool>,
-        pondering: Arc<AtomicBool>,
+        stopped: Bool,
+        pondering: Bool,
         timer: &'a Time,
         hard_time_limit: u64,
         soft_time_limit: u64,
@@ -44,11 +50,7 @@ impl<'a> TimeManager<'a> {
         }
     }
     #[must_use]
-    pub const fn depth_limited(
-        stopped: Arc<AtomicBool>,
-        pondering: Arc<AtomicBool>,
-        depth: Ply,
-    ) -> Self {
+    pub const fn depth_limited(stopped: Bool, pondering: Bool, depth: Ply) -> Self {
         Self {
             stopped,
             pondering,
@@ -56,7 +58,7 @@ impl<'a> TimeManager<'a> {
         }
     }
     #[must_use]
-    pub const fn infinite(stopped: Arc<AtomicBool>, pondering: Arc<AtomicBool>) -> Self {
+    pub const fn infinite(stopped: Bool, pondering: Bool) -> Self {
         Self {
             pondering,
             stopped,
@@ -65,7 +67,7 @@ impl<'a> TimeManager<'a> {
     }
     #[must_use]
     pub fn hard_stop_inner_search(&self) -> bool {
-        if self.stopped.load(Ordering::SeqCst) {
+        if self.is_stopped() {
             return true;
         }
         if self.is_pondering() {
@@ -84,7 +86,7 @@ impl<'a> TimeManager<'a> {
 
     #[must_use]
     pub fn hard_stop_iterative_deepening(&self, depth: Ply) -> bool {
-        if self.stopped.load(Ordering::SeqCst) {
+        if self.is_stopped() {
             return true;
         }
         if self.is_pondering() {
@@ -103,15 +105,27 @@ impl<'a> TimeManager<'a> {
     }
 
     pub fn is_pondering(&self) -> bool {
-        self.pondering.load(Ordering::SeqCst)
+        #[cfg(target_arch = "wasm32")]
+        return self.pondering;
+
+        #[cfg(not(target_arch = "wasm32"))]
+        return self.pondering.load(Ordering::SeqCst);
+    }
+
+    pub fn is_stopped(&self) -> bool {
+        #[cfg(target_arch = "wasm32")]
+        return self.stopped;
+
+        #[cfg(not(target_arch = "wasm32"))]
+        return self.stopped.load(Ordering::SeqCst);
     }
 
     #[must_use]
     pub fn soft_stop(&self, best_move_stability: Ply) -> bool {
-        if self.stopped.load(Ordering::SeqCst) {
+        if self.is_stopped() {
             return true;
         }
-        if self.pondering.load(Ordering::SeqCst) {
+        if self.is_pondering() {
             return false;
         }
         match self.mode {

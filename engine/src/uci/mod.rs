@@ -38,6 +38,12 @@ impl SpinU16 {
     }
 }
 
+#[cfg(target_arch = "wasm32")]
+type Bool = bool;
+
+#[cfg(not(target_arch = "wasm32"))]
+type Bool = Arc<AtomicBool>;
+
 /// Handles UCI input and output.
 pub struct UCIProcessor {
     /// FEN to be used.
@@ -55,7 +61,7 @@ pub struct UCIProcessor {
     /// Maximum entry count of the transposition table.
     transposition_capacity: usize,
 
-    stopped: Arc<AtomicBool>,
+    stopped: Bool,
 
     ponder_info: PonderInfo,
 
@@ -68,7 +74,7 @@ pub struct UCIProcessor {
 #[derive(Clone)]
 pub struct PonderInfo {
     ponder_allowed: bool,
-    is_pondering: Arc<AtomicBool>,
+    is_pondering: Bool,
 }
 
 #[cfg(feature = "spsa")]
@@ -127,11 +133,22 @@ impl UCIProcessor {
             fen: None,
             moves: Vec::new(),
             out,
+
+            #[cfg(not(target_arch = "wasm32"))]
             stopped: Arc::new(AtomicBool::new(false)),
+
+            #[cfg(target_arch = "wasm32")]
+            stopped: false,
+
             hash_option,
             ponder_info: PonderInfo {
                 ponder_allowed: false,
+
+                #[cfg(not(target_arch = "wasm32"))]
                 is_pondering: Arc::new(AtomicBool::new(false)),
+
+                #[cfg(target_arch = "wasm32")]
+                is_pondering: false,
             },
             transposition_capacity,
             search_controller: None,
@@ -367,16 +384,25 @@ uciok",
             return;
         }
 
-        self.stopped.store(false, Ordering::SeqCst);
-        self.ponder_info.is_pondering.store(
-            self.ponder_info.ponder_allowed && parameters.pondering().unwrap_or(false),
-            Ordering::SeqCst,
-        );
+        #[cfg(target_arch = "wasm32")]
+        {
+            self.stopped = false;
+            self.ponder_info.is_pondering = false;
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            self.stopped.store(false, Ordering::SeqCst);
+            self.ponder_info.is_pondering.store(
+                self.ponder_info.ponder_allowed && parameters.pondering().unwrap_or(false),
+                Ordering::SeqCst,
+            );
+        }
 
         if self.search_controller.is_none() {
-            self.search_controller = Some(SearchController::new(self.transposition_capacity));
+            self.search_controller =
+                Some(SearchController::new(self.out, self.transposition_capacity));
         }
-        let search_controller = self.search_controller.as_ref().unwrap();
+        let search_controller = self.search_controller.as_mut().unwrap();
         search_controller.set_position(board, self.moves.clone());
         search_controller.search(
             self.stopped.clone(),
@@ -385,12 +411,14 @@ uciok",
         );
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     /// Stop calculating as soon as possible.
     pub fn stop(&self) {
         self.ponder_info.is_pondering.store(false, Ordering::SeqCst);
         self.stopped.store(true, Ordering::SeqCst);
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn ponderhit(&self) {
         self.ponder_info.is_pondering.store(false, Ordering::SeqCst);
     }
