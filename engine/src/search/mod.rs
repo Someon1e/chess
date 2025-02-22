@@ -1115,13 +1115,6 @@ impl Search {
             }
             previous_best_score = best_score;
 
-            if !time_manager.is_pondering()
-                && (self.pv.root_best_move().is_none() || Self::score_is_checkmate(best_score))
-            {
-                // No point searching more.
-                break;
-            }
-
             if self.pv.root_best_move() == previous_best_move {
                 best_move_stability += 1;
             } else {
