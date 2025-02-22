@@ -3,9 +3,9 @@ use std::sync::{
     atomic::{AtomicBool, Ordering},
 };
 
-use crate::timer::Time;
+use crate::{evaluation::eval_data::EvalNumber, timer::Time};
 
-use super::Ply;
+use super::{IMMEDIATE_CHECKMATE_SCORE, Ply, Search};
 
 enum Mode<'a> {
     Depth(Ply),
@@ -27,6 +27,7 @@ pub struct TimeManager<'a> {
     mode: Mode<'a>,
     stopped: Bool,
     pondering: Bool,
+    mated_in: Option<Ply>,
 }
 
 impl<'a> TimeManager<'a> {
@@ -34,34 +35,43 @@ impl<'a> TimeManager<'a> {
     pub fn time_limited(
         stopped: Bool,
         pondering: Bool,
+        mated_in: Option<Ply>,
         timer: &'a Time,
         hard_time_limit: u64,
         soft_time_limit: u64,
     ) -> Self {
         assert!(hard_time_limit >= soft_time_limit);
         Self {
+            stopped,
             pondering,
+            mated_in,
             mode: Mode::Time {
                 timer,
                 hard_time_limit,
                 soft_time_limit,
             },
-            stopped,
         }
     }
     #[must_use]
-    pub const fn depth_limited(stopped: Bool, pondering: Bool, depth: Ply) -> Self {
+    pub const fn depth_limited(
+        stopped: Bool,
+        pondering: Bool,
+        mated_in: Option<Ply>,
+        depth: Ply,
+    ) -> Self {
         Self {
             stopped,
             pondering,
+            mated_in,
             mode: Mode::Depth(depth),
         }
     }
     #[must_use]
-    pub const fn infinite(stopped: Bool, pondering: Bool) -> Self {
+    pub const fn infinite(stopped: Bool, pondering: Bool, mated_in: Option<Ply>) -> Self {
         Self {
-            pondering,
             stopped,
+            pondering,
+            mated_in,
             mode: Mode::Infinite,
         }
     }
@@ -121,13 +131,22 @@ impl<'a> TimeManager<'a> {
     }
 
     #[must_use]
-    pub fn soft_stop(&self, best_move_stability: Ply) -> bool {
+    pub fn soft_stop(&self, best_score: EvalNumber, best_move_stability: Ply) -> bool {
         if self.is_stopped() {
             return true;
         }
         if self.is_pondering() {
             return false;
         }
+
+        if let Some(ply) = self.mated_in {
+            if Search::score_is_checkmate(best_score) {
+                if EvalNumber::from(ply) == IMMEDIATE_CHECKMATE_SCORE - best_score.abs() {
+                    return true;
+                }
+            }
+        }
+
         match self.mode {
             Mode::Time {
                 timer,

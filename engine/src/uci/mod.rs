@@ -404,10 +404,18 @@ uciok",
         }
         let search_controller = self.search_controller.as_mut().unwrap();
         search_controller.set_position(board, self.moves.clone());
+
+        let mated_in_plies = if let Some(mate_in_moves) = parameters.mate_in_moves() {
+            Some((2 * mate_in_moves - 1) as u8)
+        } else {
+            None
+        };
+
         search_controller.search(
             self.stopped.clone(),
             parameters.move_time().unwrap(),
             self.ponder_info.clone(),
+            mated_in_plies,
         );
     }
 

@@ -1,6 +1,8 @@
 use core::num::{NonZeroU16, NonZeroU64};
 use core::str::SplitWhitespace;
 
+use crate::search::Ply;
+
 #[derive(Default)]
 pub struct SearchTimeInfo {
     pub white_time: Option<u64>,
@@ -26,7 +28,7 @@ pub struct GoParameters {
 
     depth: Option<u16>,
 
-    find_mate: Option<u16>,
+    mate_in_moves: Option<u8>,
 
     pondering: Option<bool>,
 
@@ -41,7 +43,7 @@ impl GoParameters {
         Self {
             nodes: None,
             depth: None,
-            find_mate: None,
+            mate_in_moves: None,
             search_type: SearchType::None,
             move_time: None,
             pondering: None,
@@ -115,8 +117,11 @@ impl GoParameters {
                     self.nodes = Some(parse_number!().unwrap());
                 }
                 "mate" => {
-                    assert!(self.find_mate.is_none(), "Conflicting mate");
-                    self.find_mate = Some(parse_number!().unwrap());
+                    assert!(self.mate_in_moves.is_none(), "Conflicting mate");
+                    let mate_in_moves = parse_number!().unwrap();
+                    const MAX_MOVES: u32 = (Ply::MAX as u32 + 1) / 2;
+                    assert!(mate_in_moves < MAX_MOVES as Ply);
+                    self.mate_in_moves = Some(mate_in_moves);
                 }
                 "movetime" => {
                     assert!(self.move_time.is_none(), "Conflicting move time");
@@ -143,8 +148,8 @@ impl GoParameters {
         self.move_time
     }
     #[must_use]
-    pub const fn find_mate(&self) -> Option<u16> {
-        self.find_mate
+    pub const fn mate_in_moves(&self) -> Option<u8> {
+        self.mate_in_moves
     }
     #[must_use]
     pub const fn depth(&self) -> Option<u16> {

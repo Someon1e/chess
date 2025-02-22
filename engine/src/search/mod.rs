@@ -35,7 +35,7 @@ use self::{
     transposition::{NodeType, NodeValue},
 };
 
-type Ply = u8;
+pub type Ply = u8;
 
 /// Score of having checkmated the opponent.
 pub const IMMEDIATE_CHECKMATE_SCORE: EvalNumber = EvalNumber::MAX - 1;
@@ -1137,7 +1137,7 @@ impl Search {
                 break;
             }
 
-            if time_manager.soft_stop(best_move_stability) {
+            if time_manager.soft_stop(best_score, best_move_stability) {
                 // It would probably be a waste of time to start another iteration
                 break;
             }
