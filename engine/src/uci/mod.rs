@@ -1,18 +1,21 @@
 use core::ops::{Range, RangeInclusive};
 use core::str::SplitWhitespace;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 mod go_params;
 mod move_encoding;
+mod search_controller;
 
-use go_params::{SearchTime, SearchType};
+use go_params::SearchType;
 pub use move_encoding::{decode_move, encode_move};
+use search_controller::SearchController;
 
 use crate::{
     board::{Board, square::Square},
     move_generator::move_data::Flag,
     perft::perft_root,
     search::{
-        DepthSearchInfo, IMMEDIATE_CHECKMATE_SCORE, Search, TimeManager,
         search_params::{DEFAULT_TUNABLES, Tunable},
         transposition::megabytes_to_capacity,
     },
@@ -35,31 +38,43 @@ impl SpinU16 {
     }
 }
 
+#[cfg(target_arch = "wasm32")]
+type Bool = bool;
+
+#[cfg(not(target_arch = "wasm32"))]
+type Bool = Arc<AtomicBool>;
+
 /// Handles UCI input and output.
 pub struct UCIProcessor {
-    /// Maximum time to search, in milliseconds.
-    pub max_thinking_time: u64,
-
     /// FEN to be used.
-    pub fen: Option<String>,
+    fen: Option<String>,
 
     /// Moves to be played after FEN.
-    pub moves: Vec<(Square, Square, Flag)>,
-
-    /// Search instance.
-    pub search: Option<Search>,
+    moves: Vec<(Square, Square, Flag)>,
 
     /// Called with UCI output.
-    pub out: fn(&str),
+    out: fn(&str),
 
     /// Range and default size of the transposition table in megabytes.
-    pub hash_option: SpinU16,
+    hash_option: SpinU16,
 
     /// Maximum entry count of the transposition table.
-    pub transposition_capacity: usize,
+    transposition_capacity: usize,
+
+    stopped: Bool,
+
+    ponder_info: PonderInfo,
+
+    search_controller: Option<SearchController>,
 
     #[cfg(feature = "spsa")]
     pub tunables: Tunable,
+}
+
+#[derive(Clone)]
+pub struct PonderInfo {
+    ponder_allowed: bool,
+    is_pondering: Bool,
 }
 
 #[cfg(feature = "spsa")]
@@ -110,26 +125,41 @@ const TUNABLE_RANGES: TunableRange = TunableRange {
 };
 
 impl UCIProcessor {
-    pub fn new(max_thinking_time: u64, out: fn(&str), hash_option: SpinU16) -> Self {
+    pub fn new(out: fn(&str), hash_option: SpinU16) -> Self {
         let megabytes = hash_option.default as usize;
         let transposition_capacity = megabytes_to_capacity(megabytes);
 
         Self {
-            max_thinking_time,
             fen: None,
             moves: Vec::new(),
-            search: None,
             out,
+
+            #[cfg(not(target_arch = "wasm32"))]
+            stopped: Arc::new(AtomicBool::new(false)),
+
+            #[cfg(target_arch = "wasm32")]
+            stopped: false,
+
             hash_option,
+            ponder_info: PonderInfo {
+                ponder_allowed: false,
+
+                #[cfg(not(target_arch = "wasm32"))]
+                is_pondering: Arc::new(AtomicBool::new(false)),
+
+                #[cfg(target_arch = "wasm32")]
+                is_pondering: false,
+            },
             transposition_capacity,
+            search_controller: None,
             #[cfg(feature = "spsa")]
             tunables: DEFAULT_TUNABLES,
         }
     }
     fn set_transposition_capacity(&mut self, transposition_capacity: usize) {
         self.transposition_capacity = transposition_capacity;
-        if let Some(search) = &mut self.search {
-            search.resize_transposition_table(transposition_capacity);
+        if let Some(search_controller) = &mut self.search_controller {
+            search_controller.set_transposition_capacity(transposition_capacity);
         }
     }
 }
@@ -142,6 +172,7 @@ impl UCIProcessor {
         let max_hash = self.hash_option.range.end - 1;
         let mut options = format!(
             "option name Hash type spin default {default_hash} min {min_hash} max {max_hash}
+option name Ponder type check default false
 option name Threads type spin default 1 min 1 max 1"
         );
 
@@ -252,6 +283,10 @@ uciok",
                 let threads: u16 = value.expect("Missing value").parse().unwrap();
                 assert!(threads == 1, "Only supports single thread");
             }
+            "ponder" => {
+                let ponder_allowed: bool = value.expect("Missing value").parse().unwrap();
+                self.ponder_info.ponder_allowed = ponder_allowed;
+            }
 
             option_name => handle_option!(
                 option_name,
@@ -349,107 +384,43 @@ uciok",
             return;
         }
 
-        let search = if self.search.is_none() {
-            // First time making search
-            let search = Search::new(
-                board,
-                self.transposition_capacity,
-                #[cfg(feature = "spsa")]
-                self.tunables,
+        #[cfg(target_arch = "wasm32")]
+        {
+            self.stopped = false;
+            self.ponder_info.is_pondering = false;
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            self.stopped.store(false, Ordering::SeqCst);
+            self.ponder_info.is_pondering.store(
+                self.ponder_info.ponder_allowed && parameters.pondering().unwrap_or(false),
+                Ordering::SeqCst,
             );
-            self.search = Some(search);
-            self.search.as_mut().unwrap()
-        } else {
-            // Using cached search
-            let search = self.search.as_mut().unwrap();
-            search.new_board(board);
-            search.clear_for_new_search();
-            search
-        };
-        for (from, to, promotion) in &self.moves {
-            search.make_move_repetition::<false>(&decode_move(
-                search.board(),
-                *from,
-                *to,
-                *promotion,
-            ));
         }
 
-        let (hard_time_limit, soft_time_limit) = match parameters.move_time().unwrap() {
-            SearchTime::Infinite => (self.max_thinking_time, self.max_thinking_time),
-            SearchTime::Fixed(move_time) => (move_time, move_time),
-            SearchTime::Info(info) => {
-                let clock_time = (if search.board().white_to_move {
-                    info.white_time
-                } else {
-                    info.black_time
-                })
-                .unwrap();
-
-                let increment = (if search.board().white_to_move {
-                    info.white_increment
-                } else {
-                    info.black_increment
-                })
-                .map_or_else(|| 0, core::num::NonZero::get);
-
-                search.calculate_time(clock_time, increment, self.max_thinking_time)
-            }
-        };
-
-        let search_start = Time::now();
-        let output_info = |info: DepthSearchInfo| {
-            let (pv, evaluation) = info.best;
-            let depth = info.depth;
-            let highest_depth = info.highest_depth;
-            let nodes = info.quiescence_call_count;
-
-            let evaluation_info = if Search::score_is_checkmate(evaluation) {
-                format!(
-                    "score mate {}",
-                    (evaluation - IMMEDIATE_CHECKMATE_SCORE).abs() * evaluation.signum()
-                )
-            } else {
-                format!("score cp {evaluation}")
-            };
-            let time = search_start.milliseconds();
-            let pv_string = pv
-                .best_line()
-                .map(|encoded_move| " ".to_owned() + &encode_move(encoded_move.decode()))
-                .collect::<String>();
-
-            let nodes_per_second = if time == 0 {
-                69420
-            } else {
-                (u64::from(nodes) * 1000) / time
-            };
-
-            (self.out)(&format!(
-                "info depth {depth} seldepth {highest_depth} {evaluation_info} time {time} nodes {nodes} nps {nodes_per_second} pv{pv_string}"
-            ));
-        };
-
-        let time_manager =
-            TimeManager::time_limited(&search_start, hard_time_limit, soft_time_limit);
-        let (depth, evaluation) = search.iterative_deepening(&time_manager, &mut |depth_info| {
-            output_info(depth_info);
-        });
-
-        output_info(DepthSearchInfo {
-            depth,
-            best: (&search.pv, evaluation),
-            highest_depth: search.highest_depth,
-            quiescence_call_count: search.quiescence_call_count(),
-        });
-        (self.out)(&format!(
-            "bestmove {}",
-            encode_move(search.pv.root_best_move().decode())
-        ));
+        if self.search_controller.is_none() {
+            self.search_controller =
+                Some(SearchController::new(self.out, self.transposition_capacity));
+        }
+        let search_controller = self.search_controller.as_mut().unwrap();
+        search_controller.set_position(board, self.moves.clone());
+        search_controller.search(
+            self.stopped.clone(),
+            parameters.move_time().unwrap(),
+            self.ponder_info.clone(),
+        );
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     /// Stop calculating as soon as possible.
     pub fn stop(&self) {
-        todo!("Stop search immediately")
+        self.ponder_info.is_pondering.store(false, Ordering::SeqCst);
+        self.stopped.store(true, Ordering::SeqCst);
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn ponderhit(&self) {
+        self.ponder_info.is_pondering.store(false, Ordering::SeqCst);
     }
 
     /// This is sent to the engine when the next search (started with "position" and "go") will be from
@@ -457,8 +428,8 @@ uciok",
     /// also the next position from a testsuite with positions only.
     pub fn ucinewgame(&mut self) {
         // New game, so old data like the transposition table will not help
-        if let Some(search) = &mut self.search {
-            search.clear_cache_for_new_game();
+        if let Some(search_controller) = &mut self.search_controller {
+            search_controller.clear_cache_for_new_game();
         }
     }
 }

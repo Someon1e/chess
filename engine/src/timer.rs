@@ -3,7 +3,7 @@ mod inner {
     pub struct Time {
         start: f64,
     }
-    extern "C" {
+    unsafe extern "C" {
         fn time() -> f64;
     }
 

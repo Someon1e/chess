@@ -65,7 +65,8 @@ macro_rules! param {
 }
 
 /// Search info at a depth.
-pub struct DepthSearchInfo<'a> {
+#[derive(Clone, Copy)]
+pub struct DepthSearchInfo {
     /// Depth searched at.
     pub depth: Ply,
 
@@ -73,7 +74,7 @@ pub struct DepthSearchInfo<'a> {
     pub highest_depth: Ply,
 
     /// The best move and evaluation.
-    pub best: (&'a Pv, EvalNumber),
+    pub best: (Pv, EvalNumber),
 
     /// How many times `quiescence_search()` was called.
     pub quiescence_call_count: u32,
@@ -1114,7 +1115,9 @@ impl Search {
             }
             previous_best_score = best_score;
 
-            if self.pv.root_best_move().is_none() || Self::score_is_checkmate(best_score) {
+            if !time_manager.is_pondering()
+                && (self.pv.root_best_move().is_none() || Self::score_is_checkmate(best_score))
+            {
                 // No point searching more.
                 break;
             }
@@ -1130,12 +1133,13 @@ impl Search {
             // Report results of search iteration
             depth_completed(DepthSearchInfo {
                 depth,
-                best: (&self.pv, best_score),
+                best: (self.pv, best_score),
                 highest_depth: self.highest_depth,
                 quiescence_call_count: self.quiescence_call_count,
             });
 
             if depth == Ply::MAX {
+                while time_manager.is_pondering() {}
                 // Maximum depth, can not continue
                 break;
             }
@@ -1156,13 +1160,8 @@ impl Search {
     }
 
     #[must_use]
-    pub fn calculate_time(
-        &self,
-        clock_time: u64,
-        increment: u64,
-        max_thinking_time: u64,
-    ) -> (u64, u64) {
-        let max_time = max_thinking_time.min(clock_time / 2);
+    pub fn calculate_time(clock_time: u64, increment: u64) -> (u64, u64) {
+        let max_time = clock_time / 2;
         let hard_time_limit = (clock_time / 6 + increment * 2).min(max_time);
         let soft_time_limit = (clock_time / 24 + increment / 2).min(hard_time_limit);
         (hard_time_limit, soft_time_limit)

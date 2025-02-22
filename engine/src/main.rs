@@ -2,25 +2,26 @@
 #![warn(clippy::pedantic)]
 #![warn(clippy::nursery)]
 
-use std::{env, io::stdin};
+use std::{
+    env,
+    io::stdin,
+    sync::{Arc, atomic::AtomicBool},
+};
 
 use core::cell::RefCell;
 use engine::{
     board::Board,
-    search::{transposition::megabytes_to_capacity, Search, TimeManager},
+    search::{Search, TimeManager, transposition::megabytes_to_capacity},
     timer::Time,
     uci::{GoParameters, SpinU16, UCIProcessor},
 };
 
-/// Max time for thinking.
-const MAX_TIME: u64 = 40 * 1000;
-
 #[cfg(target_arch = "wasm32")]
-extern "C" {
+unsafe extern "C" {
     fn print_string(output: *const u8, length: u32);
 }
 
-fn out(output: &str) {
+pub fn out(output: &str) {
     #[cfg(target_arch = "wasm32")]
     unsafe {
         print_string(output.as_ptr(), output.len() as u32)
@@ -32,8 +33,6 @@ fn out(output: &str) {
 
 thread_local! {
     static UCI_PROCESSOR: RefCell<UCIProcessor> = RefCell::new(UCIProcessor::new(
-        MAX_TIME,
-
         |output: &str| {
             out(output);
         },
@@ -45,7 +44,7 @@ thread_local! {
     static INPUT: RefCell<String> = RefCell::new(String::new())
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 #[cfg(target_arch = "wasm32")]
 pub extern "C" fn send_input(input: u8) {
     let character = input as char;
@@ -504,7 +503,15 @@ fn bench() {
         search.clear_cache_for_new_game();
         search.clear_for_new_search();
 
-        let time_manager = TimeManager::depth_limited(depth);
+        #[cfg(not(target_arch = "wasm32"))]
+        let time_manager = TimeManager::depth_limited(
+            Arc::new(AtomicBool::new(false)),
+            Arc::new(AtomicBool::new(false)),
+            depth,
+        );
+        #[cfg(target_arch = "wasm32")]
+        let time_manager = TimeManager::depth_limited(false, false, depth);
+
         let result = search.iterative_deepening(&time_manager, &mut |_| {});
         out(&format!(
             "{position} {depth} {}",
@@ -532,7 +539,12 @@ fn process_input(input: &str) -> bool {
         "ucinewgame" => uci_processor.borrow_mut().ucinewgame(),
         "setoption" => uci_processor.borrow_mut().setoption(input),
 
+        #[cfg(not(target_arch = "wasm32"))]
+        "ponderhit" => uci_processor.borrow().ponderhit(),
+
         "uci" => uci_processor.borrow().uci(),
+
+        #[cfg(not(target_arch = "wasm32"))]
         "stop" => uci_processor.borrow().stop(),
         "quit" => quit = true,
 

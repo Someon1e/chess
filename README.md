@@ -7,6 +7,7 @@
 - Stalemate and checkmate detection
 - Repetition detection
 - Profile-guided optimisation
+- Pondering
 
 ### Search
 - SPSA-tuned search parameters

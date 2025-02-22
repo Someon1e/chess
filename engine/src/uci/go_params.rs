@@ -28,6 +28,8 @@ pub struct GoParameters {
 
     find_mate: Option<u16>,
 
+    pondering: Option<bool>,
+
     search_type: SearchType,
 
     move_time: Option<SearchTime>,
@@ -42,6 +44,7 @@ impl GoParameters {
             find_mate: None,
             search_type: SearchType::None,
             move_time: None,
+            pondering: None,
         }
     }
     pub fn parse(&mut self, args: &mut SplitWhitespace) {
@@ -53,7 +56,10 @@ impl GoParameters {
             }
             match label {
                 "searchmoves" => todo!(),
-                "ponder" => todo!("Pondering"),
+                "ponder" => {
+                    assert!(self.pondering.is_none(), "Pondering defined twice");
+                    self.pondering = Some(true);
+                }
 
                 "wtime" | "btime" | "winc" | "binc" | "movestogo" => {
                     if self.move_time.is_none() {
@@ -128,19 +134,28 @@ impl GoParameters {
             }
         }
     }
-    pub fn search_type(&self) -> &SearchType {
+    #[must_use]
+    pub const fn search_type(&self) -> &SearchType {
         &self.search_type
     }
-    pub fn move_time(self) -> Option<SearchTime> {
+    #[must_use]
+    pub const fn move_time(self) -> Option<SearchTime> {
         self.move_time
     }
-    pub fn find_mate(&self) -> Option<u16> {
+    #[must_use]
+    pub const fn find_mate(&self) -> Option<u16> {
         self.find_mate
     }
-    pub fn depth(&self) -> Option<u16> {
+    #[must_use]
+    pub const fn depth(&self) -> Option<u16> {
         self.depth
     }
-    pub fn nodes(&self) -> Option<u64> {
+    #[must_use]
+    pub const fn nodes(&self) -> Option<u64> {
         self.nodes
+    }
+    #[must_use]
+    pub const fn pondering(&self) -> Option<bool> {
+        self.pondering
     }
 }

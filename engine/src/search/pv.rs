@@ -1,8 +1,9 @@
-use super::{encoded_move::EncodedMove, Ply};
+use super::{Ply, encoded_move::EncodedMove};
 
 pub type PvTable = [[EncodedMove; Ply::MAX as usize]; Ply::MAX as usize];
 pub type PvLength = [Ply; Ply::MAX as usize];
 
+#[derive(Clone, Copy)]
 pub struct Pv {
     pv_table: PvTable,
     pv_length: PvLength,
@@ -25,6 +26,16 @@ impl Pv {
     #[must_use]
     pub const fn root_best_move(&self) -> EncodedMove {
         self.pv_table[0][0]
+    }
+
+    /// Returns the best reply to the best move at the first ply.
+    #[must_use]
+    pub const fn root_best_reply(&self) -> EncodedMove {
+        if self.pv_length[0] >= 2 {
+            self.pv_table[0][1]
+        } else {
+            EncodedMove::NONE
+        }
     }
 
     pub const fn set_pv_length(&mut self, ply_from_root: Ply, length: Ply) {
