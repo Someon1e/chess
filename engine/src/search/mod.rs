@@ -38,9 +38,9 @@ use self::{
 type Ply = u8;
 
 /// Score of having checkmated the opponent.
-pub const IMMEDIATE_CHECKMATE_SCORE: EvalNumber = -EvalNumber::MAX + 1;
+pub const IMMEDIATE_CHECKMATE_SCORE: EvalNumber = EvalNumber::MAX - 1;
 
-const CHECKMATE_SCORE: EvalNumber = IMMEDIATE_CHECKMATE_SCORE.abs() - (Ply::MAX as EvalNumber);
+const CHECKMATE_SCORE: EvalNumber = IMMEDIATE_CHECKMATE_SCORE - (Ply::MAX as EvalNumber);
 
 const USE_STATIC_NULL_MOVE_PRUNING: bool = true;
 const USE_NULL_MOVE_PRUNING: bool = true;
@@ -818,7 +818,7 @@ impl Search {
             // No moves
             let score = if move_generator.is_in_check() {
                 // Checkmate
-                IMMEDIATE_CHECKMATE_SCORE + EvalNumber::from(ply_from_root)
+                -IMMEDIATE_CHECKMATE_SCORE + EvalNumber::from(ply_from_root)
             } else {
                 // Stalemate
                 0

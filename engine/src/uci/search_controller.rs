@@ -29,7 +29,7 @@ fn output_search(out: fn(&str), info: &DepthSearchInfo, time: u64) {
     let evaluation_info = if Search::score_is_checkmate(evaluation) {
         format!(
             "score mate {}",
-            (evaluation - IMMEDIATE_CHECKMATE_SCORE).abs() * evaluation.signum()
+            (((IMMEDIATE_CHECKMATE_SCORE - evaluation.abs() as i32) + 1) / 2) * evaluation.signum()
         )
     } else {
         format!("score cp {evaluation}")
