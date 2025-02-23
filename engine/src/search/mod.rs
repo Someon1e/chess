@@ -927,9 +927,9 @@ impl Search {
                                         / MAX_HISTORY)) as i16
                             }
 
-                            let history_bonus = (param!(self).history_multiplier
+                            let history_bonus = (param!(self).history_multiplier_bonus
                                 * i32::from(ply_remaining)
-                                - param!(self).history_subtraction)
+                                - param!(self).history_subtraction_bonus)
                                 .min(MAX_HISTORY);
 
                             let history_side =
@@ -939,10 +939,15 @@ impl Search {
                                 &mut history_side[encoded_move_data.without_flag() as usize];
                             *history += history_gravity(*history, history_bonus);
 
+                            let history_malus = -(param!(self).history_multiplier_malus
+                                * i32::from(ply_remaining)
+                                - param!(self).history_subtraction_malus)
+                                .min(MAX_HISTORY);
+
                             for previous_quiet in quiets_evaluated {
                                 let history =
                                     &mut history_side[previous_quiet.without_flag() as usize];
-                                *history += history_gravity(*history, -history_bonus);
+                                *history += history_gravity(*history, history_malus);
                             }
                         }
                         node_type = NodeType::Beta;

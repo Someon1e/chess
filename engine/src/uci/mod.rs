@@ -102,8 +102,11 @@ struct TunableRange {
 
     pub pawn_correction_history_grain: RangeInclusive<i16>,
 
-    pub history_multiplier: RangeInclusive<i32>,
-    pub history_subtraction: RangeInclusive<i32>,
+    pub history_multiplier_bonus: RangeInclusive<i32>,
+    pub history_subtraction_bonus: RangeInclusive<i32>,
+
+    pub history_multiplier_malus: RangeInclusive<i32>,
+    pub history_subtraction_malus: RangeInclusive<i32>,
 }
 
 #[cfg(feature = "spsa")]
@@ -126,8 +129,10 @@ const TUNABLE_RANGES: TunableRange = TunableRange {
     aspiration_window_growth: 20..=90,
     improving_static_null_margin: 25..=90,
     pawn_correction_history_grain: 130..=400,
-    history_multiplier: 100..=500,
-    history_subtraction: 70..=300,
+    history_multiplier_bonus: 100..=500,
+    history_subtraction_bonus: 70..=300,
+    history_multiplier_malus: 100..=500,
+    history_subtraction_malus: 70..=300,
 };
 
 impl UCIProcessor {
@@ -224,8 +229,10 @@ option name Threads type spin default 1 min 1 max 1"
                 aspiration_window_growth,
                 improving_static_null_margin,
                 pawn_correction_history_grain,
-                history_multiplier,
-                history_subtraction
+                history_multiplier_bonus,
+                history_subtraction_bonus,
+                history_multiplier_malus,
+                history_subtraction_malus
             );
         }
 
@@ -321,8 +328,10 @@ uciok",
                     aspiration_window_growth,
                     improving_static_null_margin,
                     pawn_correction_history_grain,
-                    history_multiplier,
-                    history_subtraction
+                    history_multiplier_bonus,
+                    history_subtraction_bonus,
+                    history_multiplier_malus,
+                    history_subtraction_malus
                 }
             ),
         }
