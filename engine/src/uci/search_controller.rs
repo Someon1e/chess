@@ -7,7 +7,7 @@ use crate::board::square::Square;
 use crate::move_generator::move_data::Flag;
 use crate::search::encoded_move::EncodedMove;
 use crate::search::pv::Pv;
-use crate::search::{DepthSearchInfo, IMMEDIATE_CHECKMATE_SCORE, Search, TimeManager};
+use crate::search::{DepthSearchInfo, IMMEDIATE_CHECKMATE_SCORE, Ply, Search, TimeManager};
 use crate::timer::Time;
 use crate::uci::encode_move;
 
@@ -29,7 +29,7 @@ fn output_search(out: fn(&str), info: &DepthSearchInfo, time: u64) {
     let evaluation_info = if Search::score_is_checkmate(evaluation) {
         format!(
             "score mate {}",
-            (evaluation - IMMEDIATE_CHECKMATE_SCORE).abs() * evaluation.signum()
+            (((IMMEDIATE_CHECKMATE_SCORE - evaluation.abs() as i32) + 1) / 2) * evaluation.signum()
         )
     } else {
         format!("score cp {evaluation}")
@@ -59,6 +59,7 @@ fn search(
     search_time: SearchTime,
     stopped: Bool,
     ponder_info: PonderInfo,
+    mated_in: Option<Ply>,
 ) {
     let search_start = Time::now();
 
@@ -84,10 +85,11 @@ fn search(
     }
 
     let time_manager = match search_time {
-        SearchTime::Infinite => TimeManager::infinite(stopped, ponder_info.is_pondering),
+        SearchTime::Infinite => TimeManager::infinite(stopped, ponder_info.is_pondering, mated_in),
         SearchTime::Fixed(move_time) => TimeManager::time_limited(
             stopped,
             ponder_info.is_pondering,
+            mated_in,
             &search_start,
             move_time,
             move_time,
@@ -111,6 +113,7 @@ fn search(
             TimeManager::time_limited(
                 stopped,
                 ponder_info.is_pondering,
+                mated_in,
                 &search_start,
                 hard_time_limit,
                 soft_time_limit,
@@ -170,7 +173,7 @@ mod search_controller {
     use crate::board::Board;
     use crate::board::square::Square;
     use crate::move_generator::move_data::Flag;
-    use crate::search::Search;
+    use crate::search::{Ply, Search};
     use crate::uci::go_params::SearchTime;
     use crate::uci::{Bool, PonderInfo};
 
@@ -178,7 +181,7 @@ mod search_controller {
 
     enum SearchCommand {
         SetPosition((Board, Vec<(Square, Square, Flag)>)),
-        Search((Bool, SearchTime, PonderInfo)),
+        Search((Bool, SearchTime, PonderInfo, Option<Ply>)),
         SetTranspositionCapacity(usize),
         ClearCacheForNewGame,
     }
@@ -210,16 +213,19 @@ mod search_controller {
                                 search.clear_cache_for_new_game();
                             }
                         }
-                        SearchCommand::Search((stopped, search_time, ponder_info)) => search(
-                            out,
-                            &mut cached_search,
-                            &mut board,
-                            &mut moves,
-                            transposition_capacity,
-                            search_time,
-                            stopped,
-                            ponder_info,
-                        ),
+                        SearchCommand::Search((stopped, search_time, ponder_info, mated_in)) => {
+                            search(
+                                out,
+                                &mut cached_search,
+                                &mut board,
+                                &mut moves,
+                                transposition_capacity,
+                                search_time,
+                                stopped,
+                                ponder_info,
+                                mated_in,
+                            )
+                        }
                     }
                 }
             });
@@ -230,9 +236,15 @@ mod search_controller {
             stopped: Arc<AtomicBool>,
             search_time: SearchTime,
             ponder_info: PonderInfo,
+            mated_in: Option<Ply>,
         ) {
             self.0
-                .send(SearchCommand::Search((stopped, search_time, ponder_info)))
+                .send(SearchCommand::Search((
+                    stopped,
+                    search_time,
+                    ponder_info,
+                    mated_in,
+                )))
                 .unwrap();
         }
         pub fn set_position(&self, board: Board, moves: Vec<(Square, Square, Flag)>) {
@@ -258,7 +270,7 @@ mod search_controller {
     use crate::board::Board;
     use crate::board::square::Square;
     use crate::move_generator::move_data::Flag;
-    use crate::search::Search;
+    use crate::search::{Ply, Search};
     use crate::uci::PonderInfo;
     use crate::uci::go_params::SearchTime;
 
@@ -281,7 +293,13 @@ mod search_controller {
                 transposition_capacity,
             }
         }
-        pub fn search(&mut self, stopped: Bool, search_time: SearchTime, ponder_info: PonderInfo) {
+        pub fn search(
+            &mut self,
+            stopped: Bool,
+            search_time: SearchTime,
+            ponder_info: PonderInfo,
+            mated_in: Option<Ply>,
+        ) {
             search(
                 self.out,
                 &mut self.cached_search,
@@ -291,6 +309,7 @@ mod search_controller {
                 search_time,
                 stopped,
                 ponder_info,
+                mated_in,
             );
         }
         pub fn set_position(&mut self, board: Board, moves: Vec<(Square, Square, Flag)>) {
