@@ -87,6 +87,7 @@ struct TunableRange {
     pub futility_margin: RangeInclusive<i32>,
 
     pub static_null_margin: RangeInclusive<i32>,
+    pub improving_static_null_margin: RangeInclusive<i32>,
     pub static_null_min_depth: RangeInclusive<u8>,
 
     pub lmr_min_index: RangeInclusive<usize>,
@@ -102,6 +103,11 @@ struct TunableRange {
 
     pub aspiration_window_start: RangeInclusive<i32>,
     pub aspiration_window_growth: RangeInclusive<i32>,
+
+    pub pawn_correction_history_grain: RangeInclusive<i16>,
+
+    pub history_multiplier: RangeInclusive<i32>,
+    pub history_subtraction: RangeInclusive<i32>,
 }
 
 #[cfg(feature = "spsa")]
@@ -122,6 +128,10 @@ const TUNABLE_RANGES: TunableRange = TunableRange {
     nmp_ply_divisor: 4..=9,
     aspiration_window_start: 20..=60,
     aspiration_window_growth: 25..=95,
+    improving_static_null_margin: 30..=90,
+    pawn_correction_history_grain: 150..=300,
+    history_multiplier: 100..=500,
+    history_subtraction: 70..=300,
 };
 
 impl UCIProcessor {
@@ -215,7 +225,11 @@ option name Threads type spin default 1 min 1 max 1"
                 nmp_base_reduction,
                 nmp_ply_divisor,
                 aspiration_window_start,
-                aspiration_window_growth
+                aspiration_window_growth,
+                improving_static_null_margin,
+                pawn_correction_history_grain,
+                history_multiplier,
+                history_subtraction
             );
         }
 
@@ -308,7 +322,11 @@ uciok",
                     nmp_base_reduction,
                     nmp_ply_divisor,
                     aspiration_window_start,
-                    aspiration_window_growth
+                    aspiration_window_growth,
+                    improving_static_null_margin,
+                    pawn_correction_history_grain,
+                    history_multiplier,
+                    history_subtraction
                 }
             ),
         }
