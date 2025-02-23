@@ -1,5 +1,5 @@
 #[derive(Clone, Copy)]
-pub(crate) struct Tunable {
+pub struct Tunable {
     pub history_decay: i16,
 
     pub iir_min_depth: u8,

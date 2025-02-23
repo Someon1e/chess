@@ -1173,7 +1173,7 @@ mod tests {
     use crate::{
         board::Board,
         evaluation::{Eval, eval_data::EvalNumber},
-        search::{Search, transposition::megabytes_to_capacity},
+        search::{Search, search_params::DEFAULT_TUNABLES, transposition::megabytes_to_capacity},
     };
 
     #[test]

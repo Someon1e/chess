@@ -416,6 +416,8 @@ uciok",
             parameters.move_time().unwrap(),
             self.ponder_info.clone(),
             mated_in_plies,
+            #[cfg(feature = "spsa")]
+            self.tunables,
         );
     }
 
