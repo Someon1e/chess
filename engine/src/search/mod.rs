@@ -35,12 +35,12 @@ use self::{
     transposition::{NodeType, NodeValue},
 };
 
-type Ply = u8;
+pub type Ply = u8;
 
 /// Score of having checkmated the opponent.
-pub const IMMEDIATE_CHECKMATE_SCORE: EvalNumber = -EvalNumber::MAX + 1;
+pub const IMMEDIATE_CHECKMATE_SCORE: EvalNumber = EvalNumber::MAX - 1;
 
-const CHECKMATE_SCORE: EvalNumber = IMMEDIATE_CHECKMATE_SCORE.abs() - (Ply::MAX as EvalNumber);
+const CHECKMATE_SCORE: EvalNumber = IMMEDIATE_CHECKMATE_SCORE - (Ply::MAX as EvalNumber);
 
 const USE_STATIC_NULL_MOVE_PRUNING: bool = true;
 const USE_NULL_MOVE_PRUNING: bool = true;
@@ -818,7 +818,7 @@ impl Search {
             // No moves
             let score = if move_generator.is_in_check() {
                 // Checkmate
-                IMMEDIATE_CHECKMATE_SCORE + EvalNumber::from(ply_from_root)
+                -IMMEDIATE_CHECKMATE_SCORE + EvalNumber::from(ply_from_root)
             } else {
                 // Stalemate
                 0
@@ -1072,7 +1072,7 @@ impl Search {
                     // -EvalNumber::MAX = -2147483647
                     // EvalNumber::MIN = -2147483648
 
-                    beta = (alpha + beta) / 2;
+                    beta = ((i64::from(alpha) + i64::from(beta)) / 2) as i32;
                 } else if best_score >= beta {
                     beta = beta.saturating_add(param!(self).aspiration_window_growth);
                 } else {
@@ -1115,10 +1115,10 @@ impl Search {
             }
             previous_best_score = best_score;
 
-            if !time_manager.is_pondering()
-                && (self.pv.root_best_move().is_none() || Self::score_is_checkmate(best_score))
-            {
+            if self.pv.root_best_move().is_none() || Self::score_is_checkmate(best_score) {
+                while time_manager.is_pondering() {}
                 // No point searching more.
+
                 break;
             }
 
@@ -1144,7 +1144,7 @@ impl Search {
                 break;
             }
 
-            if time_manager.soft_stop(best_move_stability) {
+            if time_manager.soft_stop(best_score, best_move_stability) {
                 // It would probably be a waste of time to start another iteration
                 break;
             }

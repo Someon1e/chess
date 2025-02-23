@@ -507,10 +507,11 @@ fn bench() {
         let time_manager = TimeManager::depth_limited(
             Arc::new(AtomicBool::new(false)),
             Arc::new(AtomicBool::new(false)),
+            None,
             depth,
         );
         #[cfg(target_arch = "wasm32")]
-        let time_manager = TimeManager::depth_limited(false, false, depth);
+        let time_manager = TimeManager::depth_limited(false, false, None, depth);
 
         let result = search.iterative_deepening(&time_manager, &mut |_| {});
         out(&format!(
