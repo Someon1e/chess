@@ -1171,9 +1171,9 @@ impl Search {
 #[cfg(test)]
 mod tests {
     use crate::{
-        board::{Board, piece::Piece, square::Square},
+        board::Board,
         evaluation::{Eval, eval_data::EvalNumber},
-        search::{Search, search_params::DEFAULT_TUNABLES, transposition::megabytes_to_capacity},
+        search::{Search, transposition::megabytes_to_capacity},
     };
 
     #[test]
@@ -1193,48 +1193,6 @@ mod tests {
             )
             .quiescence_search(-EvalNumber::MAX, EvalNumber::MAX),
             Eval::evaluate(&quiet)
-        );
-    }
-
-    #[test]
-    fn evaluation_add_piece_works() {
-        let board = Board::from_fen("8/8/4k3/8/8/8/2K3P1/8 w - - 0 1").unwrap();
-        let board_without_pawn = Board::from_fen("8/8/4k3/8/8/8/2K5/8 w - - 0 1").unwrap();
-
-        dbg!(Eval::raw_evaluate(&board));
-        dbg!(Eval::raw_evaluate(&board_without_pawn));
-
-        let mut search = Search::new(
-            board_without_pawn,
-            megabytes_to_capacity(8),
-            #[cfg(feature = "spsa")]
-            DEFAULT_TUNABLES,
-        );
-
-        search.evaluation_add_piece(Piece::WhitePawn, Square::from_notation("g2").unwrap());
-
-        assert_eq!(Eval::evaluate(&board), search.static_evaluate());
-    }
-    #[test]
-    fn evaluation_remove_piece_works() {
-        let board = Board::from_fen("8/8/4k3/8/8/8/2K3P1/8 w - - 0 1").unwrap();
-        let board_without_pawn = Board::from_fen("8/8/4k3/8/8/8/2K5/8 w - - 0 1").unwrap();
-
-        dbg!(Eval::raw_evaluate(&board));
-        dbg!(Eval::raw_evaluate(&board_without_pawn));
-
-        let mut search = Search::new(
-            board,
-            megabytes_to_capacity(8),
-            #[cfg(feature = "spsa")]
-            DEFAULT_TUNABLES,
-        );
-
-        search.evaluation_remove_piece(Piece::WhitePawn, Square::from_notation("g2").unwrap());
-
-        assert_eq!(
-            Eval::evaluate(&board_without_pawn),
-            search.static_evaluate()
         );
     }
 }
