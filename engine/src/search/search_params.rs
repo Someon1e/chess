@@ -1,3 +1,5 @@
+pub const LMR_SCALE: u32 = 1024;
+
 #[derive(Clone, Copy)]
 pub struct Tunable {
     pub history_decay: i16,
@@ -13,8 +15,8 @@ pub struct Tunable {
 
     pub lmr_min_index: usize,
     pub lmr_min_depth: u8,
-    pub lmr_ply_divisor: u8,
-    pub lmr_index_divisor: u8,
+    pub lmr_ply_divisor: u32,
+    pub lmr_index_divisor: u32,
 
     pub lmp_base: u32,
 
@@ -41,8 +43,8 @@ pub(crate) const DEFAULT_TUNABLES: Tunable = Tunable {
     static_null_min_depth: 7,
     lmr_min_index: 6,
     lmr_min_depth: 3,
-    lmr_ply_divisor: 9,
-    lmr_index_divisor: 9,
+    lmr_ply_divisor: 9 * LMR_SCALE,
+    lmr_index_divisor: 9 * LMR_SCALE,
     lmp_base: 2,
     nmp_min_depth: 2,
     nmp_base_reduction: 3,

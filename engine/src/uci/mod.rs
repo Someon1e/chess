@@ -11,6 +11,7 @@ use go_params::SearchType;
 pub use move_encoding::{decode_move, encode_move};
 use search_controller::SearchController;
 
+use crate::search::search_params::LMR_SCALE;
 use crate::{
     board::{Board, square::Square},
     move_generator::move_data::Flag,
@@ -90,8 +91,8 @@ struct TunableRange {
     //pub static_null_min_depth: RangeInclusive<u8>,
     //pub lmr_min_index: RangeInclusive<usize>,
     //pub lmr_min_depth: RangeInclusive<u8>,
-    pub lmr_ply_divisor: RangeInclusive<u8>,
-    pub lmr_index_divisor: RangeInclusive<u8>,
+    pub lmr_ply_divisor: RangeInclusive<u32>,
+    pub lmr_index_divisor: RangeInclusive<u32>,
 
     //pub lmp_base: RangeInclusive<u32>,
     //pub nmp_min_depth: RangeInclusive<u8>,
@@ -119,8 +120,8 @@ const TUNABLE_RANGES: TunableRange = TunableRange {
     //static_null_min_depth: 2..=9,
     //lmr_min_index: 2..=6,
     //lmr_min_depth: 1..=5,
-    lmr_ply_divisor: 6..=16,
-    lmr_index_divisor: 6..=13,
+    lmr_ply_divisor: (6 * LMR_SCALE)..=(16 * LMR_SCALE),
+    lmr_index_divisor: (6 * LMR_SCALE)..=(13 * LMR_SCALE),
     //lmp_base: 2..=5,
     //nmp_min_depth: 1..=5,
     //nmp_base_reduction: 1..=6,
