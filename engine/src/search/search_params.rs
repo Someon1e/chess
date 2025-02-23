@@ -32,7 +32,7 @@ pub struct Tunable {
 pub(crate) const DEFAULT_TUNABLES: Tunable = Tunable {
     history_decay: 9,
     iir_min_depth: 5,
-    iir_depth_reduction: 2,
+    iir_depth_reduction: 1,
     futility_margin: 116,
     static_null_margin: 65,
     improving_static_null_margin: 45,
