@@ -109,11 +109,11 @@ struct TunableRange {
 
 #[cfg(feature = "spsa")]
 const TUNABLE_RANGES: TunableRange = TunableRange {
-    history_decay: 2..=20,
+    history_decay: 3..=19,
     //iir_min_depth: 1..=6,
     //iir_depth_reduction: 0..=3,
-    futility_margin: 60..=165,
-    static_null_margin: 30..=90,
+    futility_margin: 60..=170,
+    static_null_margin: 25..=100,
     //static_null_min_depth: 2..=9,
     //lmr_min_index: 2..=6,
     //lmr_min_depth: 1..=5,
@@ -123,10 +123,10 @@ const TUNABLE_RANGES: TunableRange = TunableRange {
     //nmp_min_depth: 1..=5,
     //nmp_base_reduction: 1..=6,
     //nmp_ply_divisor: 4..=9,
-    aspiration_window_start: 20..=60,
-    aspiration_window_growth: 25..=95,
-    improving_static_null_margin: 30..=90,
-    pawn_correction_history_grain: 150..=300,
+    aspiration_window_start: 10..=60,
+    aspiration_window_growth: 20..=90,
+    improving_static_null_margin: 25..=90,
+    pawn_correction_history_grain: 130..=400,
     history_multiplier: 100..=500,
     history_subtraction: 70..=300,
 };
