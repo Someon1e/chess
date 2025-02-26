@@ -111,4 +111,26 @@ impl Zobrist {
 
         key
     }
+
+    /// Computes the pawn zobrist key.
+    #[must_use]
+    pub fn minor_piece_key(board: &Board) -> Self {
+        let mut key = Self::EMPTY;
+
+        for piece in [
+            Piece::BlackKnight,
+            Piece::WhiteKnight,
+            Piece::BlackBishop,
+            Piece::WhiteBishop,
+            Piece::BlackKing,
+            Piece::WhiteKing,
+        ] {
+            let mut pieces = *board.get_bit_board(piece);
+            consume_bit_board!(pieces, square {
+                key.xor_piece(piece as usize, square.usize());
+            });
+        }
+
+        key
+    }
 }

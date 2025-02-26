@@ -81,6 +81,7 @@ pub struct DepthSearchInfo {
 }
 
 const PAWN_CORRECTION_HISTORY_LENGTH: usize = 8192;
+const MINOR_PIECE_CORRECTION_HISTORY_LENGTH: usize = 8192;
 
 #[derive(Clone, Copy, Debug)]
 pub struct SearchState {
@@ -108,7 +109,9 @@ pub struct Search {
     transposition_table: Vec<Option<NodeValue>>,
 
     quiet_history: Box<[[i16; 64 * 64]; 2]>,
+
     pawn_correction_history: Box<[[i16; PAWN_CORRECTION_HISTORY_LENGTH]; 2]>,
+    minor_piece_correction_history: Box<[[i16; MINOR_PIECE_CORRECTION_HISTORY_LENGTH]; 2]>,
 
     eval_history: [EvalNumber; 256],
 
@@ -150,6 +153,10 @@ impl Search {
             pawn_correction_history: vec![[0; PAWN_CORRECTION_HISTORY_LENGTH]; 2]
                 .try_into()
                 .unwrap(),
+            minor_piece_correction_history: vec![[0; MINOR_PIECE_CORRECTION_HISTORY_LENGTH]; 2]
+                .try_into()
+                .unwrap(),
+
             eval_history: [0; 256],
 
             search_state: SearchState {
@@ -253,13 +260,15 @@ impl Search {
     fn quiescence_search(&mut self, mut alpha: EvalNumber, beta: EvalNumber) -> EvalNumber {
         self.quiescence_call_count += 1;
 
-        let mut best_score = self.static_evaluate();
         let pawn_index = self
             .pawn_zobrist_key()
             .modulo(PAWN_CORRECTION_HISTORY_LENGTH as u64);
-        let correction = self.pawn_correction_history[if self.board.white_to_move { 1 } else { 0 }]
-            [pawn_index as usize];
-        best_score += i32::from(correction / param!(self).pawn_correction_history_grain);
+        let minor_piece_index = self
+            .minor_piece_zobrist_key()
+            .modulo(MINOR_PIECE_CORRECTION_HISTORY_LENGTH as u64);
+
+        let mut best_score =
+            self.get_correction(self.static_evaluate(), pawn_index, minor_piece_index);
 
         if best_score > alpha {
             alpha = best_score;
@@ -386,6 +395,12 @@ impl Search {
     #[must_use]
     pub const fn pawn_zobrist_key(&self) -> Zobrist {
         self.search_state.pawn_zobrist_key
+    }
+
+    /// Returns the current minor piece (knight, bishop, king) zobrist key
+    #[must_use]
+    pub fn minor_piece_zobrist_key(&self) -> Zobrist {
+        Zobrist::minor_piece_key(&self.board)
     }
 
     #[must_use]
@@ -724,6 +739,10 @@ impl Search {
         let pawn_index = self
             .pawn_zobrist_key()
             .modulo(PAWN_CORRECTION_HISTORY_LENGTH as u64);
+        let minor_piece_index = self
+            .minor_piece_zobrist_key()
+            .modulo(MINOR_PIECE_CORRECTION_HISTORY_LENGTH as u64);
+
         let static_eval = {
             let mut static_eval = self.static_evaluate();
             if let Some(saved) = saved {
@@ -738,10 +757,8 @@ impl Search {
                     static_eval = saved.value;
                 }
             }
-            let correction = self.pawn_correction_history
-                [if self.board.white_to_move { 1 } else { 0 }][pawn_index as usize];
-            static_eval += i32::from(correction / param!(self).pawn_correction_history_grain);
-            static_eval
+
+            self.get_correction(static_eval, pawn_index, minor_piece_index)
         };
 
         let improving = if move_generator.is_in_check() {
@@ -1001,35 +1018,25 @@ impl Search {
                     NodeType::Exact => true,
                 }
             {
-                const CORRECTION_HISTORY_WEIGHT_SCALE: i16 = 1024;
-                const CORRECTION_HISTORY_MAX: i16 = 16384;
-
                 let error = best_score - static_eval;
 
-                let mut entry = i32::from(
-                    self.pawn_correction_history[if self.board.white_to_move { 1 } else { 0 }]
-                        [pawn_index as usize],
-                );
-                let scaled_error = error * i32::from(param!(self).pawn_correction_history_grain);
-                let new_weight = i32::min(
-                    i32::from(ply_remaining) * i32::from(ply_remaining)
-                        + 2 * i32::from(ply_remaining)
-                        + 1,
-                    128,
-                );
-                assert!(new_weight <= i32::from(CORRECTION_HISTORY_WEIGHT_SCALE));
-
-                entry = (entry * (i32::from(CORRECTION_HISTORY_WEIGHT_SCALE) - new_weight)
-                    + scaled_error * new_weight)
-                    / i32::from(CORRECTION_HISTORY_WEIGHT_SCALE);
-                entry = i32::clamp(
-                    entry,
-                    i32::from(-CORRECTION_HISTORY_MAX),
-                    i32::from(CORRECTION_HISTORY_MAX),
+                Self::update_correction_history::<PAWN_CORRECTION_HISTORY_LENGTH>(
+                    &mut self.pawn_correction_history,
+                    ply_remaining,
+                    self.board.white_to_move,
+                    pawn_index,
+                    error,
+                    param!(self).pawn_correction_history_grain,
                 );
 
-                self.pawn_correction_history[if self.board.white_to_move { 1 } else { 0 }]
-                    [pawn_index as usize] = entry as i16;
+                Self::update_correction_history::<MINOR_PIECE_CORRECTION_HISTORY_LENGTH>(
+                    &mut self.minor_piece_correction_history,
+                    ply_remaining,
+                    self.board.white_to_move,
+                    minor_piece_index,
+                    error,
+                    param!(self).minor_piece_correction_history_grain,
+                )
             }
         }
 
@@ -1165,6 +1172,56 @@ impl Search {
         let hard_time_limit = (clock_time / 6 + increment * 2).min(max_time);
         let soft_time_limit = (clock_time / 24 + increment / 2).min(hard_time_limit);
         (hard_time_limit, soft_time_limit)
+    }
+
+    #[must_use]
+    fn get_correction(
+        &self,
+        mut evaluation: EvalNumber,
+        pawn_index: u64,
+        minor_piece_index: u64,
+    ) -> EvalNumber {
+        let pawn_correction = self.pawn_correction_history[usize::from(self.board.white_to_move)]
+            [pawn_index as usize];
+        evaluation += i32::from(pawn_correction / param!(self).pawn_correction_history_grain);
+
+        let minor_piece_correction = self.minor_piece_correction_history
+            [usize::from(self.board.white_to_move)][minor_piece_index as usize];
+        evaluation +=
+            i32::from(minor_piece_correction / param!(self).minor_piece_correction_history_grain);
+
+        evaluation
+    }
+
+    fn update_correction_history<const CORRECTION_HISTORY_LENGTH: usize>(
+        correction_history: &mut [[i16; CORRECTION_HISTORY_LENGTH]; 2],
+        ply_remaining: Ply,
+        white_to_move: bool,
+        index: u64,
+        error: EvalNumber,
+        grain: i16,
+    ) {
+        const CORRECTION_HISTORY_WEIGHT_SCALE: i16 = 1024;
+        const CORRECTION_HISTORY_MAX: i16 = 16384;
+
+        let mut entry = i32::from(correction_history[usize::from(white_to_move)][index as usize]);
+        let scaled_error = error * i32::from(grain);
+        let new_weight = i32::min(
+            i32::from(ply_remaining) * i32::from(ply_remaining) + 2 * i32::from(ply_remaining) + 1,
+            128,
+        );
+        assert!(new_weight <= i32::from(CORRECTION_HISTORY_WEIGHT_SCALE));
+
+        entry = (entry * (i32::from(CORRECTION_HISTORY_WEIGHT_SCALE) - new_weight)
+            + scaled_error * new_weight)
+            / i32::from(CORRECTION_HISTORY_WEIGHT_SCALE);
+        entry = i32::clamp(
+            entry,
+            i32::from(-CORRECTION_HISTORY_MAX),
+            i32::from(CORRECTION_HISTORY_MAX),
+        );
+
+        correction_history[usize::from(white_to_move)][index as usize] = entry as i16;
     }
 }
 
