@@ -1,0 +1,29 @@
+name: Rust
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build engine
+        run: cargo build --verbose --manifest-path=engine/Cargo.toml
+      - name: Test engine
+        run: cargo test --verbose --manifest-path=engine/Cargo.toml
+
+      - name: Check magic
+        run: cargo check --manifest-path=magic/Cargo.toml
+      - name: Check tuner
+        run: cargo check --manifest-path=tuner/Cargo.toml
+      - name: Check zobrist
+        run: cargo check --manifest-path=zobrist/Cargo.toml
