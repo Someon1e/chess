@@ -11,6 +11,7 @@ use go_params::SearchType;
 pub use move_encoding::{decode_move, encode_move};
 use search_controller::SearchController;
 
+use crate::search::search_params::LMR_SCALE;
 use crate::{
     board::{Board, square::Square},
     move_generator::move_data::Flag,
@@ -81,47 +82,58 @@ pub struct PonderInfo {
 struct TunableRange {
     pub history_decay: RangeInclusive<i16>,
 
-    pub iir_min_depth: RangeInclusive<u8>,
-    pub iir_depth_reduction: RangeInclusive<u8>,
-
+    //pub iir_min_depth: RangeInclusive<u8>,
+    //pub iir_depth_reduction: RangeInclusive<u8>,
     pub futility_margin: RangeInclusive<i32>,
 
     pub static_null_margin: RangeInclusive<i32>,
-    pub static_null_min_depth: RangeInclusive<u8>,
+    pub improving_static_null_margin: RangeInclusive<i32>,
+    //pub static_null_min_depth: RangeInclusive<u8>,
+    //pub lmr_min_index: RangeInclusive<usize>,
+    //pub lmr_min_depth: RangeInclusive<u8>,
+    pub lmr_ply_divisor: RangeInclusive<u32>,
+    pub lmr_index_divisor: RangeInclusive<u32>,
 
-    pub lmr_min_index: RangeInclusive<usize>,
-    pub lmr_min_depth: RangeInclusive<u8>,
-    pub lmr_ply_divisor: RangeInclusive<u8>,
-    pub lmr_index_divisor: RangeInclusive<u8>,
-
-    pub lmp_base: RangeInclusive<u32>,
-
-    pub nmp_min_depth: RangeInclusive<u8>,
-    pub nmp_base_reduction: RangeInclusive<u8>,
-    pub nmp_ply_divisor: RangeInclusive<u8>,
-
+    //pub lmp_base: RangeInclusive<u32>,
+    //pub nmp_min_depth: RangeInclusive<u8>,
+    //pub nmp_base_reduction: RangeInclusive<u8>,
+    //pub nmp_ply_divisor: RangeInclusive<u8>,
     pub aspiration_window_start: RangeInclusive<i32>,
     pub aspiration_window_growth: RangeInclusive<i32>,
+
+    pub pawn_correction_history_grain: RangeInclusive<i16>,
+
+    pub history_multiplier_bonus: RangeInclusive<i32>,
+    pub history_subtraction_bonus: RangeInclusive<i32>,
+
+    pub history_multiplier_malus: RangeInclusive<i32>,
+    pub history_subtraction_malus: RangeInclusive<i32>,
 }
 
 #[cfg(feature = "spsa")]
 const TUNABLE_RANGES: TunableRange = TunableRange {
-    history_decay: 2..=20,
-    iir_min_depth: 1..=6,
-    iir_depth_reduction: 0..=3,
-    futility_margin: 60..=165,
-    static_null_margin: 30..=90,
-    static_null_min_depth: 2..=9,
-    lmr_min_index: 2..=6,
-    lmr_min_depth: 1..=5,
-    lmr_ply_divisor: 6..=16,
-    lmr_index_divisor: 6..=13,
-    lmp_base: 2..=5,
-    nmp_min_depth: 1..=5,
-    nmp_base_reduction: 1..=6,
-    nmp_ply_divisor: 4..=9,
-    aspiration_window_start: 20..=60,
-    aspiration_window_growth: 25..=95,
+    history_decay: 3..=19,
+    //iir_min_depth: 1..=6,
+    //iir_depth_reduction: 0..=3,
+    futility_margin: 60..=170,
+    static_null_margin: 25..=100,
+    //static_null_min_depth: 2..=9,
+    //lmr_min_index: 2..=6,
+    //lmr_min_depth: 1..=5,
+    lmr_ply_divisor: (6 * LMR_SCALE)..=(16 * LMR_SCALE),
+    lmr_index_divisor: (6 * LMR_SCALE)..=(13 * LMR_SCALE),
+    //lmp_base: 2..=5,
+    //nmp_min_depth: 1..=5,
+    //nmp_base_reduction: 1..=6,
+    //nmp_ply_divisor: 4..=9,
+    aspiration_window_start: 10..=60,
+    aspiration_window_growth: 20..=90,
+    improving_static_null_margin: 25..=90,
+    pawn_correction_history_grain: 130..=400,
+    history_multiplier_bonus: 100..=500,
+    history_subtraction_bonus: 70..=300,
+    history_multiplier_malus: 100..=500,
+    history_subtraction_malus: 70..=300,
 };
 
 impl UCIProcessor {
@@ -201,21 +213,27 @@ option name Threads type spin default 1 min 1 max 1"
 
             define_spins!(
                 history_decay,
-                iir_min_depth,
-                iir_depth_reduction,
+                //iir_min_depth,
+                //iir_depth_reduction,
                 futility_margin,
                 static_null_margin,
-                static_null_min_depth,
-                lmr_min_index,
-                lmr_min_depth,
+                //static_null_min_depth,
+                //lmr_min_index,
+                //lmr_min_depth,
                 lmr_ply_divisor,
                 lmr_index_divisor,
-                lmp_base,
-                nmp_min_depth,
-                nmp_base_reduction,
-                nmp_ply_divisor,
+                //lmp_base,
+                //nmp_min_depth,
+                //nmp_base_reduction,
+                //nmp_ply_divisor,
                 aspiration_window_start,
-                aspiration_window_growth
+                aspiration_window_growth,
+                improving_static_null_margin,
+                pawn_correction_history_grain,
+                history_multiplier_bonus,
+                history_subtraction_bonus,
+                history_multiplier_malus,
+                history_subtraction_malus
             );
         }
 
@@ -294,21 +312,27 @@ uciok",
                 self,
                 {
                     history_decay,
-                    iir_min_depth,
-                    iir_depth_reduction,
+                    //iir_min_depth,
+                    //iir_depth_reduction,
                     futility_margin,
                     static_null_margin,
-                    static_null_min_depth,
-                    lmr_min_index,
-                    lmr_min_depth,
+                    //static_null_min_depth,
+                    //lmr_min_index,
+                    //lmr_min_depth,
                     lmr_ply_divisor,
                     lmr_index_divisor,
-                    lmp_base,
-                    nmp_min_depth,
-                    nmp_base_reduction,
-                    nmp_ply_divisor,
+                    //lmp_base,
+                    //nmp_min_depth,
+                    //nmp_base_reduction,
+                    //nmp_ply_divisor,
                     aspiration_window_start,
-                    aspiration_window_growth
+                    aspiration_window_growth,
+                    improving_static_null_margin,
+                    pawn_correction_history_grain,
+                    history_multiplier_bonus,
+                    history_subtraction_bonus,
+                    history_multiplier_malus,
+                    history_subtraction_malus
                 }
             ),
         }
@@ -416,6 +440,8 @@ uciok",
             parameters.move_time().unwrap(),
             self.ponder_info.clone(),
             mated_in_plies,
+            #[cfg(feature = "spsa")]
+            self.tunables,
         );
     }
 

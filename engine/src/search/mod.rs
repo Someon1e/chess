@@ -12,7 +12,7 @@ pub mod transposition;
 pub mod zobrist;
 
 use pv::Pv;
-use search_params::{DEFAULT_TUNABLES, Tunable};
+use search_params::{DEFAULT_TUNABLES, LMR_SCALE, Tunable};
 pub use time_manager::TimeManager;
 use zobrist::Zobrist;
 
@@ -855,9 +855,12 @@ impl Search {
 
             if !normal_search {
                 // Late move reduction
-                let r = 2
-                    + ply_remaining / param!(self).lmr_ply_divisor
-                    + index as Ply / param!(self).lmr_index_divisor;
+                let r = {
+                    let mut r = 2;
+                    r += (u32::from(ply_remaining) * LMR_SCALE) / param!(self).lmr_ply_divisor;
+                    r += ((index as u32) * LMR_SCALE) / param!(self).lmr_index_divisor;
+                    r as u8
+                };
                 score = -self.negamax(
                     time_manager,
                     ply_remaining.saturating_sub(r),
@@ -926,9 +929,9 @@ impl Search {
                                         / MAX_HISTORY)) as i16
                             }
 
-                            let history_bonus = (param!(self).history_multiplier
+                            let history_bonus = (param!(self).history_multiplier_bonus
                                 * i32::from(ply_remaining)
-                                - param!(self).history_subtraction)
+                                - param!(self).history_subtraction_bonus)
                                 .min(MAX_HISTORY);
 
                             let history_side =
@@ -938,10 +941,15 @@ impl Search {
                                 &mut history_side[encoded_move_data.without_flag() as usize];
                             *history += history_gravity(*history, history_bonus);
 
+                            let history_malus = -(param!(self).history_multiplier_malus
+                                * i32::from(ply_remaining)
+                                - param!(self).history_subtraction_malus)
+                                .min(MAX_HISTORY);
+
                             for previous_quiet in quiets_evaluated {
                                 let history =
                                     &mut history_side[previous_quiet.without_flag() as usize];
-                                *history += history_gravity(*history, -history_bonus);
+                                *history += history_gravity(*history, history_malus);
                             }
                         }
                         node_type = NodeType::Beta;
@@ -1172,7 +1180,7 @@ mod tests {
     use crate::{
         board::Board,
         evaluation::{Eval, eval_data::EvalNumber},
-        search::{Search, transposition::megabytes_to_capacity},
+        search::{Search, search_params::DEFAULT_TUNABLES, transposition::megabytes_to_capacity},
     };
 
     #[test]

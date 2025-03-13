@@ -1,5 +1,7 @@
+pub const LMR_SCALE: u32 = 1024;
+
 #[derive(Clone, Copy)]
-pub(crate) struct Tunable {
+pub struct Tunable {
     pub history_decay: i16,
 
     pub iir_min_depth: u8,
@@ -13,8 +15,8 @@ pub(crate) struct Tunable {
 
     pub lmr_min_index: usize,
     pub lmr_min_depth: u8,
-    pub lmr_ply_divisor: u8,
-    pub lmr_index_divisor: u8,
+    pub lmr_ply_divisor: u32,
+    pub lmr_index_divisor: u32,
 
     pub lmp_base: u32,
 
@@ -25,29 +27,34 @@ pub(crate) struct Tunable {
     pub aspiration_window_start: i32,
     pub aspiration_window_growth: i32,
     pub pawn_correction_history_grain: i16,
-    pub history_multiplier: i32,
-    pub history_subtraction: i32,
+    pub history_multiplier_bonus: i32,
+    pub history_subtraction_bonus: i32,
+    pub history_multiplier_malus: i32,
+    pub history_subtraction_malus: i32,
 }
 
 pub(crate) const DEFAULT_TUNABLES: Tunable = Tunable {
-    history_decay: 9,
     iir_min_depth: 5,
-    iir_depth_reduction: 2,
-    futility_margin: 116,
-    static_null_margin: 65,
-    improving_static_null_margin: 45,
+    iir_depth_reduction: 1,
     static_null_min_depth: 7,
     lmr_min_index: 6,
     lmr_min_depth: 3,
-    lmr_ply_divisor: 9,
-    lmr_index_divisor: 9,
     lmp_base: 2,
     nmp_min_depth: 2,
     nmp_base_reduction: 3,
     nmp_ply_divisor: 4,
-    aspiration_window_start: 20,
-    aspiration_window_growth: 43,
-    pawn_correction_history_grain: 256,
-    history_multiplier: 300,
-    history_subtraction: 150,
+
+    history_decay: 9,
+    futility_margin: 116,
+    static_null_margin: 58,
+    lmr_ply_divisor: 8952,
+    lmr_index_divisor: 9055,
+    aspiration_window_start: 12,
+    aspiration_window_growth: 40,
+    improving_static_null_margin: 41,
+    pawn_correction_history_grain: 244,
+    history_multiplier_bonus: 297,
+    history_subtraction_bonus: 149,
+    history_multiplier_malus: 279,
+    history_subtraction_malus: 136,
 };

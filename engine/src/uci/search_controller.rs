@@ -7,6 +7,7 @@ use crate::board::square::Square;
 use crate::move_generator::move_data::Flag;
 use crate::search::encoded_move::EncodedMove;
 use crate::search::pv::Pv;
+use crate::search::search_params::Tunable;
 use crate::search::{DepthSearchInfo, IMMEDIATE_CHECKMATE_SCORE, Ply, Search, TimeManager};
 use crate::timer::Time;
 use crate::uci::encode_move;
@@ -60,6 +61,7 @@ fn search(
     stopped: Bool,
     ponder_info: PonderInfo,
     mated_in: Option<Ply>,
+    #[cfg(feature = "spsa")] tunables: Tunable,
 ) {
     let search_start = Time::now();
 
@@ -69,7 +71,7 @@ fn search(
             board.take().unwrap(),
             transposition_capacity,
             #[cfg(feature = "spsa")]
-            self.tunables,
+            tunables,
         );
         *cached_search = Some(search);
         cached_search.as_mut().unwrap()
@@ -173,6 +175,7 @@ mod search_controller {
     use crate::board::Board;
     use crate::board::square::Square;
     use crate::move_generator::move_data::Flag;
+    use crate::search::search_params::Tunable;
     use crate::search::{Ply, Search};
     use crate::uci::go_params::SearchTime;
     use crate::uci::{Bool, PonderInfo};
@@ -181,7 +184,14 @@ mod search_controller {
 
     enum SearchCommand {
         SetPosition((Board, Vec<(Square, Square, Flag)>)),
-        Search((Bool, SearchTime, PonderInfo, Option<Ply>)),
+        Search {
+            stopped: Bool,
+            search_time: SearchTime,
+            ponder_info: PonderInfo,
+            mated_in: Option<Ply>,
+            #[cfg(feature = "spsa")]
+            tunables: Tunable,
+        },
         SetTranspositionCapacity(usize),
         ClearCacheForNewGame,
     }
@@ -213,19 +223,27 @@ mod search_controller {
                                 search.clear_cache_for_new_game();
                             }
                         }
-                        SearchCommand::Search((stopped, search_time, ponder_info, mated_in)) => {
-                            search(
-                                out,
-                                &mut cached_search,
-                                &mut board,
-                                &mut moves,
-                                transposition_capacity,
-                                search_time,
-                                stopped,
-                                ponder_info,
-                                mated_in,
-                            )
-                        }
+                        SearchCommand::Search {
+                            stopped,
+                            search_time,
+                            ponder_info,
+                            mated_in,
+
+                            #[cfg(feature = "spsa")]
+                            tunables,
+                        } => search(
+                            out,
+                            &mut cached_search,
+                            &mut board,
+                            &mut moves,
+                            transposition_capacity,
+                            search_time,
+                            stopped,
+                            ponder_info,
+                            mated_in,
+                            #[cfg(feature = "spsa")]
+                            tunables,
+                        ),
                     }
                 }
             });
@@ -237,14 +255,18 @@ mod search_controller {
             search_time: SearchTime,
             ponder_info: PonderInfo,
             mated_in: Option<Ply>,
+            #[cfg(feature = "spsa")] tunables: Tunable,
         ) {
             self.0
-                .send(SearchCommand::Search((
+                .send(SearchCommand::Search {
                     stopped,
                     search_time,
                     ponder_info,
                     mated_in,
-                )))
+
+                    #[cfg(feature = "spsa")]
+                    tunables,
+                })
                 .unwrap();
         }
         pub fn set_position(&self, board: Board, moves: Vec<(Square, Square, Flag)>) {
@@ -273,6 +295,7 @@ mod search_controller {
     use crate::search::{Ply, Search};
     use crate::uci::PonderInfo;
     use crate::uci::go_params::SearchTime;
+    use crate::uci::{PonderInfo, Tunable};
 
     use super::{Bool, search};
 
@@ -299,6 +322,7 @@ mod search_controller {
             search_time: SearchTime,
             ponder_info: PonderInfo,
             mated_in: Option<Ply>,
+            #[cfg(feature = "spsa")] tunables: Tunable,
         ) {
             search(
                 self.out,
@@ -310,6 +334,8 @@ mod search_controller {
                 stopped,
                 ponder_info,
                 mated_in,
+                #[cfg(feature = "spsa")]
+                tunables,
             );
         }
         pub fn set_position(&mut self, board: Board, moves: Vec<(Square, Square, Flag)>) {
