@@ -54,7 +54,7 @@ const PERFT_POSITION: [(&str, u8); 2] = [
 ];
 
 fn run(target: &str) {
-    let mut run = Command::new(format!("../engine/target/{target}/release/engine"))
+    let mut run = Command::new(format!("../encrustant/target/{target}/release/encrustant"))
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .spawn()
@@ -172,7 +172,7 @@ fn main() {
     });
     let output_file = args.output_file.unwrap_or(target_triple.clone());
 
-    env::set_current_dir("../engine").unwrap();
+    env::set_current_dir("../encrustant").unwrap();
 
     clean();
     build_instrument(&target_triple);
@@ -181,7 +181,7 @@ fn main() {
     build_optimised(&target_triple);
     fs::copy(
         format!(
-            "target/{target_triple}/release/engine{}",
+            "target/{target_triple}/release/encrustant{}",
             env::consts::EXE_SUFFIX
         ),
         output_file,

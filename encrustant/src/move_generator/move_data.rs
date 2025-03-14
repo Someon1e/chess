@@ -55,7 +55,7 @@ impl Flag {
     /// # Examples
     ///
     /// ```
-    /// use engine::{move_generator::move_data::Flag, board::piece::Piece};
+    /// use encrustant::{move_generator::move_data::Flag, board::piece::Piece};
     ///
     /// assert_eq!(Flag::QueenPromotion.get_promotion_piece(true), Some(Piece::WhiteQueen));
     /// assert_eq!(Flag::BishopPromotion.get_promotion_piece(false), Some(Piece::BlackBishop));

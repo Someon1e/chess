@@ -1,9 +1,9 @@
 #![deny(clippy::all)]
 #![warn(clippy::nursery)]
 
-use engine::board::Board;
-use engine::evaluation::eval_data::PieceSquareTable;
-use engine::evaluation::Eval;
+use encrustant::board::Board;
+use encrustant::evaluation::Eval;
+use encrustant::evaluation::eval_data::PieceSquareTable;
 use rayon::prelude::*;
 use std::io::BufRead;
 use std::time::Instant;

@@ -36,7 +36,7 @@ impl Square {
     /// # Examples
     ///
     /// ```
-    /// use engine::board::square::Square;
+    /// use encrustant::board::square::Square;
     ///
     /// assert_eq!(Square::from_index(0), Square::from_notation("a1").unwrap());
     /// assert_eq!(Square::from_index(1), Square::from_notation("b1").unwrap());
@@ -52,7 +52,7 @@ impl Square {
     /// # Examples
     ///
     /// ```
-    /// use engine::board::square::Square;
+    /// use encrustant::board::square::Square;
     ///
     /// assert_eq!(Square::from_coords(0, 0), Square::from_notation("a1").unwrap());
     /// assert_eq!(Square::from_coords(1, 0), Square::from_notation("a2").unwrap());
@@ -68,7 +68,7 @@ impl Square {
     /// # Examples
     ///
     /// ```
-    /// use engine::board::square::Square;
+    /// use encrustant::board::square::Square;
     ///
     /// assert_eq!(Square::from_notation("a1").unwrap().up(2), Square::from_notation("a3").unwrap());
     /// ```
@@ -82,7 +82,7 @@ impl Square {
     /// # Examples
     ///
     /// ```
-    /// use engine::board::square::Square;
+    /// use encrustant::board::square::Square;
     ///
     /// assert_eq!(Square::from_notation("a3").unwrap().down(2), Square::from_notation("a1").unwrap());
     /// ```
@@ -96,7 +96,7 @@ impl Square {
     /// # Examples
     ///
     /// ```
-    /// use engine::board::square::Square;
+    /// use encrustant::board::square::Square;
     ///
     /// assert_eq!(Square::from_notation("c1").unwrap().left(2), Square::from_notation("a1").unwrap());
     /// ```
@@ -110,7 +110,7 @@ impl Square {
     /// # Examples
     ///
     /// ```
-    /// use engine::board::square::Square;
+    /// use encrustant::board::square::Square;
     ///
     /// assert_eq!(Square::from_notation("a1").unwrap().right(2), Square::from_notation("c1").unwrap());
     /// ```
@@ -130,7 +130,7 @@ impl Square {
     /// # Examples
     ///
     /// ```
-    /// use engine::board::square::Square;
+    /// use encrustant::board::square::Square;
     ///
     /// for square_index in 0..63 {
     ///     assert!(Square::from_index(square_index).within_bounds())
@@ -160,7 +160,7 @@ impl Square {
     /// # Examples
     ///
     /// ```
-    /// use engine::board::square::Square;
+    /// use encrustant::board::square::Square;
     ///
     /// assert_eq!(Square::from_notation("a1").unwrap().flip(), Square::from_notation("a8").unwrap());
     /// assert_eq!(Square::from_notation("e4").unwrap().flip(), Square::from_notation("e5").unwrap());
@@ -175,7 +175,7 @@ impl Square {
     /// # Examples
     ///
     /// ```
-    /// use engine::board::square::Square;
+    /// use encrustant::board::square::Square;
     ///
     /// assert_eq!(Square::from_notation("a1").unwrap().flip(), Square::from_notation("a8").unwrap());
     /// assert_eq!(Square::from_notation("e4").unwrap().flip(), Square::from_notation("e5").unwrap());
@@ -190,7 +190,7 @@ impl Square {
     /// # Examples
     ///
     /// ```
-    /// use engine::board::square::Square;
+    /// use encrustant::board::square::Square;
     ///
     /// assert_eq!(Square::from_notation("a1").unwrap().rank(), 0);
     /// assert_eq!(Square::from_notation("e4").unwrap().rank(), 3);
@@ -205,7 +205,7 @@ impl Square {
     /// # Examples
     ///
     /// ```
-    /// use engine::board::square::Square;
+    /// use encrustant::board::square::Square;
     ///
     /// assert_eq!(Square::from_notation("a1").unwrap().to_notation(), "a1");
     /// ```
@@ -225,7 +225,7 @@ impl Square {
     /// # Examples
     ///
     /// ```
-    /// use engine::board::square::Square;
+    /// use encrustant::board::square::Square;
     ///
     /// assert_eq!(Square::from_notation("a1").unwrap(), Square::from_index(0));
     /// ```
@@ -245,7 +245,7 @@ impl Square {
     /// # Examples
     ///
     /// ```
-    /// use engine::board::{square::Square, bit_board::BitBoard};
+    /// use encrustant::board::{square::Square, bit_board::BitBoard};
     ///
     /// let square = Square::from_notation("a1").unwrap();
     /// assert!(square.bit_board() == BitBoard::from_square(&square));

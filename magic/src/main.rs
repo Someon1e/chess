@@ -5,17 +5,17 @@ use std::{
 };
 
 use bitvec::prelude::*;
-use engine::{
+use encrustant::{
     board::{bit_board::BitBoard, square::Square},
     move_generator::slider_lookup::{
-        get_bishop_moves, get_rook_moves, iterate_combinations, RELEVANT_BISHOP_BLOCKERS,
-        RELEVANT_ROOK_BLOCKERS,
+        RELEVANT_BISHOP_BLOCKERS, RELEVANT_ROOK_BLOCKERS, get_bishop_moves, get_rook_moves,
+        iterate_combinations,
     },
 };
 
 use rand_chacha::{
-    rand_core::{RngCore, SeedableRng},
     ChaCha20Rng,
+    rand_core::{RngCore, SeedableRng},
 };
 
 fn fill_magic_table(
@@ -33,14 +33,14 @@ fn fill_magic_table(
         } else {
             get_bishop_moves(square, blocker_combination)
         }; //gen_rook_or_bishop(square, &blocker_combination, direction_offset);
-           //assert_eq!(
-           //    if direction_offset == 0 {
-           //        get_rook_moves(square, blocker_combination)
-           //    } else {
-           //        get_bishop_moves(square, blocker_combination)
-           //    },
-           //    moves
-           //);
+        //assert_eq!(
+        //    if direction_offset == 0 {
+        //        get_rook_moves(square, blocker_combination)
+        //    } else {
+        //        get_bishop_moves(square, blocker_combination)
+        //    },
+        //    moves
+        //);
 
         let magic_index = blocker_combination.magic_index(magic, 64 - index_bits);
         let table_entry = &mut table[magic_index];

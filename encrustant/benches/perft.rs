@@ -1,5 +1,5 @@
 use criterion::{Criterion, black_box, criterion_group, criterion_main};
-use engine::{board::Board, perft::perft_root};
+use encrustant::{board::Board, perft::perft_root};
 
 pub fn move_generation_benchmark(c: &mut Criterion) {
     c.bench_function("perft start position", |bencher| {

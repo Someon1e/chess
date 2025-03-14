@@ -1,5 +1,5 @@
 use criterion::{Criterion, black_box, criterion_group, criterion_main};
-use engine::{
+use encrustant::{
     board::Board,
     move_generator::{MoveGenerator, move_data::Move},
 };
