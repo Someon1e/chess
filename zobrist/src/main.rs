@@ -2,11 +2,11 @@
 #![warn(clippy::pedantic)]
 #![warn(clippy::nursery)]
 
-use engine::board::piece::Piece;
+use encrustant::board::piece::Piece;
 use rand_chacha::ChaCha20Rng;
 use rand_chacha::rand_core::{RngCore, SeedableRng};
 
-use engine::search::zobrist::ZobristRandoms;
+use encrustant::search::zobrist::ZobristRandoms;
 
 fn main() {
     let mut rng = ChaCha20Rng::seed_from_u64(69);

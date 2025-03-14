@@ -122,7 +122,7 @@ impl Board {
     /// # Examples
     ///
     /// ```
-    /// use engine::board::Board;
+    /// use encrustant::board::Board;
     ///
     /// // Both sides have a bare King
     /// assert!(Board::from_fen("8/8/8/6k1/1K6/8/8/8 w - - 0 1").unwrap().is_insufficient_material());

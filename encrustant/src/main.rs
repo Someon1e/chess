@@ -9,7 +9,7 @@ use std::{
 };
 
 use core::cell::RefCell;
-use engine::{
+use encrustant::{
     board::Board,
     search::{Search, TimeManager, transposition::megabytes_to_capacity},
     timer::Time,

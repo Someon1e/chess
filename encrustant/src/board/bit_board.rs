@@ -116,7 +116,7 @@ impl BitBoard {
     /// # Examples
     ///
     /// ```
-    /// use engine::board::bit_board::BitBoard;
+    /// use encrustant::board::bit_board::BitBoard;
     ///
     /// assert!(BitBoard::EMPTY.is_empty());
     /// assert!(!BitBoard::FULL.is_empty());
@@ -131,7 +131,7 @@ impl BitBoard {
     /// # Examples
     ///
     /// ```
-    /// use engine::board::bit_board::BitBoard;
+    /// use encrustant::board::bit_board::BitBoard;
     ///
     /// assert!(BitBoard::FULL.is_not_empty());
     /// assert!(!BitBoard::EMPTY.is_not_empty());
@@ -146,7 +146,7 @@ impl BitBoard {
     /// # Examples
     ///
     /// ```
-    /// use engine::board::bit_board::BitBoard;
+    /// use encrustant::board::bit_board::BitBoard;
     ///
     /// assert!(!BitBoard::new(0).more_than_one_bit_set());
     /// assert!(!BitBoard::new(1).more_than_one_bit_set());
@@ -162,7 +162,7 @@ impl BitBoard {
     /// # Examples
     ///
     /// ```
-    /// use engine::board::bit_board::BitBoard;
+    /// use encrustant::board::bit_board::BitBoard;
     ///
     /// assert!(BitBoard::RANK_1.overlaps(&BitBoard::NOT_A_FILE));
     /// ```
@@ -176,7 +176,7 @@ impl BitBoard {
     /// # Examples
     ///
     /// ```
-    /// use engine::board::{bit_board::BitBoard, square::Square};
+    /// use encrustant::board::{bit_board::BitBoard, square::Square};
     ///
     /// assert!(BitBoard::RANK_4.get(&Square::from_notation("a4").unwrap()));
     /// assert!(!BitBoard::RANK_4.get(&Square::from_notation("a8").unwrap()));
@@ -191,7 +191,7 @@ impl BitBoard {
     /// # Examples
     ///
     /// ```
-    /// use engine::board::{bit_board::BitBoard, square::Square};
+    /// use encrustant::board::{bit_board::BitBoard, square::Square};
     ///
     /// assert_eq!(BitBoard::FULL.last_square(), Square::from_index(63));
     ///
@@ -209,7 +209,7 @@ impl BitBoard {
     /// # Examples
     ///
     /// ```
-    /// use engine::board::{bit_board::BitBoard, square::Square};
+    /// use encrustant::board::{bit_board::BitBoard, square::Square};
     ///
     /// let mut bit_board = BitBoard::FULL;
     /// assert_eq!(bit_board.first_square(), Square::from_index(0));
@@ -227,7 +227,7 @@ impl BitBoard {
     /// # Examples
     ///
     /// ```
-    /// use engine::board::{bit_board::BitBoard, square::Square};
+    /// use encrustant::board::{bit_board::BitBoard, square::Square};
     ///
     /// let mut bit_board = BitBoard::FULL;
     /// assert_eq!(bit_board.pop_square(), Square::from_index(0));
@@ -246,7 +246,7 @@ impl BitBoard {
     /// # Examples
     ///
     /// ```
-    /// use engine::board::bit_board::BitBoard;
+    /// use encrustant::board::bit_board::BitBoard;
     ///
     /// assert_eq!(BitBoard::EMPTY.count(), 0);
     /// assert_eq!(BitBoard::FULL.count(), 64);
@@ -263,7 +263,7 @@ impl BitBoard {
     /// # Examples
     ///
     /// ```
-    /// use engine::board::bit_board::BitBoard;
+    /// use encrustant::board::bit_board::BitBoard;
     ///
     /// let set = BitBoard::RANK_4;
     /// let mut subset = BitBoard::EMPTY;

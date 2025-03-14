@@ -1,5 +1,5 @@
 [package]
-name = "engine"
+name = "encrustant"
 version = "0.1.0"
 description = "Chess engine"
 edition = "2024"
