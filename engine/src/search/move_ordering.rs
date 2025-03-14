@@ -1,16 +1,16 @@
 use core::mem::MaybeUninit;
 
 use crate::move_generator::{
-    move_data::{Flag, Move},
     MoveGenerator,
+    move_data::{Flag, Move},
 };
 
-use super::{encoded_move::EncodedMove, Search};
+use super::{Search, encoded_move::EncodedMove};
 
 pub type MoveGuessNum = i32;
 
 #[derive(Clone, Copy)]
-pub(crate) struct MoveGuess {
+pub struct MoveGuess {
     guess: MoveGuessNum,
     pub move_data: EncodedMove,
 }
@@ -26,45 +26,24 @@ const KNIGHT_PROMOTION_BONUS: MoveGuessNum = 20_000_000;
 const ROOK_PROMOTION_BONUS: MoveGuessNum = 0;
 const BISHOP_PROMOTION_BONUS: MoveGuessNum = 0;
 
-macro_rules! repeat_array {
-    // Base case: When no elements are left to process
-    (@internal [$($acc:expr),*] []) => {
-        [$($acc),*]
-    };
+const CAPTURING_SCORE: [i32; 12] = {
+    const SCALE: i32 = 850;
 
-    // Recursive case: Process the first element and recurse on the rest
-    (@internal [$($acc:expr),*] [$head:expr $(, $tail:expr)*]) => {
-        repeat_array!(@internal [$($acc,)* $head] [$($tail),*])
-    };
+    const PAWN: i32 = 10 * SCALE;
+    const KNIGHT: i32 = 30 * SCALE;
+    const BISHOP: i32 = 31 * SCALE;
+    const ROOK: i32 = 50 * SCALE;
+    const QUEEN: i32 = 90 * SCALE;
 
-    // Entry point: Duplicate the array by calling the internal rule twice
-    ([$($arr:expr),*]) => {
-        repeat_array!(@internal [$($arr),*] [$($arr),*])
-    };
-}
+    // Should not be possible
+    const KING: i32 = 0;
 
-const MVV_LVA_PAWN: [u8; 12] = repeat_array!([15, 14, 13, 12, 11, 10]); // Victim P > Attacker P, N, B, R, Q, K
-const MVV_LVA_KNIGHT: [u8; 12] = repeat_array!([25, 24, 23, 22, 21, 20]); // Victim N > Attacker P, N, B, R, Q, K
-const MVV_LVA_BISHOP: [u8; 12] = repeat_array!([35, 34, 33, 32, 31, 30]); // Victim B > Attacker P, N, B, R, Q, K
-const MVV_LVA_ROOK: [u8; 12] = repeat_array!([45, 44, 43, 42, 41, 40]); // Victim R > Attacker P, N, B, R, Q, K
-const MVV_LVA_QUEEN: [u8; 12] = repeat_array!([55, 54, 53, 52, 51, 50]); // Victim Q > Attacker P, N, B, R, Q, K
-const MVV_LVA_KING: [u8; 12] = repeat_array!([0, 0, 0, 0, 0, 0]); // Victim K > Attacker P, N, B, R, Q, K
-const MVV_LVA: [[u8; 12]; 12] = [
-    MVV_LVA_PAWN,
-    MVV_LVA_KNIGHT,
-    MVV_LVA_BISHOP,
-    MVV_LVA_ROOK,
-    MVV_LVA_QUEEN,
-    MVV_LVA_KING,
-    MVV_LVA_PAWN,
-    MVV_LVA_KNIGHT,
-    MVV_LVA_BISHOP,
-    MVV_LVA_ROOK,
-    MVV_LVA_QUEEN,
-    MVV_LVA_KING,
-];
+    [
+        PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING,
+    ]
+};
 
-pub(crate) struct MoveOrderer;
+pub struct MoveOrderer;
 impl MoveOrderer {
     fn guess_move_value(search: &Search, move_data: Move) -> MoveGuessNum {
         let moving_from = move_data.from;
@@ -75,7 +54,7 @@ impl MoveOrderer {
                 return MoveGuessNum::from(
                     search.quiet_history[usize::from(search.board.white_to_move)]
                         [moving_from.usize() + moving_to.usize() * 64],
-                )
+                );
             }
 
             Flag::BishopPromotion => return BISHOP_PROMOTION_BONUS,
@@ -91,9 +70,20 @@ impl MoveOrderer {
         // This won't consider en passant
         if let Some(capturing) = search.board.enemy_piece_at(moving_to) {
             score += CAPTURE_BONUS;
+            score += MoveGuessNum::from(CAPTURING_SCORE[capturing as usize]);
 
             let moving_piece = search.board.friendly_piece_at(moving_from).unwrap();
-            score += MoveGuessNum::from(MVV_LVA[capturing as usize][moving_piece as usize]);
+
+            score += i32::from(
+                search.capture_history[moving_piece as usize][moving_to.usize()][if search
+                    .board
+                    .white_to_move
+                {
+                    capturing as usize - 6
+                } else {
+                    capturing as usize
+                }],
+            );
         } else {
             score += MoveGuessNum::from(
                 search.quiet_history[usize::from(search.board.white_to_move)]
@@ -112,7 +102,7 @@ impl MoveOrderer {
     ) -> MoveGuess {
         let (mut index_of_highest_move, mut highest_guess) = (
             unsorted_index,
-            move_guesses[unsorted_index].assume_init().guess,
+            unsafe { move_guesses[unsorted_index].assume_init() }.guess,
         );
 
         // Find highest guessed unsorted move
@@ -156,6 +146,43 @@ impl MoveOrderer {
         let capturing = search.board.enemy_piece_at(move_data.to).unwrap();
         let moving_piece = search.board.friendly_piece_at(move_data.from).unwrap();
 
+        macro_rules! repeat_array {
+            // Base case: When no elements are left to process
+            (@internal [$($acc:expr),*] []) => {
+                [$($acc),*]
+            };
+
+            // Recursive case: Process the first element and recurse on the rest
+            (@internal [$($acc:expr),*] [$head:expr $(, $tail:expr)*]) => {
+                repeat_array!(@internal [$($acc,)* $head] [$($tail),*])
+            };
+
+            // Entry point: Duplicate the array by calling the internal rule twice
+            ([$($arr:expr),*]) => {
+                repeat_array!(@internal [$($arr),*] [$($arr),*])
+            };
+        }
+
+        const MVV_LVA_PAWN: [u8; 12] = repeat_array!([15, 14, 13, 12, 11, 10]); // Victim P > Attacker P, N, B, R, Q, K
+        const MVV_LVA_KNIGHT: [u8; 12] = repeat_array!([25, 24, 23, 22, 21, 20]); // Victim N > Attacker P, N, B, R, Q, K
+        const MVV_LVA_BISHOP: [u8; 12] = repeat_array!([35, 34, 33, 32, 31, 30]); // Victim B > Attacker P, N, B, R, Q, K
+        const MVV_LVA_ROOK: [u8; 12] = repeat_array!([45, 44, 43, 42, 41, 40]); // Victim R > Attacker P, N, B, R, Q, K
+        const MVV_LVA_QUEEN: [u8; 12] = repeat_array!([55, 54, 53, 52, 51, 50]); // Victim Q > Attacker P, N, B, R, Q, K
+        const MVV_LVA_KING: [u8; 12] = repeat_array!([0, 0, 0, 0, 0, 0]); // Victim K > Attacker P, N, B, R, Q, K
+        const MVV_LVA: [[u8; 12]; 12] = [
+            MVV_LVA_PAWN,
+            MVV_LVA_KNIGHT,
+            MVV_LVA_BISHOP,
+            MVV_LVA_ROOK,
+            MVV_LVA_QUEEN,
+            MVV_LVA_KING,
+            MVV_LVA_PAWN,
+            MVV_LVA_KNIGHT,
+            MVV_LVA_BISHOP,
+            MVV_LVA_ROOK,
+            MVV_LVA_QUEEN,
+            MVV_LVA_KING,
+        ];
         score += MoveGuessNum::from(MVV_LVA[capturing as usize][moving_piece as usize]);
 
         score
@@ -220,14 +247,14 @@ impl MoveOrderer {
 #[cfg(test)]
 mod tests {
     use crate::{
-        board::{square::Square, Board},
+        board::{Board, square::Square},
         move_generator::{
-            move_data::{Flag, Move},
             MoveGenerator,
+            move_data::{Flag, Move},
         },
         search::{
-            encoded_move::EncodedMove, move_ordering::MoveOrderer, search_params::DEFAULT_TUNABLES,
-            transposition::megabytes_to_capacity, Search,
+            Search, encoded_move::EncodedMove, move_ordering::MoveOrderer,
+            search_params::DEFAULT_TUNABLES, transposition::megabytes_to_capacity,
         },
     };
 

@@ -1,7 +1,7 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, black_box, criterion_group, criterion_main};
 use engine::{
     board::Board,
-    move_generator::{move_data::Move, MoveGenerator},
+    move_generator::{MoveGenerator, move_data::Move},
 };
 
 pub fn get_move_list(move_list: &mut Vec<Move>, board: &mut Board) {

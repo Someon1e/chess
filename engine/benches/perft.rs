@@ -1,4 +1,4 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, black_box, criterion_group, criterion_main};
 use engine::{board::Board, perft::perft_root};
 
 pub fn move_generation_benchmark(c: &mut Criterion) {
