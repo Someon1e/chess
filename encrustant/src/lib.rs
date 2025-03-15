@@ -10,25 +10,13 @@
 #![warn(clippy::nursery)]
 #![warn(missing_docs)]
 
-/// Represents a chess position.
 pub mod board;
-
-/// Generates moves in a chess position.
-pub mod move_generator;
-
-/// Finds the best outcome in a chess position.
-pub mod search;
-
-/// Estimates how good a chess position is.
 pub mod evaluation;
-
-/// Universal Chess Protocol.
-pub mod uci;
-
-/// Perft testing.
+pub mod move_generator;
 pub mod perft;
-
+pub mod search;
 pub mod timer;
+pub mod uci;
 
 #[cfg(test)]
 mod tests {

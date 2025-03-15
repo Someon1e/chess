@@ -1,3 +1,5 @@
+//! Perft testing.
+
 use crate::{board::Board, move_generator::MoveGenerator, uci};
 
 fn perft(board: &mut Board, depth: u16) -> u64 {

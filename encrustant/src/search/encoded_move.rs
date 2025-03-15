@@ -1,3 +1,5 @@
+//! Compressed representation of moves.
+
 use crate::{
     board::square::Square,
     move_generator::move_data::{Flag, Move},

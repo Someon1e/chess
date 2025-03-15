@@ -1,3 +1,5 @@
+//! Generates moves in a chess position.
+
 use precomputed::get_between_rays;
 
 use crate::board::Board;

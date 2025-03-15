@@ -1,3 +1,5 @@
+//! Transposition table utilities.
+
 use super::{Ply, encoded_move::EncodedMove, eval_data::EvalNumber};
 
 #[derive(Clone, Copy)]

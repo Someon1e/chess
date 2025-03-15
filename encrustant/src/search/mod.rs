@@ -1,8 +1,8 @@
+//! Finds the best outcome in a chess position.
+
 pub mod encoded_move;
-
-pub mod pv;
-
 mod move_ordering;
+pub mod pv;
 mod repetition_table;
 pub mod search_params;
 mod time_manager;

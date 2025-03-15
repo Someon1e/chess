@@ -1,3 +1,5 @@
+//! Represents a chess position.
+
 use core::fmt::Display;
 
 /// Implements bit boards.

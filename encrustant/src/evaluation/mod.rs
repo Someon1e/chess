@@ -1,3 +1,5 @@
+//! Estimates how good a chess position is.
+
 use crate::{
     board::{Board, piece::Piece},
     consume_bit_board,

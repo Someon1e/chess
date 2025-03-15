@@ -1,3 +1,5 @@
+//! Parameters used in search.
+
 pub const LMR_SCALE: u32 = 1024;
 
 #[derive(Clone, Copy)]

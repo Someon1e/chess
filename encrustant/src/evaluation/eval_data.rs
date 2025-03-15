@@ -1,3 +1,5 @@
+//! Data used by evaluation.
+
 /// Number type of the evaluation score.
 pub type EvalNumber = i32;
 

@@ -1,3 +1,5 @@
+//! Universal Chess Protocol
+
 use core::ops::{Range, RangeInclusive};
 use core::str::SplitWhitespace;
 use std::sync::Arc;

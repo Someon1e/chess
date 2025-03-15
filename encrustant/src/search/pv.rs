@@ -1,3 +1,5 @@
+//! Best sequence of move in a position.
+
 use super::{Ply, encoded_move::EncodedMove};
 
 pub type PvTable = [[EncodedMove; Ply::MAX as usize]; Ply::MAX as usize];

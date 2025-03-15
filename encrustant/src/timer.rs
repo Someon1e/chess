@@ -1,3 +1,5 @@
+//! Platform-independent timer
+
 #[cfg(target_arch = "wasm32")]
 mod inner {
     pub struct Time {
