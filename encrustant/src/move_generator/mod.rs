@@ -65,7 +65,7 @@ pub struct MoveGenerator {
 }
 
 impl MoveGenerator {
-    fn gen_pawns(&self, add_move: &mut dyn FnMut(Move), captures_only: bool) {
+    fn gen_pawns<F: FnMut(Move)>(&self, add_move: &mut F, captures_only: bool) {
         pawn_move_generator::generate(self, add_move, captures_only);
     }
 }
@@ -75,7 +75,7 @@ impl MoveGenerator {
         KNIGHT_MOVES_AT_SQUARE[square.usize()]
     }
 
-    fn gen_knights(&self, add_move: &mut dyn FnMut(Move), captures_only: bool) {
+    fn gen_knights<F: FnMut(Move)>(&self, add_move: &mut F, captures_only: bool) {
         let mut non_pinned_knights =
             self.friendly_knights & !(self.diagonal_pin_rays | self.orthogonal_pin_rays);
 
@@ -99,7 +99,7 @@ impl MoveGenerator {
 }
 
 impl MoveGenerator {
-    fn gen_bishop(&self, from: Square, add_move: &mut dyn FnMut(Move), captures_only: bool) {
+    fn gen_bishop<F: FnMut(Move)>(&self, from: Square, add_move: &mut F, captures_only: bool) {
         let blockers = self.occupied_squares & relevant_bishop_blockers(from);
         let possible_moves = get_bishop_moves(from, blockers);
         let mut legal_moves =
@@ -119,7 +119,7 @@ impl MoveGenerator {
             });
         });
     }
-    fn gen_rook(&self, from: Square, add_move: &mut dyn FnMut(Move), captures_only: bool) {
+    fn gen_rook<F: FnMut(Move)>(&self, from: Square, add_move: &mut F, captures_only: bool) {
         let blockers = self.occupied_squares & relevant_rook_blockers(from);
         let possible_moves = get_rook_moves(from, blockers);
         let mut legal_moves =
@@ -234,7 +234,7 @@ impl MoveGenerator {
     }
 
     #[allow(clippy::unreadable_literal)]
-    fn gen_king(&self, add_move: &mut dyn FnMut(Move), captures_only: bool) {
+    fn gen_king<F: FnMut(Move)>(&self, add_move: &mut F, captures_only: bool) {
         let mut king_moves = Self::king_attack_bit_board(self.friendly_king_square)
             & !self.friendly_piece_bit_board
             & !self.king_danger_bit_board;
@@ -512,22 +512,22 @@ impl MoveGenerator {
     }
 
     /// Generates all friendly piece moves
-    pub fn generate(&self, add_move: &mut dyn FnMut(Move), captures_only: bool) {
-        self.gen_king(add_move, captures_only);
+    pub fn generate(&self, mut add_move: impl FnMut(Move), captures_only: bool) {
+        self.gen_king(&mut add_move, captures_only);
         if self.is_in_double_check {
             // Only king can move in double check
             return;
         }
 
-        self.gen_pawns(add_move, captures_only);
-        self.gen_knights(add_move, captures_only);
+        self.gen_pawns(&mut add_move, captures_only);
+        self.gen_knights(&mut add_move, captures_only);
         let mut friendly_diagonal = self.friendly_diagonal & !self.orthogonal_pin_rays;
         consume_bit_board!(friendly_diagonal, from {
-            self.gen_bishop(from, add_move, captures_only);
+            self.gen_bishop(from, &mut add_move, captures_only);
         });
         let mut friendly_orthogonal = self.friendly_orthogonal & !self.diagonal_pin_rays;
         consume_bit_board!(friendly_orthogonal, from {
-            self.gen_rook(from, add_move, captures_only);
+            self.gen_rook(from, &mut add_move, captures_only);
         });
     }
 

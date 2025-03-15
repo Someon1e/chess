@@ -64,7 +64,7 @@ pub const PAWN_ATTACKS: PawnAttacks = {
     }
 };
 
-fn gen_promotions(add_move: &mut dyn FnMut(Move), from: Square, to: Square) {
+fn gen_promotions<F: FnMut(Move)>(add_move: &mut F, from: Square, to: Square) {
     for promotion in Flag::PROMOTIONS {
         add_move(Move {
             from,
@@ -82,9 +82,9 @@ pub const fn attack_bit_board(from: Square, white: bool) -> BitBoard {
     }
 }
 
-pub fn generate(
+pub fn generate<F: FnMut(Move)>(
     move_generator: &MoveGenerator,
-    add_move: &mut dyn FnMut(Move),
+    add_move: &mut F,
     captures_only: bool,
 ) {
     let promotion_rank = if move_generator.white_to_move {
