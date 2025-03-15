@@ -252,6 +252,8 @@ impl Search {
     pub fn clear_cache_for_new_game(&mut self) {
         self.pawn_correction_history[0].fill(0);
         self.pawn_correction_history[1].fill(0);
+        self.minor_piece_correction_history[0].fill(0);
+        self.minor_piece_correction_history[1].fill(0);
 
         for x in self.capture_history.iter_mut() {
             for y in x.iter_mut() {
