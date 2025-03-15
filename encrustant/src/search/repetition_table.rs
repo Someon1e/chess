@@ -19,11 +19,17 @@ impl RepetitionTable {
         self.positions.pop().unwrap()
     }
 
-    pub fn contains(&self, zobrist_key: Zobrist) -> bool {
+    pub fn contains(&self, zobrist_key: Zobrist, half_move_clock: u32) -> bool {
+        if half_move_clock < 4 {
+            return false;
+        }
         self.positions
             .iter()
             .rev()
-            .any(|other_key| *other_key == zobrist_key)
+            .take(half_move_clock as usize)
+            .skip(3)
+            .step_by(2)
+            .any(|other| *other == zobrist_key)
     }
 
     pub fn clear(&mut self) {

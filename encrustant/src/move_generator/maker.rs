@@ -16,6 +16,11 @@ impl Board {
 
         let flag = move_data.flag;
 
+        if piece == Piece::WhitePawn || piece == Piece::BlackPawn {
+            self.game_state.half_move_clock = 0;
+        } else {
+            self.game_state.half_move_clock += 1;
+        }
         if piece == Piece::WhiteKing {
             self.game_state.castling_rights.unset_white_king_side();
             self.game_state.castling_rights.unset_white_queen_side();
@@ -90,6 +95,7 @@ impl Board {
             _ => {
                 self.game_state.captured = self.enemy_piece_at(move_data.to);
                 if let Some(captured) = self.game_state.captured {
+                    self.game_state.half_move_clock = 0;
                     let capturing_bit_board = self.get_bit_board_mut(captured);
                     capturing_bit_board.toggle(&move_data.to);
                 }
