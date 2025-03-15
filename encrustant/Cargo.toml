@@ -1,0 +1,32 @@
+[package]
+name = "encrustant"
+version = "0.1.0"
+description = "Chess engine"
+edition = "2024"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dev-dependencies]
+criterion = { version = "0.5.1", features = ["html_reports"] }
+
+[[bench]]
+name = "perft"
+harness = false
+
+[[bench]]
+name = "evaluation"
+harness = false
+
+[[bench]]
+name = "make_unmake_move"
+harness = false
+
+[dependencies]
+
+[profile.release]
+lto = true
+codegen-units = 1
+
+[features]
+default = []
+spsa = []

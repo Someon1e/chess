@@ -1,0 +1,38 @@
+name: Rust
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  engine:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Add WebAssembly target
+        run: rustup target add wasm32-unknown-unknown
+      - name: Check engine WebAssembly
+        run: cargo check --verbose --manifest-path=encrustant/Cargo.toml --target=wasm32-unknown-unknown
+      - name: Build engine
+        run: cargo build --verbose --manifest-path=encrustant/Cargo.toml
+      - name: Test engine
+        run: cargo test --verbose --manifest-path=encrustant/Cargo.toml
+
+  helpers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check magic
+        run: cargo check --manifest-path=magic/Cargo.toml
+      - name: Check tuner
+        run: cargo check --manifest-path=tuner/Cargo.toml
+      - name: Check zobrist
+        run: cargo check --manifest-path=zobrist/Cargo.toml

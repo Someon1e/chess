@@ -1,6 +1,6 @@
 # Paths
 PGO_DIR := engine_pgo
-ENGINE_DIR := engine
+ENGINE_DIR := encrustant
 
 EXE ?= built
 TARGET ?=
