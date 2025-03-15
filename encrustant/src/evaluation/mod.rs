@@ -1,5 +1,5 @@
 use crate::{
-    board::{piece::Piece, Board},
+    board::{Board, piece::Piece},
     consume_bit_board,
 };
 

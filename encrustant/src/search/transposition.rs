@@ -1,4 +1,4 @@
-use super::{encoded_move::EncodedMove, eval_data::EvalNumber, Ply};
+use super::{Ply, encoded_move::EncodedMove, eval_data::EvalNumber};
 
 #[derive(Clone, Copy)]
 pub(super) struct NodeValue {

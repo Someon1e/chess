@@ -1,5 +1,5 @@
 use crate::{
-    board::{piece::Piece, square::Square, Board},
+    board::{Board, piece::Piece, square::Square},
     move_generator::move_data::{Flag, Move},
     search::encoded_move::EncodedMove,
 };

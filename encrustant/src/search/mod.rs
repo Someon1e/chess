@@ -108,6 +108,7 @@ pub struct Search {
     transposition_table: Vec<Option<NodeValue>>,
 
     quiet_history: Box<[[i16; 64 * 64]; 2]>,
+    capture_history: Box<[[[i16; 6]; 64]; 12]>, // Inner table length is 6 because outer table already gives information about the piece colour
     pawn_correction_history: Box<[[i16; PAWN_CORRECTION_HISTORY_LENGTH]; 2]>,
 
     eval_history: [EvalNumber; 256],
@@ -146,6 +147,7 @@ impl Search {
 
             killer_moves: [EncodedMove::NONE; 64],
             quiet_history: vec![[0; 64 * 64]; 2].try_into().unwrap(),
+            capture_history: vec![[[0; 6]; 64]; 12].try_into().unwrap(),
 
             pawn_correction_history: vec![[0; PAWN_CORRECTION_HISTORY_LENGTH]; 2]
                 .try_into()
@@ -230,6 +232,7 @@ impl Search {
         self.quiescence_call_count = 0;
         self.highest_depth = 0;
         self.killer_moves.fill(EncodedMove::NONE);
+
         for value in &mut self.quiet_history[0] {
             *value /= param!(self).history_decay;
         }
@@ -242,6 +245,12 @@ impl Search {
     pub fn clear_cache_for_new_game(&mut self) {
         self.pawn_correction_history[0].fill(0);
         self.pawn_correction_history[1].fill(0);
+
+        for x in self.capture_history.iter_mut() {
+            for y in x.iter_mut() {
+                y.fill(0);
+            }
+        }
 
         self.quiet_history[0].fill(0);
         self.quiet_history[1].fill(0);
@@ -829,6 +838,7 @@ impl Search {
         let (mut best_move, mut best_score) = (EncodedMove::NONE, -EvalNumber::MAX);
 
         let mut quiets_evaluated: Vec<EncodedMove> = Vec::new();
+        let mut captures_evaluated: Vec<EncodedMove> = Vec::new();
         let mut index = 0;
         loop {
             let encoded_move_data = unsafe {
@@ -840,6 +850,7 @@ impl Search {
             .move_data;
             let move_data = encoded_move_data.decode();
 
+            // This won't consider en passant
             let is_capture = move_generator.enemy_piece_bit_board().get(&move_data.to);
             let old_state = self.make_move_repetition::<true>(&move_data);
 
@@ -915,23 +926,47 @@ impl Search {
                     node_type = NodeType::Exact;
 
                     if score >= beta {
-                        if !is_capture {
+                        fn get_capture_entry(
+                            search: &mut Search,
+                            from: Square,
+                            to: Square,
+                        ) -> &mut i16 {
+                            let moving_piece = search.board.friendly_piece_at(from).unwrap();
+                            let captured = search.board.enemy_piece_at(to).unwrap();
+                            &mut search.capture_history[moving_piece as usize][to.usize()][if search
+                                .board
+                                .white_to_move
+                            {
+                                captured as usize - 6
+                            } else {
+                                captured as usize
+                            }]
+                        }
+
+                        const MAX_HISTORY: i32 = 16384;
+                        fn history_gravity(current_value: i16, history_bonus: i32) -> i16 {
+                            (history_bonus
+                                - (i32::from(current_value) * history_bonus.abs() / MAX_HISTORY))
+                                as i16
+                        }
+
+                        if is_capture {
+                            let history_bonus = (param!(self).capture_history_multiplier_bonus
+                                * i32::from(ply_remaining)
+                                - param!(self).capture_history_subtraction_bonus)
+                                .min(MAX_HISTORY);
+                            let entry = get_capture_entry(self, move_data.from, move_data.to);
+                            *entry += history_gravity(*entry, history_bonus);
+                        } else {
                             // Not a capture but still caused beta cutoff, sort this higher later
 
                             if (ply_from_root as usize) < self.killer_moves.len() {
                                 self.killer_moves[usize::from(ply_from_root)] = encoded_move_data;
                             }
 
-                            const MAX_HISTORY: i32 = 16384;
-                            fn history_gravity(current_value: i16, history_bonus: i32) -> i16 {
-                                (history_bonus
-                                    - (i32::from(current_value) * history_bonus.abs()
-                                        / MAX_HISTORY)) as i16
-                            }
-
-                            let history_bonus = (param!(self).history_multiplier_bonus
+                            let history_bonus = (param!(self).quiet_history_multiplier_bonus
                                 * i32::from(ply_remaining)
-                                - param!(self).history_subtraction_bonus)
+                                - param!(self).quiet_history_subtraction_bonus)
                                 .min(MAX_HISTORY);
 
                             let history_side =
@@ -941,23 +976,41 @@ impl Search {
                                 &mut history_side[encoded_move_data.without_flag() as usize];
                             *history += history_gravity(*history, history_bonus);
 
-                            let history_malus = -(param!(self).history_multiplier_malus
+                            let quiet_history_malus = -(param!(self)
+                                .quiet_history_multiplier_malus
                                 * i32::from(ply_remaining)
-                                - param!(self).history_subtraction_malus)
+                                - param!(self).quiet_history_subtraction_malus)
                                 .min(MAX_HISTORY);
-
                             for previous_quiet in quiets_evaluated {
                                 let history =
                                     &mut history_side[previous_quiet.without_flag() as usize];
-                                *history += history_gravity(*history, history_malus);
+                                *history += history_gravity(*history, quiet_history_malus);
                             }
                         }
+
+                        let capture_history_malus = -(param!(self)
+                            .capture_history_multiplier_malus
+                            * i32::from(ply_remaining)
+                            - param!(self).capture_history_subtraction_malus)
+                            .min(MAX_HISTORY);
+                        for previous_capture in captures_evaluated {
+                            let previous_entry = get_capture_entry(
+                                self,
+                                previous_capture.from(),
+                                previous_capture.to(),
+                            );
+                            *previous_entry +=
+                                history_gravity(*previous_entry, capture_history_malus);
+                        }
+
                         node_type = NodeType::Beta;
                         break;
                     }
                 }
             }
-            if !is_capture {
+            if is_capture {
+                captures_evaluated.push(encoded_move_data);
+            } else {
                 if is_not_pv_node && !move_generator.is_in_check() {
                     if USE_FUTILITY_PRUNING
                         && static_eval + param!(self).futility_margin * i32::from(ply_remaining)

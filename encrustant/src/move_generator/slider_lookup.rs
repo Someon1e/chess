@@ -3,14 +3,14 @@ use std::sync::OnceLock;
 use crate::{
     board::{
         bit_board::BitBoard,
-        square::{Square, DIRECTIONS},
+        square::{DIRECTIONS, Square},
     },
     move_generator::slider_keys::{ROOK_KEYS, SLIDERS_TABLE_SIZE},
 };
 
 use super::{
     precomputed::SQUARES_FROM_EDGE,
-    slider_keys::{Key, BISHOP_KEYS},
+    slider_keys::{BISHOP_KEYS, Key},
 };
 
 const fn all_rays(square_index: usize) -> [u64; 8] {
@@ -206,8 +206,8 @@ mod tests {
     use crate::{
         board::{bit_board::BitBoard, square::Square},
         move_generator::slider_lookup::{
-            gen_rook_or_bishop, get_bishop_moves, get_rook_moves, iterate_combinations,
-            rook_or_bishop_blockers, RELEVANT_BISHOP_BLOCKERS, RELEVANT_ROOK_BLOCKERS,
+            RELEVANT_BISHOP_BLOCKERS, RELEVANT_ROOK_BLOCKERS, gen_rook_or_bishop, get_bishop_moves,
+            get_rook_moves, iterate_combinations, rook_or_bishop_blockers,
         },
     };
 

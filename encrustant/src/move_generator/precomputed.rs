@@ -1,11 +1,7 @@
 use crate::board::{bit_board::BitBoard, square::Square};
 
 const fn min(a: i8, b: i8) -> i8 {
-    if a > b {
-        b
-    } else {
-        a
-    }
+    if a > b { b } else { a }
 }
 
 pub const SQUARES_FROM_EDGE: [[i8; 8]; 64] = {
