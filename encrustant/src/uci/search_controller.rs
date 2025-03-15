@@ -293,7 +293,6 @@ mod search_controller {
     use crate::board::square::Square;
     use crate::move_generator::move_data::Flag;
     use crate::search::{Ply, Search};
-    use crate::uci::PonderInfo;
     use crate::uci::go_params::SearchTime;
     use crate::uci::{PonderInfo, Tunable};
 
