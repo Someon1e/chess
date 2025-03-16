@@ -886,10 +886,14 @@ impl Search {
             if !normal_search {
                 // Late move reduction
                 let r = {
-                    let mut r = 2;
-                    r += (u32::from(ply_remaining) * LMR_SCALE) / param!(self).lmr_ply_divisor;
-                    r += ((index as u32) * LMR_SCALE) / param!(self).lmr_index_divisor;
-                    r as u8
+                    let mut r = 2 * LMR_SCALE;
+                    r += LMR_SCALE
+                        * ((u32::from(ply_remaining) / param!(self).lmr_ply_divisor)
+                            + (index as u32 / param!(self).lmr_index_divisor));
+                    if is_not_pv_node {
+                        r += param!(self).lmr_non_pv_reduction
+                    }
+                    (r / LMR_SCALE) as u8
                 };
                 score = -self.negamax(
                     time_manager,
