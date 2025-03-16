@@ -112,7 +112,7 @@ impl Zobrist {
         key
     }
 
-    /// Computes the pawn zobrist key.
+    /// Computes the minor piece zobrist key.
     #[must_use]
     pub fn minor_piece_key(board: &Board) -> Self {
         let mut key = Self::EMPTY;
