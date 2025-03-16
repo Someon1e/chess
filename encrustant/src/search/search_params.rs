@@ -26,7 +26,10 @@ pub struct Tunable {
 
     pub aspiration_window_start: i32,
     pub aspiration_window_growth: i32,
+
     pub pawn_correction_history_grain: i16,
+
+    pub minor_piece_correction_history_grain: i16,
 
     pub quiet_history_multiplier_bonus: i32,
     pub quiet_history_subtraction_bonus: i32,
@@ -65,6 +68,8 @@ pub(crate) const DEFAULT_TUNABLES: Tunable = Tunable {
 
     improving_static_null_margin: 41,
     pawn_correction_history_grain: 244,
+
+    minor_piece_correction_history_grain: 256,
 
     quiet_history_multiplier_bonus: 297,
     quiet_history_subtraction_bonus: 149,
