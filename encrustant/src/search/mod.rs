@@ -705,10 +705,10 @@ impl Search {
             // Check if it's actually the same position
             if saved.zobrist_key_32 == zobrist_key.lower_u32() {
                 // Check if the saved depth is as high as the depth now
-                if saved.ply_remaining >= ply_remaining {
+                if is_not_pv_node && saved.ply_remaining >= ply_remaining {
                     let node_type = &saved.node_type;
                     if match node_type {
-                        NodeType::Exact => is_not_pv_node,
+                        NodeType::Exact => true,
                         NodeType::Beta => saved.value >= beta,
                         NodeType::Alpha => saved.value <= alpha,
                     } {
