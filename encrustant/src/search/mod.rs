@@ -12,7 +12,7 @@ pub mod transposition;
 pub mod zobrist;
 
 use pv::Pv;
-use search_params::{DEFAULT_TUNABLES, LMR_SCALE, Tunable};
+use search_params::{DEFAULT_TUNABLES, Tunable};
 pub use time_manager::TimeManager;
 use zobrist::Zobrist;
 
@@ -886,10 +886,10 @@ impl Search {
             if !normal_search {
                 // Late move reduction
                 let r = {
-                    let mut r = 2;
-                    r += (u32::from(ply_remaining) * LMR_SCALE) / param!(self).lmr_ply_divisor;
-                    r += ((index as u32) * LMR_SCALE) / param!(self).lmr_index_divisor;
-                    r as u8
+                    let mut r = param!(self).lmr_base;
+                    r += u32::from(ply_remaining) * param!(self).lmr_ply_multiplier;
+                    r += (index as u32) * param!(self).lmr_index_multiplier;
+                    (r / 1024) as u8
                 };
                 score = -self.negamax(
                     time_manager,
