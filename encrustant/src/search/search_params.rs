@@ -59,7 +59,7 @@ pub(crate) const DEFAULT_TUNABLES: Tunable = Tunable {
 
     lmr_base: 2048,
 
-    lmr_ply_multiplier: 104,
+    lmr_ply_multiplier: 130,
     lmr_index_multiplier: 100,
 
     lmr_min_index: 6,
