@@ -76,8 +76,8 @@ pub struct DepthSearchInfo {
     /// The best move and evaluation.
     pub best: (Pv, EvalNumber),
 
-    /// How many times `quiescence_search()` was called.
-    pub quiescence_call_count: u32,
+    /// How many times `make_move` was called in search
+    pub node_count: u32,
 }
 
 const PAWN_CORRECTION_HISTORY_LENGTH: usize = 8192;
@@ -123,7 +123,7 @@ pub struct Search {
     pub pv: Pv,
     pub highest_depth: Ply,
 
-    quiescence_call_count: u32,
+    node_count: u32,
 
     #[cfg(feature = "spsa")]
     tunable: Tunable,
@@ -171,7 +171,7 @@ impl Search {
             pv: Pv::new(),
             highest_depth: 0,
 
-            quiescence_call_count: 0,
+            node_count: 0,
 
             #[cfg(feature = "spsa")]
             tunable,
@@ -236,7 +236,7 @@ impl Search {
     pub fn clear_for_new_search(&mut self) {
         // Don't need to clear `eval_history` because each ply is overwritten before they can be read
 
-        self.quiescence_call_count = 0;
+        self.node_count = 0;
         self.highest_depth = 0;
         self.killer_moves.fill(EncodedMove::NONE);
 
@@ -269,8 +269,6 @@ impl Search {
 
     #[must_use]
     fn quiescence_search(&mut self, mut alpha: EvalNumber, beta: EvalNumber) -> EvalNumber {
-        self.quiescence_call_count += 1;
-
         let pawn_index = self
             .pawn_zobrist_key()
             .modulo(PAWN_CORRECTION_HISTORY_LENGTH as u64);
@@ -304,6 +302,7 @@ impl Search {
             .decode();
 
             let old_state = self.make_move::<false>(&move_data);
+            self.node_count += 1;
             let score = -self.quiescence_search(-beta, -alpha);
             self.unmake_move(&move_data, &old_state);
 
@@ -871,7 +870,9 @@ impl Search {
 
             // This won't consider en passant
             let is_capture = move_generator.enemy_piece_bit_board().get(&move_data.to);
+
             let old_state = self.make_move_repetition::<true>(&move_data);
+            self.node_count += 1;
 
             // Search deeper when in check
             let check_extension = MoveGenerator::calculate_is_in_check(&self.board);
@@ -1204,7 +1205,7 @@ impl Search {
                 depth,
                 best: (self.pv, best_score),
                 highest_depth: self.highest_depth,
-                quiescence_call_count: self.quiescence_call_count,
+                node_count: self.node_count,
             });
 
             if depth == Ply::MAX {
@@ -1222,10 +1223,10 @@ impl Search {
         (depth, previous_best_score)
     }
 
-    /// Returns how many times quiescence search was called.
+    /// Returns how many times `make_move` was called in search
     #[must_use]
-    pub const fn quiescence_call_count(&self) -> u32 {
-        self.quiescence_call_count
+    pub const fn node_count(&self) -> u32 {
+        self.node_count
     }
 
     #[must_use]

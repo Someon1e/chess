@@ -514,11 +514,8 @@ fn bench() {
         let time_manager = TimeManager::depth_limited(false, false, None, depth);
 
         let result = search.iterative_deepening(&time_manager, &mut |_| {});
-        out(&format!(
-            "{position} {depth} {}",
-            search.quiescence_call_count()
-        ));
-        total_nodes += u64::from(search.quiescence_call_count());
+        out(&format!("{position} {depth} {}", search.node_count()));
+        total_nodes += u64::from(search.node_count());
     }
     out(&format!(
         "{total_nodes} nodes {nodes_per_second} nps",

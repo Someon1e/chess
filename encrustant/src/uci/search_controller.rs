@@ -25,7 +25,7 @@ fn output_search(out: fn(&str), info: &DepthSearchInfo, time: u64) {
     let (pv, evaluation) = info.best;
     let depth = info.depth;
     let highest_depth = info.highest_depth;
-    let nodes = info.quiescence_call_count;
+    let nodes = info.node_count;
 
     let evaluation_info = if Search::score_is_checkmate(evaluation) {
         format!(
@@ -151,7 +151,7 @@ fn search(
             depth,
             best: (search.pv, evaluation),
             highest_depth: search.highest_depth,
-            quiescence_call_count: search.quiescence_call_count(),
+            node_count: search.node_count(),
         },
         search_start.milliseconds(),
     );
