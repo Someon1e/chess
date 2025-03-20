@@ -77,7 +77,7 @@ pub struct DepthSearchInfo {
     pub best: (Pv, EvalNumber),
 
     /// How many times `make_move` was called in search
-    pub node_count: u32,
+    pub node_count: u64,
 }
 
 const PAWN_CORRECTION_HISTORY_LENGTH: usize = 8192;
@@ -123,7 +123,7 @@ pub struct Search {
     pub pv: Pv,
     pub highest_depth: Ply,
 
-    node_count: u32,
+    node_count: u64,
 
     #[cfg(feature = "spsa")]
     tunable: Tunable,
@@ -1225,7 +1225,7 @@ impl Search {
 
     /// Returns how many times `make_move` was called in search
     #[must_use]
-    pub const fn node_count(&self) -> u32 {
+    pub const fn node_count(&self) -> u64 {
         self.node_count
     }
 
