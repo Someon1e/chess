@@ -781,6 +781,10 @@ impl Search {
             ply_from_root >= 2 && static_eval > self.eval_history[ply_from_root as usize - 2]
         };
 
+        if usize::from(ply_from_root + 1) < self.killer_moves.len() {
+            self.killer_moves[usize::from(ply_from_root + 1)] = EncodedMove::NONE;
+        }
+
         if is_not_pv_node && !move_generator.is_in_check() {
             // Static null move pruning (also known as reverse futility pruning)
             if USE_STATIC_NULL_MOVE_PRUNING {
