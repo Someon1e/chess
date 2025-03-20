@@ -1,7 +1,5 @@
 //! Parameters used in search.
 
-pub const LMR_SCALE: u32 = 1024;
-
 #[derive(Clone, Copy)]
 pub struct Tunable {
     pub iir_min_depth: u8,
@@ -15,8 +13,9 @@ pub struct Tunable {
 
     pub lmr_min_index: usize,
     pub lmr_min_depth: u8,
-    pub lmr_ply_divisor: u32,
-    pub lmr_index_divisor: u32,
+    pub lmr_base: u32,
+    pub lmr_ply_multiplier: u32,
+    pub lmr_index_multiplier: u32,
 
     pub lmp_base: u32,
 
@@ -49,8 +48,6 @@ pub(crate) const DEFAULT_TUNABLES: Tunable = Tunable {
 
     static_null_min_depth: 7,
 
-    lmr_min_index: 6,
-    lmr_min_depth: 3,
     lmp_base: 2,
 
     nmp_min_depth: 2,
@@ -60,8 +57,13 @@ pub(crate) const DEFAULT_TUNABLES: Tunable = Tunable {
     futility_margin: 116,
     static_null_margin: 58,
 
-    lmr_ply_divisor: 8952,
-    lmr_index_divisor: 9055,
+    lmr_base: 2048,
+
+    lmr_ply_multiplier: 130,
+    lmr_index_multiplier: 100,
+
+    lmr_min_index: 6,
+    lmr_min_depth: 3,
 
     aspiration_window_start: 12,
     aspiration_window_growth: 40,
