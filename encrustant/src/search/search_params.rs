@@ -25,10 +25,10 @@ pub struct Tunable {
 
     pub aspiration_window_start: i32,
     pub aspiration_window_growth: i32,
+    /// Maximum number of aspiration window attempts.
     pub aspiration_window_count: u32,
 
     pub pawn_correction_history_grain: i16,
-
     pub minor_piece_correction_history_grain: i16,
 
     pub quiet_history_multiplier_bonus: i32,

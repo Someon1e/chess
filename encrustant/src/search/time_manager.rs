@@ -52,6 +52,8 @@ impl<'a> TimeManager<'a> {
             },
         }
     }
+
+    /// Stop when iterative deepening depth reaches `depth`
     #[must_use]
     pub const fn depth_limited(
         stopped: Bool,
@@ -66,6 +68,8 @@ impl<'a> TimeManager<'a> {
             mode: Mode::Depth(depth),
         }
     }
+
+    /// Only ends when `stopped` is true
     #[must_use]
     pub const fn infinite(stopped: Bool, pondering: Bool, mated_in: Option<Ply>) -> Self {
         Self {
@@ -75,6 +79,7 @@ impl<'a> TimeManager<'a> {
             mode: Mode::Infinite,
         }
     }
+
     #[must_use]
     pub fn hard_stop_inner_search(&self) -> bool {
         if self.is_stopped() {
@@ -122,6 +127,7 @@ impl<'a> TimeManager<'a> {
         return self.pondering.load(Ordering::SeqCst);
     }
 
+    /// Returns the value of the `stopped` boolean.
     pub fn is_stopped(&self) -> bool {
         #[cfg(target_arch = "wasm32")]
         return self.stopped;

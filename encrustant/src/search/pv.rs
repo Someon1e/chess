@@ -20,6 +20,7 @@ impl Pv {
         }
     }
 
+    /// Returns the best sequence of moves.
     pub fn best_line(&self) -> core::iter::Take<core::slice::Iter<'_, EncodedMove>> {
         self.pv_table[0].iter().take(self.pv_length[0] as usize)
     }
@@ -44,6 +45,7 @@ impl Pv {
         self.pv_length[ply_from_root as usize] = length;
     }
 
+    /// Store a new best move.
     pub fn update_move(&mut self, ply_from_root: Ply, encoded_move_data: EncodedMove) {
         self.pv_table[ply_from_root as usize][ply_from_root as usize] = encoded_move_data;
         for next_ply in (ply_from_root + 1)..self.pv_length[ply_from_root as usize + 1] {

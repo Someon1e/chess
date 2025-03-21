@@ -42,6 +42,7 @@ impl Eval {
         phase
     }
 
+    /// Get the middlegame and endgame value of a piece on a square
     #[must_use]
     pub const fn get_piece_value(
         middle_game_piece_square_tables: &PieceSquareTable,
@@ -56,6 +57,7 @@ impl Eval {
         (middle_game_piece_score, end_game_piece_score)
     }
 
+    /// Uses the phase to interpolate between middlegame and endgame score
     #[must_use]
     pub fn calculate_score(
         phase: EvalNumber,

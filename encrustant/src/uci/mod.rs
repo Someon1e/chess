@@ -455,6 +455,9 @@ uciok",
         self.stopped.store(true, Ordering::SeqCst);
     }
 
+    /// The user has played the expected move.
+    /// This will be sent if the engine was told to ponder on the same move the user has played.
+    /// The engine should continue searching but switch from pondering to normal search.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn ponderhit(&self) {
         self.ponder_info.is_pondering.store(false, Ordering::SeqCst);

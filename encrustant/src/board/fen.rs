@@ -6,19 +6,43 @@ use super::{
     square::Square,
 };
 
+/// Errors that can occur when parsing a FEN string.
 #[derive(Debug)]
 pub enum FenParseErr {
-    InvalidPiece,
-    MissingSideToMove,
-    InvalidSideToMove,
-    MissingHalfMoveClock,
-    InvalidHalfMoveClock,
-    MissingFullMoveCounter,
-    InvalidFullMoveCounter,
-    MissingEnPassant,
-    InvalidEnPassant,
+    /// The position section of the FEN string is missing.
     MissingPosition,
+
+    /// An invalid piece character was encountered in the position section of the FEN string.
+    InvalidPiece,
+
+    /// An invalid digit was encountered in the position section (e.g., a number greater than 8 or incorrect rank structure).
     InvalidDigit,
+
+    /// The side to move ("w" or "b") is missing from the FEN string.
+    MissingSideToMove,
+
+    /// The side to move is present but contains an invalid value (not "w" or "b").
+    InvalidSideToMove,
+
+    /// The half-move clock (used for the fifty-move rule) is missing from the FEN string.
+    MissingHalfMoveClock,
+
+    /// The half-move clock is present but contains an invalid value (not a valid integer).
+    InvalidHalfMoveClock,
+
+    /// The full-move counter (which counts the number of full moves in the game) is missing from the FEN string.
+    MissingFullMoveCounter,
+
+    /// The full-move counter is present but contains an invalid value (not a valid integer).
+    InvalidFullMoveCounter,
+
+    /// The en passant target square is missing from the FEN string.
+    MissingEnPassant,
+
+    /// The en passant target square is present but contains an invalid value (not a valid square notation or "-").
+    InvalidEnPassant,
+
+    /// The castling rights section is missing from the FEN string.
     MissingCastling,
 }
 

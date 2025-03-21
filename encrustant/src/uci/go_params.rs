@@ -38,6 +38,7 @@ pub struct GoParameters {
 }
 
 impl GoParameters {
+    /// Returns empty parameters
     #[must_use]
     pub const fn empty() -> Self {
         Self {
@@ -49,6 +50,7 @@ impl GoParameters {
             pondering: None,
         }
     }
+
     pub fn parse(&mut self, args: &mut SplitWhitespace) {
         while let Some(label) = args.next() {
             macro_rules! parse_number {
@@ -139,26 +141,33 @@ impl GoParameters {
             }
         }
     }
+
     #[must_use]
     pub const fn search_type(&self) -> &SearchType {
         &self.search_type
     }
+
     #[must_use]
     pub const fn move_time(self) -> Option<SearchTime> {
         self.move_time
     }
+
     #[must_use]
     pub const fn mate_in_moves(&self) -> Option<u8> {
         self.mate_in_moves
     }
+
     #[must_use]
     pub const fn depth(&self) -> Option<u16> {
         self.depth
     }
+
+    /// Limit of nodes to search
     #[must_use]
     pub const fn nodes(&self) -> Option<u64> {
         self.nodes
     }
+
     #[must_use]
     pub const fn pondering(&self) -> Option<bool> {
         self.pondering
