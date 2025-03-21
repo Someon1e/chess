@@ -14,6 +14,7 @@ pub mod zobrist;
 use pv::Pv;
 use search_params::{DEFAULT_TUNABLES, Tunable};
 pub use time_manager::TimeManager;
+use transposition::TranspositionTable;
 use zobrist::Zobrist;
 
 use crate::{
@@ -106,7 +107,7 @@ pub struct Search {
 
     repetition_table: RepetitionTable,
 
-    transposition_table: Vec<Option<NodeValue>>,
+    transposition_table: TranspositionTable,
 
     quiet_history: Box<[[i16; 64 * 64]; 2]>,
     capture_history: Box<[[[i16; 6]; 64]; 12]>, // Inner table length is 6 because outer table already gives information about the piece colour
@@ -146,7 +147,7 @@ impl Search {
 
             repetition_table: RepetitionTable::new(),
 
-            transposition_table: vec![None; transposition_capacity],
+            transposition_table: TranspositionTable::new(transposition_capacity),
 
             killer_moves: [EncodedMove::NONE; 64],
             quiet_history: vec![[0; 64 * 64]; 2].try_into().unwrap(),
@@ -209,7 +210,7 @@ impl Search {
 
     /// Sets an empty transposition table with the new capacity.
     pub fn resize_transposition_table(&mut self, transposition_capacity: usize) {
-        self.transposition_table = vec![None; transposition_capacity];
+        self.transposition_table = TranspositionTable::new(transposition_capacity);
     }
 
     /// Returns the current board.
@@ -264,11 +265,28 @@ impl Search {
         self.quiet_history[0].fill(0);
         self.quiet_history[1].fill(0);
 
-        self.transposition_table.fill(None);
+        self.transposition_table.clear();
     }
 
     #[must_use]
     fn quiescence_search(&mut self, mut alpha: EvalNumber, beta: EvalNumber) -> EvalNumber {
+        let zobrist_key = self.position_zobrist_key();
+        let zobrist_index = self.transposition_table.get_index(zobrist_key);
+
+        if let Some(saved) = self.transposition_table.get(zobrist_index) {
+            // Check if it's actually the same position
+            if saved.zobrist_key_32 == zobrist_key.lower_u32() {
+                let node_type = &saved.node_type;
+                if match node_type {
+                    NodeType::Exact => true,
+                    NodeType::Beta => saved.value >= beta,
+                    NodeType::Alpha => saved.value <= alpha,
+                } {
+                    return saved.value;
+                }
+            }
+        }
+
         let pawn_index = self
             .pawn_zobrist_key()
             .modulo(PAWN_CORRECTION_HISTORY_LENGTH as u64);
@@ -286,6 +304,8 @@ impl Search {
                 return best_score;
             }
         }
+
+        let mut node_type = NodeType::Alpha;
 
         let move_generator = MoveGenerator::new(&self.board);
         let (mut move_guesses, move_count) =
@@ -310,8 +330,10 @@ impl Search {
                 best_score = score;
                 if score > alpha {
                     alpha = score;
+                    node_type = NodeType::Exact;
 
                     if score >= beta {
+                        node_type = NodeType::Beta;
                         break;
                     }
                 }
@@ -319,6 +341,18 @@ impl Search {
 
             index += 1;
         }
+
+        self.transposition_table.set(
+            zobrist_index,
+            NodeValue {
+                zobrist_key_32: zobrist_key.lower_u32(),
+                ply_remaining: 0,
+                node_type,
+                value: best_score,
+                transposition_move: EncodedMove::NONE,
+            },
+        );
+
         best_score
     }
 
@@ -591,30 +625,8 @@ impl Search {
         }
 
         if PREFETCH {
-            #[cfg(target_feature = "sse")]
-            {
-                use core::arch::x86_64::{_MM_HINT_NTA, _mm_prefetch};
-                let index =
-                    self.position_zobrist_key()
-                        .distribute(self.transposition_table.len()) as usize;
-                unsafe {
-                    _mm_prefetch::<{ _MM_HINT_NTA }>(
-                        self.transposition_table.as_ptr().add(index).cast::<i8>(),
-                    );
-                }
-            }
-            #[cfg(any(target_arch = "aarch64", target_arch = "arm64ec"))]
-            {
-                use core::arch::aarch64::{_PREFETCH_LOCALITY0, _PREFETCH_READ, _prefetch};
-                let index =
-                    self.position_zobrist_key()
-                        .distribute(self.transposition_table.len()) as usize;
-                unsafe {
-                    _prefetch::<_PREFETCH_READ, _PREFETCH_LOCALITY0>(
-                        self.transposition_table.as_ptr().add(index).cast::<i8>(),
-                    );
-                }
-            }
+            self.transposition_table
+                .prefetch(self.position_zobrist_key());
         }
 
         let game_state = self.board.make_move(move_data);
@@ -691,7 +703,7 @@ impl Search {
         }
 
         // Turn zobrist key into an index into the transposition table
-        let zobrist_index = zobrist_key.distribute(self.transposition_table.len()) as usize;
+        let zobrist_index = self.transposition_table.get_index(zobrist_key);
 
         // This is the best move in this position according to previous searches
         let mut hash_move = EncodedMove::NONE;
@@ -700,7 +712,7 @@ impl Search {
         let is_not_pv_node = alpha + 1 == beta;
 
         // Get value from transposition table
-        let saved = if let Some(saved) = self.transposition_table[zobrist_index] {
+        let saved = if let Some(saved) = self.transposition_table.get(zobrist_index) {
             // Check if it's actually the same position
             if saved.zobrist_key_32 == zobrist_key.lower_u32() {
                 // Check if the saved depth is as high as the depth now
@@ -1104,13 +1116,16 @@ impl Search {
         }
 
         // Save to transposition table
-        self.transposition_table[zobrist_index] = Some(NodeValue {
-            zobrist_key_32: zobrist_key.lower_u32(),
-            ply_remaining,
-            node_type,
-            value: best_score,
-            transposition_move: best_move,
-        });
+        self.transposition_table.set(
+            zobrist_index,
+            NodeValue {
+                zobrist_key_32: zobrist_key.lower_u32(),
+                ply_remaining,
+                node_type,
+                value: best_score,
+                transposition_move: best_move,
+            },
+        );
 
         best_score
     }
