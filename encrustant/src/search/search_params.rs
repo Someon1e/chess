@@ -23,7 +23,8 @@ pub struct Tunable {
     pub nmp_base_reduction: u8,
     pub nmp_ply_divisor: u8,
 
-    pub aspiration_window_start: i32,
+    pub aspiration_window_min_depth: u8,
+    pub initial_aspiration_window: i32,
     pub aspiration_window_growth: i32,
     /// Maximum number of aspiration window attempts.
     pub aspiration_window_count: u32,
@@ -66,9 +67,10 @@ pub(crate) const DEFAULT_TUNABLES: Tunable = Tunable {
     lmr_min_index: 6,
     lmr_min_depth: 3,
 
-    aspiration_window_start: 12,
+    aspiration_window_min_depth: 3,
+    initial_aspiration_window: 12,
     aspiration_window_growth: 40,
-    aspiration_window_count: 4,
+    aspiration_window_count: 5,
 
     improving_static_null_margin: 41,
     pawn_correction_history_grain: 244,

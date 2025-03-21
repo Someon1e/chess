@@ -1128,11 +1128,11 @@ impl Search {
         mut best_score: EvalNumber,
         depth: Ply,
     ) -> EvalNumber {
-        if USE_ASPIRATION_WINDOWS && depth > 2 {
+        if USE_ASPIRATION_WINDOWS && depth > param!(self).aspiration_window_min_depth {
             let mut alpha = best_score
-                .saturating_sub(param!(self).aspiration_window_start)
+                .saturating_sub(param!(self).initial_aspiration_window)
                 .max(-EvalNumber::MAX);
-            let mut beta = best_score.saturating_add(param!(self).aspiration_window_start);
+            let mut beta = best_score.saturating_add(param!(self).initial_aspiration_window);
             for _ in 0..param!(self).aspiration_window_count {
                 best_score = self.negamax(time_manager, depth, 0, false, alpha, beta);
                 if best_score <= alpha {
