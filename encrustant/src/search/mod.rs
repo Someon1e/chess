@@ -1133,7 +1133,7 @@ impl Search {
                 .saturating_sub(param!(self).aspiration_window_start)
                 .max(-EvalNumber::MAX);
             let mut beta = best_score.saturating_add(param!(self).aspiration_window_start);
-            for _ in 0..4 {
+            for _ in 0..param!(self).aspiration_window_count {
                 best_score = self.negamax(time_manager, depth, 0, false, alpha, beta);
                 if best_score <= alpha {
                     alpha = alpha

@@ -101,6 +101,7 @@ struct TunableRange {
     //pub nmp_ply_divisor: RangeInclusive<u8>,
     pub aspiration_window_start: RangeInclusive<i32>,
     pub aspiration_window_growth: RangeInclusive<i32>,
+    pub aspiration_window_count: RangeInclusive<u32>,
 
     pub pawn_correction_history_grain: RangeInclusive<i16>,
 
@@ -129,6 +130,7 @@ const TUNABLE_RANGES: TunableRange = TunableRange {
     //nmp_ply_divisor: 4..=9,
     aspiration_window_start: 10..=60,
     aspiration_window_growth: 20..=90,
+    aspiration_window_count: 2..=8,
     improving_static_null_margin: 25..=90,
     pawn_correction_history_grain: 130..=400,
     quiet_history_multiplier_bonus: 100..=500,
