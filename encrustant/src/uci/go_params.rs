@@ -26,7 +26,7 @@ pub struct SearchTime {
 
 impl SearchTime {
     #[must_use]
-    pub const fn fixed_time(self) -> Option<u64> {
+    pub const fn fixed_time(&self) -> Option<u64> {
         self.fixed_time
     }
 
