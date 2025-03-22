@@ -7,16 +7,6 @@ use crate::{evaluation::eval_data::EvalNumber, timer::Time};
 
 use super::{IMMEDIATE_CHECKMATE_SCORE, Ply, Search};
 
-enum Mode<'a> {
-    Depth(Ply),
-    Time {
-        timer: &'a Time,
-        hard_time_limit: u64,
-        soft_time_limit: u64,
-    },
-    Infinite,
-}
-
 #[cfg(target_arch = "wasm32")]
 type Bool = bool;
 
@@ -24,32 +14,63 @@ type Bool = bool;
 type Bool = Arc<AtomicBool>;
 
 pub struct TimeManager<'a> {
-    mode: Mode<'a>,
+    depth_limit: Option<Ply>,
+    real_time: Option<RealTime<'a>>,
+
     stopped: Bool,
     pondering: Bool,
     mated_in: Option<Ply>,
 }
 
+pub struct RealTime<'a> {
+    timer: &'a Time,
+    hard_time_limit: u64,
+    soft_time_limit: u64,
+}
+impl<'a> RealTime<'a> {
+    pub fn new(timer: &'a Time, hard_time_limit: u64, soft_time_limit: u64) -> Self {
+        assert!(hard_time_limit >= soft_time_limit);
+        Self {
+            timer,
+            hard_time_limit,
+            soft_time_limit,
+        }
+    }
+}
+
 impl<'a> TimeManager<'a> {
+    #[must_use]
+    pub fn new(
+        depth_limit: Option<Ply>,
+        real_time: Option<RealTime<'a>>,
+
+        stopped: Bool,
+        pondering: Bool,
+        mated_in: Option<Ply>,
+    ) -> Self {
+        Self {
+            depth_limit,
+            real_time,
+
+            stopped,
+            pondering,
+            mated_in,
+        }
+    }
+
     #[must_use]
     pub fn time_limited(
         stopped: Bool,
         pondering: Bool,
         mated_in: Option<Ply>,
-        timer: &'a Time,
-        hard_time_limit: u64,
-        soft_time_limit: u64,
+        real_time: Option<RealTime<'a>>,
     ) -> Self {
-        assert!(hard_time_limit >= soft_time_limit);
         Self {
             stopped,
             pondering,
             mated_in,
-            mode: Mode::Time {
-                timer,
-                hard_time_limit,
-                soft_time_limit,
-            },
+            real_time,
+            depth_limit: None,
         }
     }
 
@@ -65,7 +86,8 @@ impl<'a> TimeManager<'a> {
             stopped,
             pondering,
             mated_in,
-            mode: Mode::Depth(depth),
+            depth_limit: Some(depth),
+            real_time: None,
         }
     }
 
@@ -76,7 +98,8 @@ impl<'a> TimeManager<'a> {
             stopped,
             pondering,
             mated_in,
-            mode: Mode::Infinite,
+            depth_limit: None,
+            real_time: None,
         }
     }
 
@@ -88,15 +111,14 @@ impl<'a> TimeManager<'a> {
         if self.is_pondering() {
             return false;
         }
-        match self.mode {
-            Mode::Time {
-                timer,
-                hard_time_limit,
-                ..
-            } => timer.milliseconds() > hard_time_limit,
-            Mode::Infinite => false,
-            Mode::Depth(_) => false,
+        if self
+            .real_time
+            .as_ref()
+            .is_some_and(|real_time| real_time.timer.milliseconds() > real_time.hard_time_limit)
+        {
+            return true;
         }
+        return false;
     }
 
     #[must_use]
@@ -108,15 +130,19 @@ impl<'a> TimeManager<'a> {
             return false;
         }
 
-        match self.mode {
-            Mode::Time {
-                timer,
-                hard_time_limit,
-                ..
-            } => timer.milliseconds() > hard_time_limit,
-            Mode::Infinite => false,
-            Mode::Depth(max_depth) => depth > max_depth,
+        if self.depth_limit.is_some_and(|max_depth| depth > max_depth) {
+            return true;
         }
+
+        if self
+            .real_time
+            .as_ref()
+            .is_some_and(|real_time| real_time.timer.milliseconds() > real_time.hard_time_limit)
+        {
+            return true;
+        }
+
+        return false;
     }
 
     pub fn is_pondering(&self) -> bool {
@@ -153,22 +179,14 @@ impl<'a> TimeManager<'a> {
             }
         }
 
-        match self.mode {
-            Mode::Time {
-                timer,
-                soft_time_limit,
-                hard_time_limit,
-            } => {
-                const BEST_MOVE_STABILITY_MULTIPLIERS: [u64; 8] =
-                    [150, 130, 120, 110, 100, 95, 90, 85];
-                let multiplier = BEST_MOVE_STABILITY_MULTIPLIERS[best_move_stability
-                    .min(BEST_MOVE_STABILITY_MULTIPLIERS.len() as u8 - 1)
-                    as usize];
-                let adjusted_time = (soft_time_limit * multiplier) / 100;
-                timer.milliseconds() > adjusted_time.min(hard_time_limit)
-            }
-            Mode::Infinite => false,
-            Mode::Depth(_) => false,
+        if let Some(real_time) = &self.real_time {
+            const BEST_MOVE_STABILITY_MULTIPLIERS: [u64; 8] = [150, 130, 120, 110, 100, 95, 90, 85];
+            let multiplier = BEST_MOVE_STABILITY_MULTIPLIERS
+                [best_move_stability.min(BEST_MOVE_STABILITY_MULTIPLIERS.len() as u8 - 1) as usize];
+            let adjusted_time = (real_time.soft_time_limit * multiplier) / 100;
+            return real_time.timer.milliseconds() > adjusted_time.min(real_time.hard_time_limit);
         }
+
+        return false;
     }
 }

@@ -8,7 +8,8 @@ use crate::move_generator::move_data::Flag;
 use crate::search::encoded_move::EncodedMove;
 use crate::search::pv::Pv;
 use crate::search::search_params::Tunable;
-use crate::search::{DepthSearchInfo, IMMEDIATE_CHECKMATE_SCORE, Ply, Search, TimeManager};
+use crate::search::time_manager::{RealTime, TimeManager};
+use crate::search::{DepthSearchInfo, IMMEDIATE_CHECKMATE_SCORE, Ply, Search};
 use crate::timer::Time;
 use crate::uci::encode_move;
 
@@ -86,43 +87,37 @@ fn search(
         search.make_move_repetition::<false>(&decode_move(search.board(), *from, *to, *promotion));
     }
 
-    let time_manager = match search_time {
-        SearchTime::Infinite => TimeManager::infinite(stopped, ponder_info.is_pondering, mated_in),
-        SearchTime::Fixed(move_time) => TimeManager::time_limited(
-            stopped,
-            ponder_info.is_pondering,
-            mated_in,
-            &search_start,
-            move_time,
-            move_time,
-        ),
-        SearchTime::Info(info) => {
-            let clock_time = (if search.board().white_to_move {
-                info.white_time
-            } else {
-                info.black_time
-            })
-            .unwrap();
-
+    let real_time = {
+        let clock_time = if search.board().white_to_move {
+            search_time.white_time()
+        } else {
+            search_time.black_time()
+        };
+        if let Some(clock_time) = clock_time {
             let increment = (if search.board().white_to_move {
-                info.white_increment
+                search_time.white_increment()
             } else {
-                info.black_increment
+                search_time.black_increment()
             })
             .map_or_else(|| 0, core::num::NonZero::get);
 
             let (hard_time_limit, soft_time_limit) = Search::calculate_time(clock_time, increment);
-            TimeManager::time_limited(
-                stopped,
-                ponder_info.is_pondering,
-                mated_in,
+            Some(RealTime::new(
                 &search_start,
                 hard_time_limit,
                 soft_time_limit,
-            )
+            ))
+        } else {
+            None
         }
-        _ => panic!("Unknown time control"),
     };
+    let time_manager = TimeManager::new(
+        search_time.depth(),
+        real_time,
+        stopped,
+        ponder_info.is_pondering,
+        mated_in,
+    );
 
     let (mut root_best_move, mut root_best_reply) = (EncodedMove::NONE, EncodedMove::NONE);
     let mut try_update = |pv: &Pv| {

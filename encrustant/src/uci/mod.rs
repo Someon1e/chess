@@ -396,56 +396,58 @@ uciok",
     pub fn go(&mut self, parameters: GoParameters) {
         let mut board = Board::from_fen(self.fen.as_ref().unwrap()).unwrap();
 
-        if matches!(parameters.search_type(), SearchType::Perft) {
-            for (from, to, promotion) in &self.moves {
-                board.make_move(&decode_move(&board, *from, *to, *promotion));
+        match parameters.search_type().unwrap() {
+            SearchType::Perft(depth) => {
+                for (from, to, promotion) in &self.moves {
+                    board.make_move(&decode_move(&board, *from, *to, *promotion));
+                }
+
+                let search_start = Time::now();
+                let nodes = perft_root(&mut board, depth, self.out);
+                let time = search_start.milliseconds();
+                let nodes_per_second = if time == 0 { 0 } else { (nodes * 1000) / time };
+                (self.out)(&format!(
+                    "Searched {nodes} nodes in {time} milliseconds ({nodes_per_second} nodes per second)",
+                ));
             }
+            SearchType::Normal(search_time) => {
+                #[cfg(target_arch = "wasm32")]
+                {
+                    self.stopped = false;
+                    self.ponder_info.is_pondering = false;
+                }
+                #[cfg(not(target_arch = "wasm32"))]
+                {
+                    self.stopped.store(false, Ordering::SeqCst);
+                    self.ponder_info.is_pondering.store(
+                        self.ponder_info.ponder_allowed && search_time.pondering().unwrap_or(false),
+                        Ordering::SeqCst,
+                    );
+                }
 
-            let search_start = Time::now();
-            let nodes = perft_root(&mut board, parameters.depth().unwrap(), self.out);
-            let time = search_start.milliseconds();
-            let nodes_per_second = if time == 0 { 0 } else { (nodes * 1000) / time };
-            (self.out)(&format!(
-                "Searched {nodes} nodes in {time} milliseconds ({nodes_per_second} nodes per second)",
-            ));
-            return;
+                if self.search_controller.is_none() {
+                    self.search_controller =
+                        Some(SearchController::new(self.out, self.transposition_capacity));
+                }
+                let search_controller = self.search_controller.as_mut().unwrap();
+                search_controller.set_position(board, self.moves.clone());
+
+                let mated_in_plies = if let Some(mate_in_moves) = search_time.mate_in_moves() {
+                    Some((2 * mate_in_moves - 1) as u8)
+                } else {
+                    None
+                };
+
+                search_controller.search(
+                    self.stopped.clone(),
+                    search_time,
+                    self.ponder_info.clone(),
+                    mated_in_plies,
+                    #[cfg(feature = "spsa")]
+                    self.tunables,
+                );
+            }
         }
-
-        #[cfg(target_arch = "wasm32")]
-        {
-            self.stopped = false;
-            self.ponder_info.is_pondering = false;
-        }
-        #[cfg(not(target_arch = "wasm32"))]
-        {
-            self.stopped.store(false, Ordering::SeqCst);
-            self.ponder_info.is_pondering.store(
-                self.ponder_info.ponder_allowed && parameters.pondering().unwrap_or(false),
-                Ordering::SeqCst,
-            );
-        }
-
-        if self.search_controller.is_none() {
-            self.search_controller =
-                Some(SearchController::new(self.out, self.transposition_capacity));
-        }
-        let search_controller = self.search_controller.as_mut().unwrap();
-        search_controller.set_position(board, self.moves.clone());
-
-        let mated_in_plies = if let Some(mate_in_moves) = parameters.mate_in_moves() {
-            Some((2 * mate_in_moves - 1) as u8)
-        } else {
-            None
-        };
-
-        search_controller.search(
-            self.stopped.clone(),
-            parameters.move_time().unwrap(),
-            self.ponder_info.clone(),
-            mated_in_plies,
-            #[cfg(feature = "spsa")]
-            self.tunables,
-        );
     }
 
     #[cfg(not(target_arch = "wasm32"))]

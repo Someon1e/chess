@@ -11,7 +11,7 @@ use std::{
 use core::cell::RefCell;
 use encrustant::{
     board::Board,
-    search::{Search, TimeManager, transposition::megabytes_to_capacity},
+    search::{Search, time_manager::TimeManager, transposition::megabytes_to_capacity},
     timer::Time,
     uci::{GoParameters, SpinU16, UCIProcessor},
 };

@@ -5,7 +5,7 @@ mod move_ordering;
 pub mod pv;
 mod repetition_table;
 pub mod search_params;
-mod time_manager;
+pub mod time_manager;
 pub mod transposition;
 
 /// Zobrist key.
@@ -13,7 +13,7 @@ pub mod zobrist;
 
 use pv::Pv;
 use search_params::{DEFAULT_TUNABLES, Tunable};
-pub use time_manager::TimeManager;
+use time_manager::TimeManager;
 use zobrist::Zobrist;
 
 use crate::{
