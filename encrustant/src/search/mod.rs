@@ -930,7 +930,7 @@ impl Search {
 
             self.unmake_move_repetition(&move_data, &old_state);
 
-            if ply_remaining > 1 && time_manager.hard_stop_inner_search() {
+            if ply_remaining > 1 && time_manager.hard_stop_inner_search(self.node_count) {
                 return 0;
             }
 
@@ -1179,7 +1179,7 @@ impl Search {
             depth += 1;
             let best_score = self.aspiration_search(time_manager, previous_best_score, depth);
 
-            if time_manager.hard_stop_iterative_deepening(depth) {
+            if time_manager.hard_stop_iterative_deepening(depth, self.node_count) {
                 // Must stop now.
                 break;
             }
@@ -1214,7 +1214,7 @@ impl Search {
                 break;
             }
 
-            if time_manager.soft_stop(best_score, best_move_stability) {
+            if time_manager.soft_stop(self.node_count, best_score, best_move_stability) {
                 // It would probably be a waste of time to start another iteration
                 break;
             }

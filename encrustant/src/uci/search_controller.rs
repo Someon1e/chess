@@ -8,7 +8,7 @@ use crate::move_generator::move_data::Flag;
 use crate::search::encoded_move::EncodedMove;
 use crate::search::pv::Pv;
 use crate::search::search_params::Tunable;
-use crate::search::time_manager::{RealTime, TimeManager};
+use crate::search::time_manager::{NodeLimit, RealTime, TimeManager};
 use crate::search::{DepthSearchInfo, IMMEDIATE_CHECKMATE_SCORE, Ply, Search};
 use crate::timer::Time;
 use crate::uci::encode_move;
@@ -113,6 +113,11 @@ fn search(
     };
     let time_manager = TimeManager::new(
         search_time.depth(),
+        if let Some(nodes) = search_time.nodes() {
+            Some(NodeLimit::new(nodes, nodes))
+        } else {
+            None
+        },
         real_time,
         stopped,
         ponder_info.is_pondering,

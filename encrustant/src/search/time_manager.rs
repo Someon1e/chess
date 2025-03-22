@@ -15,11 +15,26 @@ type Bool = Arc<AtomicBool>;
 
 pub struct TimeManager<'a> {
     depth_limit: Option<Ply>,
+    node_limit: Option<NodeLimit>,
     real_time: Option<RealTime<'a>>,
 
     stopped: Bool,
     pondering: Bool,
     mated_in: Option<Ply>,
+}
+
+pub struct NodeLimit {
+    soft_limit: u64,
+    hard_limit: u64,
+}
+impl NodeLimit {
+    pub const fn new(hard_limit: u64, soft_limit: u64) -> Self {
+        assert!(hard_limit >= soft_limit);
+        Self {
+            soft_limit,
+            hard_limit,
+        }
+    }
 }
 
 pub struct RealTime<'a> {
@@ -42,6 +57,7 @@ impl<'a> TimeManager<'a> {
     #[must_use]
     pub fn new(
         depth_limit: Option<Ply>,
+        node_limit: Option<NodeLimit>,
         real_time: Option<RealTime<'a>>,
 
         stopped: Bool,
@@ -50,6 +66,7 @@ impl<'a> TimeManager<'a> {
     ) -> Self {
         Self {
             depth_limit,
+            node_limit,
             real_time,
 
             stopped,
@@ -71,6 +88,7 @@ impl<'a> TimeManager<'a> {
             mated_in,
             real_time,
             depth_limit: None,
+            node_limit: None,
         }
     }
 
@@ -87,6 +105,24 @@ impl<'a> TimeManager<'a> {
             pondering,
             mated_in,
             depth_limit: Some(depth),
+            node_limit: None,
+            real_time: None,
+        }
+    }
+
+    #[must_use]
+    pub const fn node_limited(
+        stopped: Bool,
+        pondering: Bool,
+        mated_in: Option<Ply>,
+        node_limit: NodeLimit,
+    ) -> Self {
+        Self {
+            stopped,
+            pondering,
+            mated_in,
+            depth_limit: None,
+            node_limit: Some(node_limit),
             real_time: None,
         }
     }
@@ -99,18 +135,27 @@ impl<'a> TimeManager<'a> {
             pondering,
             mated_in,
             depth_limit: None,
+            node_limit: None,
             real_time: None,
         }
     }
 
     #[must_use]
-    pub fn hard_stop_inner_search(&self) -> bool {
+    pub fn hard_stop_inner_search(&self, node_count: u64) -> bool {
         if self.is_stopped() {
             return true;
         }
         if self.is_pondering() {
             return false;
         }
+        if self
+            .node_limit
+            .as_ref()
+            .is_some_and(|node_limit| node_count >= node_limit.hard_limit)
+        {
+            return true;
+        }
+
         if self
             .real_time
             .as_ref()
@@ -122,12 +167,20 @@ impl<'a> TimeManager<'a> {
     }
 
     #[must_use]
-    pub fn hard_stop_iterative_deepening(&self, depth: Ply) -> bool {
+    pub fn hard_stop_iterative_deepening(&self, depth: Ply, node_count: u64) -> bool {
         if self.is_stopped() {
             return true;
         }
         if self.is_pondering() {
             return false;
+        }
+
+        if self
+            .node_limit
+            .as_ref()
+            .is_some_and(|node_limit| node_count >= node_limit.hard_limit)
+        {
+            return true;
         }
 
         if self.depth_limit.is_some_and(|max_depth| depth > max_depth) {
@@ -163,12 +216,24 @@ impl<'a> TimeManager<'a> {
     }
 
     #[must_use]
-    pub fn soft_stop(&self, best_score: EvalNumber, best_move_stability: Ply) -> bool {
+    pub fn soft_stop(
+        &self,
+        node_count: u64,
+        best_score: EvalNumber,
+        best_move_stability: Ply,
+    ) -> bool {
         if self.is_stopped() {
             return true;
         }
         if self.is_pondering() {
             return false;
+        }
+        if self
+            .node_limit
+            .as_ref()
+            .is_some_and(|node_limit| node_count >= node_limit.soft_limit)
+        {
+            return true;
         }
 
         if let Some(ply) = self.mated_in {
